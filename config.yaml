@@ -1,0 +1,18 @@
+# Configuração do pipeline. Uso: python -m pipeline --config config.yaml
+#
+# O token do GitHub NÃO fica aqui: defina a variável de ambiente indicada em
+# `github.token_env` (export GITHUB_TOKEN="...").
+
+github:
+  token_env: GITHUB_TOKEN        # nome da variável de ambiente (nunca o valor do token)
+
+# Janela de observação (12 meses, fixada pelo professor na abertura da S01).
+# TODO: datas AINDA NÃO DEFINIDAS pelo professor (lacuna L01) — não inventar.
+# Formato: AAAA-MM-DD (UTC). Enquanto forem null, o pipeline avisa e segue.
+janela:
+  inicio: null
+  fim: null
+
+caminhos:
+  cache: cache                   # respostas da API (ignorado pelo Git)
+  saidas: outputs                # funil.csv, CSVs finais, etc.

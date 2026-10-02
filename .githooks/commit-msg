@@ -1,0 +1,8 @@
+#!/bin/sh
+# Hook commit-msg: exige #N na mensagem. Ativar com: git config core.hooksPath .githooks
+ROOT="$(git rev-parse --show-toplevel)"
+for PY in python3 python; do
+  command -v "$PY" >/dev/null 2>&1 && exec "$PY" "$ROOT/scripts/check_commit_msg.py" "$1"
+done
+echo "commit-msg: Python não encontrado; não foi possível validar a mensagem." >&2
+exit 1
