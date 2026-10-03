@@ -5,6 +5,8 @@ import logging
 import sys
 
 from pipeline.config import ConfigError, get_token, load_config
+from pipeline.funil import escrever_funil
+from pipeline.selection import selecionar
 
 log = logging.getLogger("pipeline")
 
@@ -20,18 +22,36 @@ def build_parser() -> argparse.ArgumentParser:
     return parser
 
 
-def run(config, token: str) -> None:
+def criar_cliente(token: str):
+    """Cliente HTTP da Issue #11 (rate limit, backoff, cache). None enquanto não existir."""
+    try:
+        from pipeline.http_client import HttpClient  # entregue pela Issue #11
+    except ImportError:
+        return None
+    return HttpClient(token)
+
+
+def run(config, token: str, client=None) -> None:
     """Orquestra as etapas do pipeline.
 
-    As etapas (seleção, coleta, métricas) entram em Issues próprias e serão
-    encadeadas aqui na integração (#6). Por ora só valida o ambiente.
+    Seleção + funil (#4) já encadeados; coleta e métricas entram em outras Issues (#6).
     """
     if config.janela_definida:
         log.info("janela: %s a %s", config.janela_inicio, config.janela_fim)
     else:
         log.warning("janela de observação não definida no config (lacuna L01); defina antes de coletar")
     log.info("cache: %s | saídas: %s", config.cache_dir, config.saidas_dir)
-    log.info("ambiente OK (token lido de %s). Nenhuma etapa de coleta implementada ainda.", config.token_env)
+    log.info("ambiente OK (token lido de %s).", config.token_env)
+
+    if not config.janela_definida:
+        log.warning("seleção não executada: a janela de observação é necessária (releases e runs)")
+        return
+    if client is None:
+        log.warning("seleção não executada: pipeline.http_client (Issue #11) ainda não disponível")
+        return
+    resultado = selecionar(client, config.selecao, config.janela_inicio, config.janela_fim)
+    csv_path, md_path = escrever_funil(resultado, config.saidas_dir)
+    log.info("funil gerado: %s e %s", csv_path, md_path)
 
 
 def main(argv=None) -> int:
@@ -43,7 +63,7 @@ def main(argv=None) -> int:
     except ConfigError as exc:
         log.error("%s", exc)
         return 1
-    run(config, token)
+    run(config, token, criar_cliente(token))
     return 0
 
 

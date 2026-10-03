@@ -16,3 +16,17 @@ janela:
 caminhos:
   cache: cache                   # respostas da API (ignorado pelo Git)
   saidas: outputs                # funil.csv, CSVs finais, etc.
+
+# Seleção de repositórios (S01). O enunciado NÃO define "popular" (lacuna L03) nem
+# as faixas de estrelas: os valores abaixo são decisão do grupo (o enunciado só dá
+# `stars:1000..2000`, `2000..5000` como exemplo). Mínimos de 5 releases e 50 runs
+# válidos vêm do enunciado (E§3).
+selecao:
+  stars_min: 1000                # piso de estrelas (stars:>=1000)
+  faixas_estrelas: [1000, 2000, 5000, 10000, 20000, 50000]  # limites inferiores; última faixa aberta
+  linguagens: []                 # [] = sem fatiar por linguagem; ex.: [Python, Java]
+  excluir_forks: true
+  excluir_arquivados: true
+  min_releases: 5
+  min_runs_validos: 50
+  idade_referencia: fim          # idade = created_at até janela.fim (lacuna L16); ou "inicio"

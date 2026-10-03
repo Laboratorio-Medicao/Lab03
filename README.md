@@ -40,6 +40,14 @@ Sem a variável definida, o comando falha com uma mensagem explicando o que faze
 python -m pipeline --config config.yaml
 ```
 
+## Seleção de repositórios e funil (Issue #4)
+
+`pipeline/selection.py` busca candidatos na Search API **fatiada** por faixas de estrelas (e, opcionalmente, linguagem), subdividindo ao meio qualquer fatia com mais de 1.000 resultados. Depois aplica os filtros do mais barato ao mais caro: `actions/workflows.total_count > 0` → ≥ 5 releases na janela → ≥ 50 runs válidos (default branch, `event=push`, buscados mês a mês). Para quem passa, coleta contribuidores (`per_page=1&anon=true`, última página do `Link`) e idade.
+
+Saídas em `caminhos.saidas`: `funil.csv` (um registro por repositório, com etapa e motivo de descarte) e `funil.md` (resumo gerado dos mesmos registros).
+
+Decisões do grupo (lacunas do enunciado, configuráveis em `selecao:`): critério de "popular" e faixas de estrelas (L03), run válido (L04), releases contadas (L05), idade = `created_at` até `janela.fim` (L16). A seleção só roda com a janela definida e com `pipeline.http_client` (Issue #11) disponível.
+
 ## Testes e cobertura
 
 ```bash

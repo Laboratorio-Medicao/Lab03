@@ -15,12 +15,28 @@ class ConfigError(Exception):
 
 
 @dataclass(frozen=True)
+class SelecaoConfig:
+    """Parâmetros da seleção (lacuna L03: critério de "popular" é decisão do grupo)."""
+
+    stars_min: int = 1000
+    # Limites inferiores das faixas de estrelas; a última faixa é aberta (stars:>=último).
+    faixas_estrelas: tuple[int, ...] = (1000, 2000, 5000, 10000, 20000, 50000)
+    linguagens: tuple[str, ...] = ()  # vazio = sem fatiar por linguagem
+    excluir_forks: bool = True
+    excluir_arquivados: bool = True
+    min_releases: int = 5
+    min_runs_validos: int = 50
+    idade_referencia: str = "fim"  # "inicio" ou "fim" da janela (lacuna L16)
+
+
+@dataclass(frozen=True)
 class Config:
     token_env: str
     janela_inicio: date | None
     janela_fim: date | None
     cache_dir: Path
     saidas_dir: Path
+    selecao: SelecaoConfig = SelecaoConfig()
 
     @property
     def janela_definida(self) -> bool:
@@ -36,6 +52,34 @@ def _parse_data(valor, campo: str) -> date | None:
         return date.fromisoformat(str(valor))
     except ValueError:
         raise ConfigError(f"{campo}: data inválida {valor!r} (use AAAA-MM-DD)") from None
+
+
+def _parse_selecao(raw: dict) -> SelecaoConfig:
+    if not isinstance(raw, dict):
+        raise ConfigError("selecao: deve ser um mapa chave/valor")
+    padrao = SelecaoConfig()
+    try:
+        faixas = tuple(int(x) for x in raw.get("faixas_estrelas", padrao.faixas_estrelas))
+        stars_min = int(raw.get("stars_min", padrao.stars_min))
+        min_releases = int(raw.get("min_releases", padrao.min_releases))
+        min_runs = int(raw.get("min_runs_validos", padrao.min_runs_validos))
+    except (TypeError, ValueError):
+        raise ConfigError("selecao: faixas_estrelas, stars_min, min_releases e min_runs_validos devem ser inteiros") from None
+    if not faixas or list(faixas) != sorted(set(faixas)):
+        raise ConfigError("selecao.faixas_estrelas: use inteiros estritamente crescentes")
+    referencia = str(raw.get("idade_referencia", padrao.idade_referencia))
+    if referencia not in ("inicio", "fim"):
+        raise ConfigError("selecao.idade_referencia: use 'inicio' ou 'fim'")
+    return SelecaoConfig(
+        stars_min=stars_min,
+        faixas_estrelas=faixas,
+        linguagens=tuple(str(x) for x in (raw.get("linguagens") or ())),
+        excluir_forks=bool(raw.get("excluir_forks", padrao.excluir_forks)),
+        excluir_arquivados=bool(raw.get("excluir_arquivados", padrao.excluir_arquivados)),
+        min_releases=min_releases,
+        min_runs_validos=min_runs,
+        idade_referencia=referencia,
+    )
 
 
 def load_config(path: str | Path) -> Config:
@@ -61,6 +105,7 @@ def load_config(path: str | Path) -> Config:
         raise ConfigError("janela: 'fim' deve ser posterior a 'inicio'")
 
     return Config(
+        selecao=_parse_selecao(raw.get("selecao") or {}),
         token_env=str(github.get("token_env") or DEFAULT_TOKEN_ENV),
         janela_inicio=inicio,
         janela_fim=fim,
