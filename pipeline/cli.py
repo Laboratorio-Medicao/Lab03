@@ -22,13 +22,17 @@ def build_parser() -> argparse.ArgumentParser:
     return parser
 
 
-def criar_cliente(token: str):
-    """Cliente HTTP da Issue #11 (rate limit, backoff, cache). None enquanto não existir."""
+def criar_cliente(token: str, cache_dir=None):
+    """Cliente HTTP com cache em disco (Issues #11 e #12). None enquanto não existir."""
     try:
-        from pipeline.http_client import HttpClient  # entregue pela Issue #11
+        from pipeline.cache import CachedHttpClient
+        from pipeline.http_client import HttpClient
     except ImportError:
         return None
-    return HttpClient(token)
+    client = HttpClient(token)
+    if cache_dir is not None:
+        return CachedHttpClient(client, cache_dir)
+    return client
 
 
 def run(config, token: str, client=None) -> None:
@@ -63,7 +67,7 @@ def main(argv=None) -> int:
     except ConfigError as exc:
         log.error("%s", exc)
         return 1
-    run(config, token, criar_cliente(token))
+    run(config, token, criar_cliente(token, config.cache_dir))
     return 0
 
 
