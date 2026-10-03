@@ -2,7 +2,7 @@ from datetime import date
 
 import pytest
 
-from pipeline.config import ConfigError, get_token, load_config
+from pipeline.config import ConfigError, carregar_dotenv, get_token, load_config
 
 
 def escrever(tmp_path, conteudo: str):
@@ -14,7 +14,8 @@ def escrever(tmp_path, conteudo: str):
 def test_config_do_repositorio_e_valido(raiz):
     config = load_config(raiz / "config.yaml")
     assert config.token_env == "GITHUB_TOKEN"
-    assert not config.janela_definida  # datas ainda não definidas pelo professor
+    if config.janela_definida:  # datas podem ser provisórias (L01); só exigimos coerência
+        assert config.janela_fim > config.janela_inicio
 
 
 def test_config_do_repositorio_nao_contem_token(raiz):
@@ -71,3 +72,15 @@ def test_token_ausente_gera_erro_claro(raiz, ambiente):
 def test_nome_da_variavel_e_configuravel(tmp_path):
     config = load_config(escrever(tmp_path, "github:\n  token_env: MEU_TOKEN\n"))
     assert get_token(config, {"MEU_TOKEN": "x"}) == "x"
+
+
+def test_dotenv_carrega_sem_sobrescrever(tmp_path):
+    env = tmp_path / ".env"
+    env.write_text('# c\nGITHUB_TOKEN="abc"\nexport OUTRA=x y\nJA_DEFINIDA=novo\n', encoding="utf-8")
+    ambiente = {"JA_DEFINIDA": "antigo"}
+    assert carregar_dotenv(env, ambiente) is True
+    assert ambiente == {"GITHUB_TOKEN": "abc", "OUTRA": "x y", "JA_DEFINIDA": "antigo"}
+
+
+def test_dotenv_inexistente_devolve_false(tmp_path):
+    assert carregar_dotenv(tmp_path / "nao_existe", {}) is False

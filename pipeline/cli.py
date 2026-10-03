@@ -4,9 +4,9 @@ import argparse
 import logging
 import sys
 
-from pipeline.config import ConfigError, get_token, load_config
-from pipeline.funil import escrever_funil
-from pipeline.selection import selecionar
+from pipeline.config import ConfigError, carregar_dotenv, get_token, load_config
+from pipeline.selection import ApiError
+from pipeline.execucao import Etapas, anexar_log_em_arquivo, executar
 
 log = logging.getLogger("pipeline")
 
@@ -35,11 +35,18 @@ def criar_cliente(token: str, cache_dir=None):
     return client
 
 
-def run(config, token: str, client=None) -> None:
-    """Orquestra as etapas do pipeline.
+def criar_etapas() -> Etapas | None:
+    """Coleta por repositório e cálculo das métricas (Issues #7-#10, #13, #14).
 
-    Seleção + funil (#4) já encadeados; coleta e métricas entram em outras Issues (#6).
+    Devolve None enquanto essas Issues não entregarem as funções com o contrato de
+    `pipeline.execucao` (coletar(client, repo, inicio, fim) e calcular(repo, dados, inicio, fim)).
+    Quando existirem, basta importá-las aqui e montar `Etapas(coletar=..., calcular=...)`.
     """
+    return None
+
+
+def run(config, token: str, client=None, etapas: Etapas | None = None) -> None:
+    """Orquestra o fluxo completo (Issue #6): seleção -> coleta -> métricas -> resultados -> funil -> log."""
     if config.janela_definida:
         log.info("janela: %s a %s", config.janela_inicio, config.janela_fim)
     else:
@@ -53,21 +60,33 @@ def run(config, token: str, client=None) -> None:
     if client is None:
         log.warning("seleção não executada: pipeline.http_client (Issue #11) ainda não disponível")
         return
-    resultado = selecionar(client, config.selecao, config.janela_inicio, config.janela_fim)
-    csv_path, md_path = escrever_funil(resultado, config.saidas_dir)
-    log.info("funil gerado: %s e %s", csv_path, md_path)
+    if etapas is None:
+        log.warning("coleta e métricas (Issues #7-#10, #13, #14) ainda não disponíveis: só seleção e funil")
+        etapas = Etapas(coletar=None, calcular=None)
+    handler = anexar_log_em_arquivo(config.saidas_dir)  # outputs/execucao.log
+    try:
+        resumo = executar(config, client, etapas, config.selecao.amostra_alvo)
+        log.info("execução concluída: %d concluídos, %d erros", resumo.concluidos, resumo.erros)
+    finally:
+        logging.getLogger("pipeline").removeHandler(handler)
+        handler.close()
 
 
 def main(argv=None) -> int:
     logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
     args = build_parser().parse_args(argv)
     try:
+        carregar_dotenv(".env")  # opcional; variável de ambiente já definida tem prioridade
         config = load_config(args.config)
         token = get_token(config)
     except ConfigError as exc:
         log.error("%s", exc)
         return 1
-    run(config, token, criar_cliente(token, config.cache_dir))
+    try:
+        run(config, token, criar_cliente(token, config.cache_dir), criar_etapas())
+    except ApiError as exc:
+        log.error("execução interrompida: %s (confira o token e a cota da API)", exc)
+        return 1
     return 0
 
 

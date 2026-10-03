@@ -27,6 +27,7 @@ class SelecaoConfig:
     min_releases: int = 5
     min_runs_validos: int = 50
     idade_referencia: str = "fim"  # "inicio" ou "fim" da janela (lacuna L16)
+    amostra_alvo: int = 100  # tamanho da amostra da S01 (E§10); corte acima disso não é definido (L17)
 
 
 @dataclass(frozen=True)
@@ -63,10 +64,13 @@ def _parse_selecao(raw: dict) -> SelecaoConfig:
         stars_min = int(raw.get("stars_min", padrao.stars_min))
         min_releases = int(raw.get("min_releases", padrao.min_releases))
         min_runs = int(raw.get("min_runs_validos", padrao.min_runs_validos))
+        amostra_alvo = int(raw.get("amostra_alvo", padrao.amostra_alvo))
     except (TypeError, ValueError):
         raise ConfigError("selecao: faixas_estrelas, stars_min, min_releases e min_runs_validos devem ser inteiros") from None
     if not faixas or list(faixas) != sorted(set(faixas)):
         raise ConfigError("selecao.faixas_estrelas: use inteiros estritamente crescentes")
+    if amostra_alvo < 1:
+        raise ConfigError("selecao.amostra_alvo: deve ser um inteiro >= 1")
     referencia = str(raw.get("idade_referencia", padrao.idade_referencia))
     if referencia not in ("inicio", "fim"):
         raise ConfigError("selecao.idade_referencia: use 'inicio' ou 'fim'")
@@ -79,6 +83,7 @@ def _parse_selecao(raw: dict) -> SelecaoConfig:
         min_releases=min_releases,
         min_runs_validos=min_runs,
         idade_referencia=referencia,
+        amostra_alvo=amostra_alvo,
     )
 
 
@@ -112,6 +117,28 @@ def load_config(path: str | Path) -> Config:
         cache_dir=Path(caminhos.get("cache") or "cache"),
         saidas_dir=Path(caminhos.get("saidas") or "outputs"),
     )
+
+
+def carregar_dotenv(path: str | Path = ".env", environ=None) -> bool:
+    """Carrega `CHAVE=valor` de um .env para o ambiente, sem sobrescrever variáveis já definidas.
+
+    Aceita comentários (#), `export CHAVE=...` e aspas simples/duplas. Devolve False se o
+    arquivo não existe. Nunca loga valores.
+    """
+    environ = os.environ if environ is None else environ
+    path = Path(path)
+    if not path.is_file():
+        return False
+    for linha in path.read_text(encoding="utf-8").splitlines():
+        linha = linha.strip()
+        if not linha or linha.startswith("#") or "=" not in linha:
+            continue
+        chave, _, valor = linha.removeprefix("export ").partition("=")
+        valor = valor.strip()
+        if len(valor) >= 2 and valor[0] == valor[-1] and valor[0] in "\"'":
+            valor = valor[1:-1]
+        environ.setdefault(chave.strip(), valor)
+    return True
 
 
 def get_token(config: Config, environ=None) -> str:

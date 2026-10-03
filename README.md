@@ -23,6 +23,8 @@ O token é lido da variável de ambiente `GITHUB_TOKEN`. **Nunca** o coloque no 
 export GITHUB_TOKEN="seu_token"
 ```
 
+Alternativamente, crie um arquivo `.env` na raiz (já ignorado pelo Git) com `GITHUB_TOKEN=seu_token`; o comando o carrega sozinho. Uma variável já exportada no terminal tem prioridade sobre o `.env`.
+
 Sem a variável definida, o comando falha com uma mensagem explicando o que fazer.
 
 ## Configuração (`config.yaml`)
@@ -30,7 +32,7 @@ Sem a variável definida, o comando falha com uma mensagem explicando o que faze
 | Chave | Descrição |
 |---|---|
 | `github.token_env` | Nome da variável de ambiente que guarda o token (padrão `GITHUB_TOKEN`). |
-| `janela.inicio` / `janela.fim` | Janela de observação de 12 meses (`AAAA-MM-DD`, UTC). **Ainda não definida pelo professor**; enquanto estiver `null` o pipeline apenas avisa. |
+| `janela.inicio` / `janela.fim` | Janela de observação de 12 meses (`AAAA-MM-DD`, UTC). **Datas provisórias** no `config.yaml` até o professor informar as oficiais (L01); basta editar essas duas linhas. |
 | `caminhos.cache` | Pasta do cache local (ignorada pelo Git). |
 | `caminhos.saidas` | Pasta das saídas geradas (`funil.csv`, CSVs finais). |
 
@@ -47,6 +49,16 @@ python -m pipeline --config config.yaml
 Saídas em `caminhos.saidas`: `funil.csv` (um registro por repositório, com etapa e motivo de descarte) e `funil.md` (resumo gerado dos mesmos registros).
 
 Decisões do grupo (lacunas do enunciado, configuráveis em `selecao:`): critério de "popular" e faixas de estrelas (L03), run válido (L04), releases contadas (L05), idade = `created_at` até `janela.fim` (L16). A seleção só roda com a janela definida e com `pipeline.http_client` (Issue #11) disponível.
+
+## Execução integrada (Issue #6)
+
+`pipeline/execucao.py` encadeia **seleção → validação da amostra → coleta → métricas → resultados → funil → log** no mesmo comando. Ele só orquestra: seleção/funil vêm da #4; coleta, métricas, `http_client` e cache vêm das Issues #7–#14 e são injetados (`Etapas`, `client`).
+
+- **Amostra:** só repositórios `selecionado` no funil, sem duplicatas (`full_name` sem diferenciar caixa). `selecao.amostra_alvo` (100) não relaxa filtros nem completa a amostra: se passarem menos, o log avisa; se passarem mais, mantém os primeiros na ordem da seleção (critério de corte **não definido**, L17).
+- **Erros:** falha em um repositório é registrada (`status=erro` em `resultados.csv` e no log) e a execução segue (política não definida no enunciado).
+- **Cache:** se o cliente expõe `estatisticas()`, o log registra o consumo da execução (diferença antes/depois) — útil para comparar a 1ª e a 2ª execução.
+- **Saídas** em `caminhos.saidas`: `funil.csv`/`funil.md`, `resultados.csv`, `execucao.log` (append; cada execução tem início e fim datados; o token nunca é logado).
+- **Pendente:** `pipeline.cli.criar_etapas()` devolve `None` até as Issues #7–#10, #13 e #14 entregarem as funções (contrato em `pipeline/execucao.py`); enquanto isso o comando faz só seleção e funil.
 
 ## Testes e cobertura
 
@@ -77,7 +89,7 @@ O workflow `.github/workflows/commits.yml` aplica a mesma regra no GitHub, caso 
 ## Estrutura do projeto
 
 ```text
-pipeline/              CLI (python -m pipeline) e leitura do config
+pipeline/              CLI (python -m pipeline), config, seleção, funil e orquestração (execucao.py)
 metricas/              funções de cálculo das métricas DORA (módulo medido pela cobertura)
 tests/                 testes automatizados (pytest)
 scripts/               utilitários (validação de mensagem de commit)

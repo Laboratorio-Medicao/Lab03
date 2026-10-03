@@ -7,11 +7,13 @@ github:
   token_env: GITHUB_TOKEN        # nome da variável de ambiente (nunca o valor do token)
 
 # Janela de observação (12 meses, fixada pelo professor na abertura da S01).
-# TODO: datas AINDA NÃO DEFINIDAS pelo professor (lacuna L01) — não inventar.
-# Formato: AAAA-MM-DD (UTC). Enquanto forem null, o pipeline avisa e segue.
+# ATENÇÃO — DATAS PROVISÓRIAS: o professor ainda não informou as datas (lacuna L01).
+# Os valores abaixo são só para testar (últimos 12 meses em 2026-10-02) e NÃO são oficiais.
+# Para trocar, edite apenas estas duas linhas (AAAA-MM-DD, UTC); nada no código depende delas.
+# Se mudar a janela depois de coletar, refaça seleção e coleta (e limpe o cache).
 janela:
-  inicio: null
-  fim: null
+  inicio: 2025-10-02
+  fim: 2026-10-02
 
 caminhos:
   cache: cache                   # respostas da API (ignorado pelo Git)
@@ -30,3 +32,5 @@ selecao:
   min_releases: 5
   min_runs_validos: 50
   idade_referencia: fim          # idade = created_at até janela.fim (lacuna L16); ou "inicio"
+  amostra_alvo: 100              # tamanho da amostra da S01 (E§10); se mais de 100 passarem nos filtros, o corte
+                                 # (primeiros na ordem da seleção) NÃO é definido pela Fonte da Verdade (L17)
