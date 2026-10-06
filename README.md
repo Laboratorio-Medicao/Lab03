@@ -50,6 +50,15 @@ Saídas em `caminhos.saidas`: `funil.csv` (um registro por repositório, com eta
 
 Decisões do grupo (lacunas do enunciado, configuráveis em `selecao:`): critério de "popular" e faixas de estrelas (L03), run válido (L04), releases contadas (L05), idade = `created_at` até `janela.fim` (L16). A seleção só roda com a janela definida e com `pipeline.http_client` (Issue #11) disponível.
 
+## Coleta de releases (Issue #7)
+
+`pipeline/collect_releases.py` coleta **todas** as releases de cada repositório, **sem corte de data**: as anteriores à janela são necessárias como "release anterior" da 1ª release da janela (`compare/{anterior}...{R}`, RQ02). De cada release guarda `tag_name`, `draft`, `prerelease`, `published_at` e, para uso adiante, `id`, `created_at`, `target_commitish` e `html_url`. A lista sai ordenada por `published_at` (drafts no fim).
+
+- **Cache:** um JSON por repositório em `<cache>/releases/<owner>__<repo>.json` (escrita atômica). Se o arquivo existe, nenhuma chamada é feita. Como não há corte de data, ele continua válido se a janela mudar.
+- **Teto da API:** o endpoint de releases só pagina até as 1.000 mais recentes. Acima disso a coleta para, marca `"truncado": true` no JSON e avisa no log (as mais antigas ficam de fora).
+- **Release anterior:** `pares_com_anterior(releases, inicio, fim)` devolve `(anterior, R)` para cada release de deploy da janela (L05); `anterior` pode estar fora da janela e é `None` se R for a primeira da história. `incluir_prerelease=True` gera a variante com pré-releases (RQ07).
+- **Branch (L06):** releases não são filtradas pelo default branch (`target_commitish` fica no JSON para análise); registrado como ameaça de construto.
+
 ## Execução integrada (Issue #6)
 
 `pipeline/execucao.py` encadeia **seleção → validação da amostra → coleta → métricas → resultados → funil → log** no mesmo comando. Ele só orquestra: seleção/funil vêm da #4; coleta, métricas, `http_client` e cache vêm das Issues #7–#14 e são injetados (`Etapas`, `client`).
