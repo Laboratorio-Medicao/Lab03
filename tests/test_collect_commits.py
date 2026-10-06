@@ -52,9 +52,11 @@ def commits(n):
     return [commit(i) for i in range(n)]
 
 
-def servidor(comparacoes, status=None, total=None):
-    """`comparacoes`: "base...head" -> commits; `status`: chave -> HTTP de erro; `total`: força total_commits."""
+def servidor(comparacoes, status=None, total=None, estado=None):
+    """`comparacoes`: "base...head" -> commits; `status`: chave -> HTTP de erro; `total`: força total_commits;
+    `estado`: chave -> `status` do compare (padrão "ahead")."""
     status = status or {}
+    estado = estado or {}
 
     def fn(path, params):
         assert "/compare/" in path, f"path inesperado: {path}"
@@ -64,7 +66,7 @@ def servidor(comparacoes, status=None, total=None):
         todos = comparacoes[chave]
         n, pp = int(params["page"]), int(params["per_page"])
         return Resp({
-            "status": "ahead",
+            "status": estado.get(chave, "ahead"),
             "total_commits": len(todos) if total is None else total,
             "commits": todos[(n - 1) * pp:n * pp],
             "files": [],
@@ -192,6 +194,7 @@ def test_campos_de_cada_release():
         "published_at": "2025-04-10T12:00:00Z",
         "base": "v1",
         "status": "ok",
+        "status_compare": "ahead",
         "total_commits": 2,
         "truncado": False,
     }
@@ -265,3 +268,28 @@ def test_sem_cache_dir_nao_grava_nada(tmp_path, monkeypatch):
 def test_full_name_invalido(tmp_path):
     with pytest.raises(ValueError):
         collect_commits(servidor({}), "sem-barra", [], cache_dir=tmp_path)
+
+
+# ---- status do compare (diverged, L06) ----
+
+def test_compare_divergente_e_registrado_contado_e_mantido(caplog):
+    c = servidor({"v1.9...v2.1": commits(3), "v2.1...v2.2": commits(1)}, estado={"v1.9...v2.1": "diverged"})
+    pares = [(rel("v1.9"), rel("v2.1")), (rel("v2.1"), rel("v2.2"))]
+    with caplog.at_level(logging.WARNING, logger="pipeline.collect_commits"):
+        res = collect_commits(c, "org/repo", pares)
+    assert [r["status_compare"] for r in res["releases"]] == ["diverged", "ahead"]
+    assert res["n_divergentes"] == 1
+    assert len(res["releases"][0]["commits"]) == 3  # continua no cálculo
+    assert "divergente" in caplog.text
+
+
+def test_status_compare_nulo_em_404_sem_anterior_e_cache_antigo(tmp_path):
+    from pipeline.collect_releases import arquivo_cache
+    arquivo = arquivo_cache(tmp_path, "org/repo", subpasta="commits")
+    arquivo.parent.mkdir(parents=True)
+    antigo = {"base": "v1", "head": "v2", "status": "ok", "total_commits": 0, "truncado": False, "commits": []}
+    arquivo.write_text(json.dumps({"comparacoes": {"v1...v2": antigo}}), encoding="utf-8")
+    c = servidor({}, status={"v2...v3": 404})
+    res = collect_commits(c, "org/repo", [(None, rel("v1")), (rel("v1"), rel("v2")), (rel("v2"), rel("v3"))], tmp_path)
+    assert [r["status_compare"] for r in res["releases"]] == [None, None, None]
+    assert res["n_divergentes"] == 0

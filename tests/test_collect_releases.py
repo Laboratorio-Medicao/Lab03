@@ -129,22 +129,28 @@ def test_erro_http_sobe_como_api_error(tmp_path):
     assert not arquivo_cache(tmp_path, "org/sumiu").exists()
 
 
-def test_para_no_teto_de_1000_e_marca_truncado(tmp_path, caplog):
-    paginas = [[rel(f"v{p}.{i}", "2025-01-01T00:00:00Z", id=p * 100 + i) for i in range(100)] for p in range(11)]
+def test_pagina_alem_de_1000_releases_sem_teto(tmp_path):
+    # /releases não tem o teto de 1.000 da Search API (renovatebot/renovate: 122 páginas).
+    paginas = [[rel(f"v{p}.{i}", "2025-01-01T00:00:00Z", id=p * 100 + i) for i in range(100)] for p in range(12)]
     client = cliente_paginas(*paginas)
     resultado = collect_releases(client, "org/grande", tmp_path)
-    assert len(resultado) == 1000
-    assert len(client.chamadas) == 10
+    assert len(resultado) == 1200
+    assert len(client.chamadas) == 12
     dados = json.loads(arquivo_cache(tmp_path, "org/grande").read_text(encoding="utf-8"))
-    assert dados["truncado"] is True
-    assert "teto" in caplog.text
+    assert dados["total"] == 1200
+    assert "truncado" not in dados
 
 
-def test_exatamente_1000_sem_proxima_pagina_nao_e_truncado(tmp_path):
-    paginas = [[rel(f"v{p}.{i}", "2025-01-01T00:00:00Z", id=p * 100 + i) for i in range(100)] for p in range(10)]
-    collect_releases(cliente_paginas(*paginas), "org/repo", tmp_path)
-    dados = json.loads(arquivo_cache(tmp_path, "org/repo").read_text(encoding="utf-8"))
-    assert dados["truncado"] is False
+def test_cache_truncado_da_versao_antiga_e_recoletado(tmp_path, caplog):
+    arquivo = arquivo_cache(tmp_path, "org/repo")
+    arquivo.parent.mkdir(parents=True)
+    arquivo.write_text(json.dumps({"truncado": True, "releases": [rel("v9", "2025-01-01T00:00:00Z")]}), encoding="utf-8")
+    client = cliente_paginas([rel("v1", "2024-01-01T00:00:00Z"), rel("v9", "2025-01-01T00:00:00Z")])
+    resultado = collect_releases(client, "org/repo", tmp_path)
+    assert [r["tag_name"] for r in resultado] == ["v1", "v9"]
+    assert len(client.chamadas) == 1
+    assert "truncado" in caplog.text
+    assert "truncado" not in json.loads(arquivo.read_text(encoding="utf-8"))
 
 
 # ---- cache por repositório ----

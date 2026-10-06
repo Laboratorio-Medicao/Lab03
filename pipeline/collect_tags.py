@@ -14,7 +14,7 @@ Commit não encontrado (404/422, tag apontando para commit apagado/reescrito): a
 `data=None`, é contada em `sem_data` e fica fora de `pares_com_anterior` (NÃO DEFINIDO NA FONTE
 DA VERDADE). Erro em `/tags` sobe como `ApiError` e nada é gravado.
 
-Diferente de `/releases`, `/tags` não para nos 1.000 primeiros resultados (conferido em
+Como `/releases`, `/tags` não para nos 1.000 primeiros resultados (conferido em
 kubernetes/kubernetes: a página 11 com `per_page=100` traz dados), então a paginação vai até o
 fim. Custo: 1 chamada por página de tags + 1 por commit distinto (repositórios com milhares de
 tags custam milhares de chamadas na 1ª coleta; depois tudo vem do cache).

@@ -18,6 +18,12 @@ Status de cada release:
 - `sem_anterior`: R é a primeira release da história; fica fora do lead time (RQ02) sem chamar a API.
 Outros erros HTTP sobem como `ApiError` e nada é gravado.
 
+`status_compare` guarda o `status` do `compare` (`ahead`, `behind`, `diverged`, `identical`).
+`diverged` indica que a release anterior está em outra linha de versão (ex.: backport publicado
+entre duas releases da linha principal). O `compare` então traz commits a partir do merge-base,
+que podem ser muito antigos e inflar o lead time (L06). Esses casos são avisados no log e
+contados em `n_divergentes`, mas continuam no cálculo (NÃO DEFINIDO NA FONTE DA VERDADE).
+
 Cache em JSON por repositório em `<cache>/commits/<owner>__<repo>.json`, com um mapa
 `"base...head" -> comparação` (404 incluído). Só os pares ausentes do mapa vão à API, então mudar
 a janela reaproveita as comparações já feitas.
@@ -40,6 +46,7 @@ SUBPASTA_CACHE = "commits"
 STATUS_OK = "ok"
 STATUS_404 = "404"
 STATUS_SEM_ANTERIOR = "sem_anterior"
+STATUS_DIVERGED = "diverged"
 
 
 def caminho_compare(full_name: str, base: str, head: str) -> str:
@@ -50,17 +57,19 @@ def caminho_compare(full_name: str, base: str, head: str) -> str:
 def comparar(client, full_name: str, base: str, head: str) -> dict | None:
     """Commits de `base...head` com paginação por `page`; `None` se o `compare` der 404.
 
-    Devolve `{"base", "head", "status", "total_commits", "truncado", "commits"}`.
+    Devolve `{"base", "head", "status", "status_compare", "total_commits", "truncado", "commits"}`.
     """
     caminho = caminho_compare(full_name, base, head)
     commits: list[dict] = []
     total = None
+    status_compare = None
     pagina = 1
     try:
         while True:
             corpo = _get(client, caminho, {"per_page": POR_PAGINA, "page": pagina}).json()
             if total is None:
                 total = int(corpo.get("total_commits") or 0)
+                status_compare = corpo.get("status")
             lote = corpo.get("commits") or []
             commits.extend(_normalizar(c) for c in lote)
             if not lote or len(commits) >= total:
@@ -78,10 +87,16 @@ def comparar(client, full_name: str, base: str, head: str) -> dict | None:
             "%s: compare %s...%s trouxe %d de %d commits; comparação truncada",
             full_name, base, head, len(commits), total,
         )
+    if status_compare == STATUS_DIVERGED:
+        log.warning(
+            "%s: compare %s...%s divergente (anterior em outra linha de versão); lead time pode inflar",
+            full_name, base, head,
+        )
     return {
         "base": base,
         "head": head,
         "status": STATUS_OK,
+        "status_compare": status_compare,
         "total_commits": total,
         "truncado": truncado,
         "commits": commits,
@@ -107,9 +122,9 @@ def collect_commits(
 ) -> dict:
     """Commits de cada release R a partir dos pares `(anterior, R)` de `pares_com_anterior`.
 
-    Devolve `{"full_name", "releases", "n_releases_ignored_404", "n_sem_anterior", "n_truncadas"}`;
-    cada item de `releases` tem `tag_name`, `published_at`, `base`, `status`, `total_commits`,
-    `truncado` e `commits`, na ordem de `pares`.
+    Devolve `{"full_name", "releases", "n_releases_ignored_404", "n_sem_anterior", "n_truncadas",
+    "n_divergentes"}`; cada item de `releases` tem `tag_name`, `published_at`, `base`, `status`,
+    `status_compare`, `total_commits`, `truncado` e `commits`, na ordem de `pares`.
     """
     arquivo = arquivo_cache(cache_dir, full_name, subpasta=SUBPASTA_CACHE) if cache_dir is not None else None
     comparacoes: dict[str, dict] = {}
@@ -125,7 +140,10 @@ def collect_commits(
             "base": anterior["tag_name"] if anterior is not None else None,
         }
         if anterior is None:
-            releases.append({**entrada, "status": STATUS_SEM_ANTERIOR, "total_commits": None, "truncado": False, "commits": []})
+            releases.append({
+                **entrada, "status": STATUS_SEM_ANTERIOR, "status_compare": None,
+                "total_commits": None, "truncado": False, "commits": [],
+            })
             continue
         chave = f"{anterior['tag_name']}...{r['tag_name']}"
         if chave not in comparacoes:
@@ -133,6 +151,7 @@ def collect_commits(
                 "base": anterior["tag_name"],
                 "head": r["tag_name"],
                 "status": STATUS_404,
+                "status_compare": None,
                 "total_commits": None,
                 "truncado": False,
                 "commits": [],
@@ -142,6 +161,7 @@ def collect_commits(
         releases.append({
             **entrada,
             "status": c["status"],
+            "status_compare": c.get("status_compare"),  # ausente em caches anteriores a este campo
             "total_commits": c["total_commits"],
             "truncado": c["truncado"],
             "commits": c["commits"],
@@ -150,6 +170,7 @@ def collect_commits(
     n_404 = sum(1 for r in releases if r["status"] == STATUS_404)
     n_sem_anterior = sum(1 for r in releases if r["status"] == STATUS_SEM_ANTERIOR)
     n_truncadas = sum(1 for r in releases if r["truncado"])
+    n_divergentes = sum(1 for r in releases if r["status_compare"] == STATUS_DIVERGED)
     n_commits = sum(len(r["commits"]) for r in releases)
     log.info(
         "%s: %d releases, %d commits (%d comparações novas), %d ignoradas por 404, %d sem anterior",
@@ -170,4 +191,5 @@ def collect_commits(
         "n_releases_ignored_404": n_404,
         "n_sem_anterior": n_sem_anterior,
         "n_truncadas": n_truncadas,
+        "n_divergentes": n_divergentes,
     }

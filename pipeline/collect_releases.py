@@ -10,9 +10,9 @@ Cache em JSON por repositório em `<cache>/releases/<owner>__<repo>.json`. Como 
 de data, o arquivo continua válido se a janela mudar. Usa o mesmo path/params da contagem de
 releases da seleção (`contar_releases`), então as páginas já estão no cache HTTP (Issue #12).
 
-A API de releases só pagina até os **primeiros 1.000 resultados** (ordem: mais recentes
-primeiro). Acima disso a coleta para, marca `truncado` no JSON e avisa no log; as releases mais
-antigas ficam de fora (NÃO DEFINIDO NA FONTE DA VERDADE).
+A paginação vai até o fim: diferente da Search API e de `actions/runs`, `/releases` **não** para
+nos 1.000 primeiros resultados (conferido em renovatebot/renovate: 122 páginas com `per_page=100`).
+Um cache gravado pela versão antiga, com `"truncado": true`, é descartado e a coleta é refeita.
 
 `pares_com_anterior` devolve, para cada release de deploy publicada na janela, a release de
 deploy imediatamente anterior (pode estar fora da janela; `None` se não houver).
@@ -25,7 +25,7 @@ import logging
 from datetime import date, datetime, timezone
 from pathlib import Path
 
-from pipeline.selection import POR_PAGINA, TETO_RESULTADOS, _data, _destino, _get, _link
+from pipeline.selection import POR_PAGINA, _data, _destino, _get, _link
 
 log = logging.getLogger("pipeline.collect_releases")
 
@@ -53,16 +53,12 @@ def collect_releases(client, full_name: str, cache_dir: Path | None = None) -> l
     arquivo = arquivo_cache(cache_dir, full_name) if cache_dir is not None else None
     if arquivo is not None and arquivo.exists():
         dados = json.loads(arquivo.read_text(encoding="utf-8"))
-        log.info("%s: %d releases (cache)", full_name, len(dados["releases"]))
-        return dados["releases"]
+        if not dados.get("truncado"):
+            log.info("%s: %d releases (cache)", full_name, len(dados["releases"]))
+            return dados["releases"]
+        log.warning("%s: cache de releases truncado no antigo teto de 1.000; coletando de novo", full_name)
 
-    brutas, truncado = _paginar_releases(client, full_name)
-    releases = ordenar([_normalizar(r) for r in brutas])
-    if truncado:
-        log.warning(
-            "%s: releases truncadas no teto de %d da API; as mais antigas ficaram de fora",
-            full_name, TETO_RESULTADOS,
-        )
+    releases = ordenar([_normalizar(r) for r in _paginar_releases(client, full_name)])
     log.info("%s: %d releases coletadas", full_name, len(releases))
 
     if arquivo is not None:
@@ -70,24 +66,22 @@ def collect_releases(client, full_name: str, cache_dir: Path | None = None) -> l
             "full_name": full_name,
             "coletado_em": datetime.now(timezone.utc).isoformat(timespec="seconds"),
             "total": len(releases),
-            "truncado": truncado,
             "releases": releases,
         })
     return releases
 
 
-def _paginar_releases(client, full_name: str) -> tuple[list[dict], bool]:
-    """Segue `Link: rel="next"` até o fim ou até o teto de 1.000; devolve (releases, truncado)."""
+def _paginar_releases(client, full_name: str) -> list[dict]:
+    """Segue `Link: rel="next"` até o fim."""
     resp = _get(client, f"/repos/{full_name}/releases", {"per_page": POR_PAGINA})
     itens: list[dict] = list(resp.json())
     proxima = _link(resp.headers, "next")
-    while proxima and len(itens) < TETO_RESULTADOS:
+    while proxima:
         caminho, parametros = _destino(proxima)
         resp = _get(client, caminho, parametros)
         itens.extend(resp.json())
         proxima = _link(resp.headers, "next")
-    truncado = bool(proxima) or len(itens) > TETO_RESULTADOS
-    return itens[:TETO_RESULTADOS], truncado
+    return itens
 
 
 def _normalizar(r: dict) -> dict:
