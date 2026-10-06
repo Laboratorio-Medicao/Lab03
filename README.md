@@ -80,6 +80,16 @@ Decisões do grupo (lacunas do enunciado, configuráveis em `selecao:`): critér
 - **Tag anterior:** `pares_com_anterior(tags, inicio, fim)` devolve `(anterior, T)` para cada tag da janela. `anterior` pode estar fora da janela e é `None` se T for a primeira da história.
 - **Escopo:** entram todas as tags, inclusive as que têm release e as que apontam para fora do default branch (como nas releases, L06). Casar tag ↔ release fica para o cálculo das variantes (Issue #21). Ameaça à validade: uma tag criada tarde sobre um commit antigo recebe a data desse commit.
 
+## Coleta de commits entre releases (Issue #9)
+
+`pipeline/collect_commits.py` obtém os commits incluídos em cada release R da janela com `GET /repos/{owner}/{repo}/compare/{anterior}...{R}` (RQ02). A entrada são os pares `(anterior, R)` de `collect_releases.pares_com_anterior`. De cada commit guarda `sha`, `author_date` (`commit.author.date`, E§3), `committer_date`, `message` e `n_parents` (merges, L07).
+
+- **Paginação:** sem paginação o `compare` devolve no máximo 250 commits (E§4). A coleta sempre pagina com `per_page=100`/`page` até reunir `total_commits` (lido da 1ª página) ou até vir uma página vazia. Se a API parar antes do total, a release fica com `"truncado": true` e gera aviso no log.
+- **404 (E§11):** tag apagada ou reescrita. A release recebe `status = "404"`, sem commits, gera aviso no log, fica fora do lead time e é contada em `n_releases_ignored_404`. Outros erros HTTP interrompem a coleta do repositório.
+- **Sem release anterior:** a primeira release da história recebe `status = "sem_anterior"` (contada em `n_sem_anterior`) e não chama a API.
+- **Release sem commits novos:** `status = "ok"` com `commits = []`. A regra de lead time para esse caso (L07) fica na Issue #10.
+- **Cache:** um JSON por repositório em `<cache>/commits/<owner>__<repo>.json`, com um mapa `"base...head" → comparação` (os 404 também ficam nele). Só os pares ausentes vão à API, então mudar a janela reaproveita o que já foi coletado.
+
 ## Testes e cobertura
 
 ```bash
