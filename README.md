@@ -69,6 +69,17 @@ Decisões do grupo (lacunas do enunciado, configuráveis em `selecao:`): critér
 - **Saídas** em `caminhos.saidas`: `funil.csv`/`funil.md`, `resultados.csv`, `execucao.log` (append; cada execução tem início e fim datados; o token nunca é logado).
 - **Pendente:** `pipeline.cli.criar_etapas()` devolve `None` até as Issues #7–#10, #13 e #14 entregarem as funções (contrato em `pipeline/execucao.py`); enquanto isso o comando faz só seleção e funil.
 
+## Coleta de tags (Issue #8)
+
+`pipeline/collect_tags.py` coleta **todas** as tags de cada repositório, sem corte de data. Elas são a unidade de deploy da combinação C3 da RQ07. A tag anterior à janela é a base do `compare` da 1ª tag da janela. Tags não trazem data (E§4): a data vem do commit apontado, em `GET /repos/{owner}/{repo}/git/commits/{sha}`.
+
+- **Data da tag:** `commit.author.date`, a mesma regra de "data de um commit" de E§3. `committer.date` também fica no JSON. Cada tag guarda `name`, `sha`, `data`, `author_date` e `committer_date`. A lista sai ordenada por data (desempate por `committer_date` e depois por nome); tags sem data ficam no fim.
+- **Custo:** 1 chamada por página de tags + 1 por commit **distinto** (várias tags no mesmo commit custam uma chamada). Diferente de releases, `/tags` não tem teto de 1.000: a paginação vai até o fim.
+- **Commit não encontrado (404/422):** a tag fica com `data = null`, é contada em `sem_data` no JSON, gera aviso no log e fica fora dos pares (política não definida no enunciado).
+- **Cache:** um JSON por repositório em `<cache>/tags/<owner>__<repo>.json` (escrita atômica, mesmo formato da Issue #7). Se o arquivo existe, nenhuma chamada é feita.
+- **Tag anterior:** `pares_com_anterior(tags, inicio, fim)` devolve `(anterior, T)` para cada tag da janela. `anterior` pode estar fora da janela e é `None` se T for a primeira da história.
+- **Escopo:** entram todas as tags, inclusive as que têm release e as que apontam para fora do default branch (como nas releases, L06). Casar tag ↔ release fica para o cálculo das variantes (Issue #21). Ameaça à validade: uma tag criada tarde sobre um commit antigo recebe a data desse commit.
+
 ## Testes e cobertura
 
 ```bash
