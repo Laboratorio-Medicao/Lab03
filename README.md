@@ -2,7 +2,7 @@
 
 Pipeline reprodutível que calcula as métricas DORA (deployment frequency, lead time, change failure rate e tempo de recuperação) a partir de dados públicos do GitHub (releases, commits e GitHub Actions).
 
-> **Estado atual (Sprint S01):** esqueleto do projeto, configuração, comando único, CI e hook de commit. As etapas de seleção, coleta e cálculo entram nas demais Issues da S01 e serão encadeadas no mesmo comando.
+> **Estado atual (Sprint S01):** o comando único encadeia seleção, funil, coleta (releases, tags, commits entre releases e workflow runs) e métricas DORA, com cache em disco e retomada.
 
 ## Pré-requisitos
 
@@ -42,9 +42,15 @@ Sem a variável definida, o comando falha com uma mensagem explicando o que faze
 python -m pipeline --config config.yaml
 ```
 
+O comando faz tudo: busca e filtra candidatos até completar `selecao.amostra_alvo` (100) repositórios, coleta os dados de cada um e grava em `outputs/`: `funil.csv`, `funil.md`, `resultados.csv` e `execucao.log`. O funil é regravado a cada 10 repositórios avaliados. A primeira execução leva horas (limite de 5.000 chamadas/hora); o pipeline espera sozinho quando a cota acaba.
+
+**Interrupção e retomada.** Se parar (`Ctrl+C`, rede, rate limit), rode o mesmo comando: as respostas já feitas estão em `cache/` e não são repetidas. O log da 2ª execução mostra `cache_misses: 0` quando tudo já estava em cache. Só respostas 2xx e 404 vão para o cache; erros transitórios (403 de rate limit, 5xx) são refeitos.
+
+**Rate limit e erros.** `X-RateLimit-Remaining/Reset` e `Retry-After` são lidos; com a cota zerada (resposta 200, 403 ou 429) o log mostra `aguardando até <epoch>` e a requisição é repetida. 5xx e erros de rede usam backoff de 1, 2, 4, 8 s (até 5 tentativas).
+
 ## Seleção de repositórios e funil (Issue #4)
 
-`pipeline/selection.py` busca candidatos na Search API **fatiada** por faixas de estrelas (e, opcionalmente, linguagem), subdividindo ao meio qualquer fatia com mais de 1.000 resultados. Depois aplica os filtros do mais barato ao mais caro: `actions/workflows.total_count > 0` → ≥ 5 releases na janela → ≥ 50 runs válidos (default branch, `event=push`, buscados mês a mês). Para quem passa, coleta contribuidores (`per_page=1&anon=true`, última página do `Link`) e idade.
+`pipeline/selection.py` busca candidatos na Search API **fatiada** por faixas de estrelas (e, opcionalmente, linguagem), subdividindo ao meio qualquer fatia com mais de 1.000 resultados. Depois aplica os filtros do mais barato ao mais caro: `actions/workflows.total_count > 0` → ≥ 5 releases na janela → ≥ 50 runs válidos (default branch, `event=push`, buscados mês a mês). A contagem de runs válidos **para ao atingir o mínimo** (`min_runs_validos`), então `n_runs_valid_window` no funil é exato abaixo do mínimo e um piso acima dele (a contagem completa está em `resultados.csv`). A avaliação dos candidatos (ordem determinística por `full_name`, lacuna L17) **para ao selecionar `amostra_alvo` repositórios**; o `funil.md` informa quantos candidatos ficaram sem avaliar. Para quem passa, coleta contribuidores (`per_page=1&anon=true`, última página do `Link`) e idade.
 
 Saídas em `caminhos.saidas`: `funil.csv` (um registro por repositório, com etapa e motivo de descarte) e `funil.md` (resumo gerado dos mesmos registros).
 
@@ -67,7 +73,7 @@ Decisões do grupo (lacunas do enunciado, configuráveis em `selecao:`): critér
 - **Erros:** falha em um repositório é registrada (`status=erro` em `resultados.csv` e no log) e a execução segue (política não definida no enunciado).
 - **Cache:** se o cliente expõe `estatisticas()`, o log registra o consumo da execução (diferença antes/depois) — útil para comparar a 1ª e a 2ª execução.
 - **Saídas** em `caminhos.saidas`: `funil.csv`/`funil.md`, `resultados.csv`, `execucao.log` (append; cada execução tem início e fim datados; o token nunca é logado).
-- **Pendente:** `pipeline.cli.criar_etapas()` devolve `None` até as Issues #7–#10, #13 e #14 entregarem as funções (contrato em `pipeline/execucao.py`); enquanto isso o comando faz só seleção e funil.
+- **Etapas (`pipeline/etapas.py`):** por repositório selecionado, `coletar_repositorio` obtém releases → pares com a release anterior → `compare` paginado → runs mensais (e tags, se `coleta.tags: true`), e `calcular_metricas` produz uma linha de `resultados.csv` (metadados, DF, lead time (a)/(b), CFR (a), recuperação, contadores de exclusão/censura e classificação DORA de referência C1).
 
 ## Coleta de tags (Issue #8)
 
@@ -111,6 +117,10 @@ Decisões do grupo (lacunas do enunciado, configuráveis em `selecao:`): critér
 | Commit de merge (L07) | Entra no cálculo como qualquer commit (`n_parents` fica no cache de commits) | — |
 
 Se nenhuma release for avaliável (por exemplo, repo com uma única release), as medianas ficam `None`.
+
+## CFR (a) e tempo de recuperação
+
+`metricas/cfr.py`: `cfr = falhas / (falhas + sucessos)` sobre runs `event=push` (filtro defensivo `so_push`); `classify_conclusion` trata os 9 valores de `conclusion`. `metricas/recovery.py`: por workflow, em ordem de `run_started_at`, o episódio começa na **primeira** falha após um sucesso (falhas seguidas fazem parte dele) e termina no próximo sucesso (`updated_at`); falhas sem sucesso até o fim da janela são **censuradas**: `episodios()` devolve `tempos_h`, `n_episodios` e `n_censurados` (em `resultados.csv`: `n_episodios_censurados` e `prop_episodios_censurados`). Uma falha antes de qualquer sucesso também abre episódio (decisão do grupo).
 
 ## Testes e cobertura
 

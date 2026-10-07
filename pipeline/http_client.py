@@ -18,6 +18,7 @@ import requests
 
 BASE_URL = "https://api.github.com"
 MAX_TENTATIVAS = 5
+MAX_ESPERAS_RATE_LIMIT = 10
 
 log = logging.getLogger("pipeline.http_client")
 
@@ -51,29 +52,85 @@ class HttpClient:
             proxima = _link_next(resp.headers)
 
     def _fetch(self, url: str, params=None):
+        """GET com: backoff exponencial em 5xx e erros de rede, e espera automática de rate limit.
+
+        - 5xx / erro de rede: espera 1, 2, 4, 8… s, até MAX_TENTATIVAS;
+        - 403/429 por rate limit (`X-RateLimit-Remaining: 0` ou `Retry-After`): espera e repete,
+          até MAX_ESPERAS_RATE_LIMIT vezes; um 403 comum (sem esses sinais) é devolvido;
+        - resposta que zerou a cota (`remaining=0`): espera o reset antes da próxima chamada.
+        """
         atraso = 1
-        resp = None
-        for tentativa in range(MAX_TENTATIVAS):
-            resp = self._session.get(url, params=params)
+        tentativa = 0
+        esperas_rate_limit = 0
+        while True:
+            try:
+                resp = self._session.get(url, params=params)
+            except (requests.ConnectionError, requests.Timeout) as exc:
+                tentativa += 1
+                if tentativa >= MAX_TENTATIVAS:
+                    raise
+                log.warning("erro de rede em %s (%s) (tentativa %d/%d), aguardando %ds",
+                            url, type(exc).__name__, tentativa, MAX_TENTATIVAS, atraso)
+                self._sleep(atraso)
+                atraso *= 2
+                continue
+
+            if resp.status_code in (403, 429):
+                espera = _espera_rate_limit(resp.headers)
+                if espera is not None and esperas_rate_limit < MAX_ESPERAS_RATE_LIMIT:
+                    esperas_rate_limit += 1
+                    self._aguardar(espera, resp.headers)
+                    continue
+                return resp
+
             self._checar_rate_limit(resp)
             if not (500 <= resp.status_code < 600):
                 return resp
-            if tentativa < MAX_TENTATIVAS - 1:
-                log.warning(
-                    "HTTP %d em %s (tentativa %d/%d), aguardando %ds",
-                    resp.status_code, url, tentativa + 1, MAX_TENTATIVAS, atraso,
-                )
-                self._sleep(atraso)
-                atraso *= 2
-        return resp
+            tentativa += 1
+            if tentativa >= MAX_TENTATIVAS:
+                return resp
+            log.warning(
+                "HTTP %d em %s (tentativa %d/%d), aguardando %ds",
+                resp.status_code, url, tentativa, MAX_TENTATIVAS, atraso,
+            )
+            self._sleep(atraso)
+            atraso *= 2
 
     def _checar_rate_limit(self, resp) -> None:
-        remaining = int(resp.headers.get("X-RateLimit-Remaining", 1))
-        if remaining == 0:
-            reset = int(resp.headers.get("X-RateLimit-Reset", time.time() + 60))
-            espera = max(reset - time.time(), 1)
-            log.warning("rate limit atingido, aguardando %.0fs", espera)
-            self._sleep(espera)
+        """Cota zerada numa resposta de sucesso: espera o reset antes da próxima chamada."""
+        if _remaining(resp.headers) == 0:
+            self._aguardar(_espera_rate_limit(resp.headers) or 60, resp.headers)
+
+    def _aguardar(self, espera: float, headers) -> None:
+        reset = headers.get("X-RateLimit-Reset")
+        ate = f"até {reset} (epoch)" if reset else f"por {espera:.0f}s"
+        log.warning("rate limit: aguardando %s (%.0fs)", ate, espera)
+        self._sleep(espera)
+
+
+def _remaining(headers) -> int | None:
+    valor = headers.get("X-RateLimit-Remaining")
+    try:
+        return int(valor) if valor is not None else None
+    except ValueError:
+        return None
+
+
+def _espera_rate_limit(headers) -> float | None:
+    """Segundos a esperar se os cabeçalhos indicam rate limit; None caso contrário."""
+    retry_after = headers.get("Retry-After")
+    if retry_after is not None:
+        try:
+            return max(float(retry_after), 1.0)
+        except ValueError:
+            pass
+    if _remaining(headers) == 0:
+        try:
+            reset = float(headers.get("X-RateLimit-Reset"))
+        except (TypeError, ValueError):
+            return 60.0
+        return max(reset - time.time(), 1.0) + 1  # +1 s de folga: o reset é por segundo inteiro
+    return None
 
 
 def _link_next(headers) -> str | None:

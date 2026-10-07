@@ -157,3 +157,41 @@ def test_chave_depende_dos_params():
 
 def test_chave_sem_params_e_estavel():
     assert _chave("/path", None) == _chave("/path", {})
+
+
+# ---- auditoria S01 (P4): erros transitórios não são cacheados; contadores ----
+
+@pytest.mark.parametrize("status", [403, 429, 500, 502, 503])
+def test_erros_transitorios_nao_sao_cacheados(tmp_path, status):
+    client = FakeClient([Resp({"m": "x"}, status=status), Resp({"ok": 1})])
+    cc = CachedHttpClient(client, tmp_path)
+    assert cc.get("/z").status_code == status
+    assert list(tmp_path.glob("*.json")) == []
+    assert cc.get("/z").status_code == 200  # reexecução refaz a chamada
+    assert len(client.chamadas) == 2
+
+
+def test_404_e_cacheado(tmp_path):
+    client = FakeClient([Resp({}, status=404)])
+    cc = CachedHttpClient(client, tmp_path)
+    cc.get("/c")
+    assert cc.get("/c").status_code == 404
+    assert len(client.chamadas) == 1
+
+
+def test_erro_antigo_no_disco_e_ignorado(tmp_path):
+    antigo = CachedHttpClient(FakeClient([]), tmp_path)
+    arq = antigo._arquivo("/z", None)
+    arq.write_text(json.dumps({"status_code": 503, "headers": {}, "body": None}), encoding="utf-8")
+    client = FakeClient([Resp({"ok": 1})])
+    assert CachedHttpClient(client, tmp_path).get("/z").status_code == 200
+    assert len(client.chamadas) == 1
+
+
+def test_estatisticas_segunda_execucao_zero_chamadas(tmp_path):
+    c1 = CachedHttpClient(FakeClient([Resp({"a": 1}), Resp({"b": 2})]), tmp_path)
+    c1.get("/a"); c1.get("/b")
+    assert c1.estatisticas() == {"cache_hits": 0, "cache_misses": 2}
+    c2 = CachedHttpClient(FakeClient([]), tmp_path)
+    c2.get("/a"); c2.get("/b")
+    assert c2.estatisticas() == {"cache_hits": 2, "cache_misses": 0}

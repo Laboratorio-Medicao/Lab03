@@ -3,7 +3,8 @@
 import pytest
 
 from metricas.cfr import cfr, classify_conclusion
-from metricas.recovery import recovery_times
+from metricas.cfr import so_push
+from metricas.recovery import episodios, recovery_times
 
 UTC = "+00:00"
 
@@ -147,17 +148,61 @@ def test_sucesso_de_workflow_1_nao_recupera_falha_de_workflow_2():
 
 # ---- recovery_times: falhas consecutivas ----
 
-def test_falhas_consecutivas_cada_uma_conta_independentemente():
+def test_falhas_consecutivas_formam_um_unico_episodio():
     runs = [
         run("failure", started="2025-01-01T09:00:00Z", updated="2025-01-01T09:00:00Z"),
         run("failure", started="2025-01-01T10:00:00Z", updated="2025-01-01T10:00:00Z"),
         run("success", started="2025-01-01T11:00:00Z", updated="2025-01-01T11:00:00Z"),
     ]
-    tempos = recovery_times(runs)
-    # F1 → S: 2h; F2 → S: 1h
-    assert len(tempos) == 2
-    assert pytest.approx(2.0) in tempos
-    assert pytest.approx(1.0) in tempos
+    # episódio começa na PRIMEIRA falha (09:00) e termina no sucesso (11:00): 2h
+    assert recovery_times(runs) == [pytest.approx(2.0)]
+
+
+def test_exemplo_do_enunciado_um_episodio_de_1h20():
+    """E§5 RQ04: success 09:00 · failure 10:00 · failure 10:30 · success 11:15 (terminou 11:20)."""
+    runs = [
+        run("success", started="2025-01-01T09:00:00Z", updated="2025-01-01T09:05:00Z"),
+        run("failure", started="2025-01-01T10:00:00Z", updated="2025-01-01T10:05:00Z"),
+        run("failure", started="2025-01-01T10:30:00Z", updated="2025-01-01T10:35:00Z"),
+        run("success", started="2025-01-01T11:15:00Z", updated="2025-01-01T11:20:00Z"),
+    ]
+    r = episodios(runs)
+    assert r["tempos_h"] == [pytest.approx(80 / 60)]
+    assert (r["n_episodios"], r["n_censurados"]) == (1, 0)
+
+
+def test_dois_episodios_separados_por_sucesso():
+    runs = [
+        run("failure", started="2025-01-01T08:00:00Z", updated="2025-01-01T08:00:00Z"),
+        run("success", started="2025-01-01T09:00:00Z", updated="2025-01-01T09:00:00Z"),
+        run("failure", started="2025-01-01T10:00:00Z", updated="2025-01-01T10:00:00Z"),
+        run("success", started="2025-01-01T10:30:00Z", updated="2025-01-01T10:30:00Z"),
+    ]
+    assert recovery_times(runs) == [pytest.approx(1.0), pytest.approx(0.5)]
+
+
+def test_censura_e_contada_nao_removida():
+    runs = [
+        run("failure", started="2025-01-01T08:00:00Z", updated="2025-01-01T08:00:00Z", wid=1),
+        run("success", started="2025-01-01T09:00:00Z", updated="2025-01-01T09:00:00Z", wid=1),
+        run("failure", started="2025-01-01T10:00:00Z", wid=1),   # nunca recuperada
+        run("failure", started="2025-01-01T10:00:00Z", wid=2),   # outro workflow, nunca recuperada
+    ]
+    r = episodios(runs)
+    assert r["tempos_h"] == [pytest.approx(1.0)]
+    assert (r["n_episodios"], r["n_censurados"]) == (3, 2)
+
+
+def test_so_push_ignora_schedule_e_dispatch():
+    runs = [
+        {**run("failure"), "event": "schedule"},
+        {**run("failure"), "event": "workflow_dispatch"},
+        {**run("success"), "event": "push"},
+        run("failure"),  # sem campo event: mantido
+    ]
+    assert len(so_push(runs)) == 2
+    assert cfr(runs) == pytest.approx(0.5)
+    assert episodios([{**run("failure"), "event": "schedule"}])["n_episodios"] == 0
 
 
 def test_recovery_sem_runs_retorna_lista_vazia():

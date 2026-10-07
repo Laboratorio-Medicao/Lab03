@@ -48,14 +48,22 @@ def renderizar_md(res: ResultadoSelecao) -> str:
     linhas = [
         "# Funil de Seleção",
         "",
-        f"Resultados brutos da busca: {res.brutos} · candidatos após deduplicação: {s['candidatos']}",
+        f"Resultados brutos da busca: {res.brutos} · candidatos após deduplicação: {res.candidatos_total or s['candidatos']}",
         "",
         "| Etapa | Entram | Saem | Restam |",
         "|---|---:|---:|---:|",
-        f"| 0. Candidatos (Search API, sem duplicatas) | {s['candidatos']} | — | {s['candidatos']} |",
+        f"| 0. Candidatos avaliados (Search API, sem duplicatas) | {s['candidatos']} | — | {s['candidatos']} |",
     ]
     linhas += [f"| {e['etapa']} | {e['entram']} | {e['saem']} | {e['restam']} |" for e in s["etapas"]]
-    linhas += [f"| Amostra final | {s['selecionados']} | — | {s['selecionados']} |", "", "## Motivos de descarte", ""]
+    linhas += [f"| Amostra final | {s['selecionados']} | — | {s['selecionados']} |", ""]
+    if res.candidatos_total > s["candidatos"]:
+        nao = res.candidatos_total - s["candidatos"]
+        linhas += [
+            f"A avaliação parou ao atingir a amostra: **{s['candidatos']}** candidatos avaliados "
+            f"e **{nao}** não avaliados (ordem determinística por `full_name`; lacuna L17).",
+            "",
+        ]
+    linhas += ["## Motivos de descarte", ""]
     if s["motivos"]:
         linhas += ["| Motivo | Quantidade |", "|---|---:|"] + [f"| {m} | {n} |" for m, n in s["motivos"].items()]
     else:

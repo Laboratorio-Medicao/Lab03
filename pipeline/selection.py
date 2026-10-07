@@ -99,6 +99,7 @@ class ResultadoSelecao:
     registros: list[RepoRecord] = field(default_factory=list)
     fatias: list[RegistroFatia] = field(default_factory=list)
     brutos: int = 0
+    candidatos_total: int = 0  # candidatos únicos da busca (>= len(registros) se a avaliação parou cedo)
 
 
 # --------------------------------------------------------------------------- HTTP helpers
@@ -246,9 +247,19 @@ def meses_da_janela(inicio: date, fim: date) -> list[tuple[date, date]]:
 
 
 def _runs_do_intervalo(client, full_name: str, branch: str, ini: date, fim: date, contagem: dict) -> None:
+    minimo = contagem.get("minimo")
+    if minimo is not None and contagem["validos"] >= minimo:
+        return  # já basta para o filtro: não gasta mais chamadas
     params = {"branch": branch, "event": "push", "created": f"{ini.isoformat()}..{fim.isoformat()}", "per_page": POR_PAGINA}
     resp = _get(client, f"/repos/{full_name}/actions/runs", params)
     total = int(resp.json().get("total_count", 0))
+
+    runs = list(resp.json().get("workflow_runs", []))
+    validos_pagina = sum(1 for r in runs if r.get("conclusion") in CONCLUSOES_VALIDAS)
+    if minimo is not None and contagem["validos"] + validos_pagina >= minimo:
+        contagem["consultados"] += len(runs)
+        contagem["validos"] += validos_pagina
+        return
 
     if total >= TETO_RESULTADOS:  # teto atingido: subdividir o intervalo (E§4)
         if ini < fim:
@@ -260,20 +271,28 @@ def _runs_do_intervalo(client, full_name: str, branch: str, ini: date, fim: date
         log.warning("%s runs em %s atingiram o teto de %d e não podem ser subdivididos", full_name, ini, TETO_RESULTADOS)
         contagem["saturado"] = True
 
-    runs = list(resp.json().get("workflow_runs", []))
     proxima = _link(resp.headers, "next")
     while proxima:
+        if minimo is not None and contagem["validos"] + validos_pagina >= minimo:
+            break
         caminho, parametros = _destino(proxima)
         resp = _get(client, caminho, parametros)
-        runs.extend(resp.json().get("workflow_runs", []))
+        pagina = resp.json().get("workflow_runs", [])
+        runs.extend(pagina)
+        validos_pagina += sum(1 for r in pagina if r.get("conclusion") in CONCLUSOES_VALIDAS)
         proxima = _link(resp.headers, "next")
     contagem["consultados"] += len(runs)
-    contagem["validos"] += sum(1 for r in runs if r.get("conclusion") in CONCLUSOES_VALIDAS)
+    contagem["validos"] += validos_pagina
 
 
-def contar_runs(client, full_name: str, branch: str, inicio: date, fim: date) -> tuple[int, int]:
-    """(runs consultados, runs válidos) no default branch, event=push, fatiado por mês."""
-    contagem = {"consultados": 0, "validos": 0}
+def contar_runs(client, full_name: str, branch: str, inicio: date, fim: date, minimo: int | None = None) -> tuple[int, int]:
+    """(runs consultados, runs válidos) no default branch, event=push, fatiado por mês.
+
+    Com `minimo`, a contagem **para ao atingir** esse número de runs válidos (o filtro do funil só
+    precisa saber se o mínimo foi alcançado): então `válidos` é exato abaixo do mínimo e um piso
+    (>= minimo) acima dele. A contagem completa vem da coleta (`collect_runs`).
+    """
+    contagem = {"consultados": 0, "validos": 0, "minimo": minimo}
     for ini, fim_mes in meses_da_janela(inicio, fim):
         _runs_do_intervalo(client, full_name, branch, ini, fim_mes, contagem)
     return contagem["consultados"], contagem["validos"]
@@ -333,7 +352,7 @@ def avaliar(client, item: dict, sel: SelecaoConfig, inicio: date, fim: date) -> 
 
         etapa = "runs"
         reg.runs_consultados, reg.n_runs_valid_window = contar_runs(
-            client, reg.full_name, reg.default_branch, inicio, fim
+            client, reg.full_name, reg.default_branch, inicio, fim, sel.min_runs_validos
         )
         if reg.n_runs_valid_window < sel.min_runs_validos:
             return _descartar(reg, "runs", f"lt_{sel.min_runs_validos}_runs")
@@ -348,11 +367,30 @@ def avaliar(client, item: dict, sel: SelecaoConfig, inicio: date, fim: date) -> 
     return reg
 
 
-def selecionar(client, sel: SelecaoConfig, inicio: date, fim: date) -> ResultadoSelecao:
+def selecionar(
+    client, sel: SelecaoConfig, inicio: date, fim: date, ao_avaliar=None, parar_em: int | None = None
+) -> ResultadoSelecao:
+    """Busca fatiada + filtros. Candidatos são avaliados na ordem determinística de `full_name`.
+
+    - `parar_em`: encerra a avaliação quando esse número de repositórios for selecionado (amostra
+      da S01). Os candidatos não avaliados ficam fora de `registros`, mas contam em
+      `candidatos_total` (o funil mostra a diferença). Critério de corte: lacuna L17.
+    - `ao_avaliar(resultado_parcial)`: chamado a cada 10 repositórios e ao final, para gravar o
+      funil de forma incremental (uma interrupção não perde o progresso).
+    """
     busca = search_candidatos(client, sel)
-    registros = []
+    res = ResultadoSelecao([], busca.fatias, busca.brutos, len(busca.candidatos))
+    selecionados = 0
     for i, item in enumerate(busca.candidatos, 1):
         reg = avaliar(client, item, sel, inicio, fim)
         log.info("[%d/%d] %s -> %s%s", i, len(busca.candidatos), reg.full_name, reg.status, f" ({reg.motivo})" if reg.motivo else "")
-        registros.append(reg)
-    return ResultadoSelecao(registros, busca.fatias, busca.brutos)
+        res.registros.append(reg)
+        selecionados += reg.status == "selecionado"
+        if ao_avaliar is not None and i % 10 == 0:
+            ao_avaliar(res)
+        if parar_em is not None and selecionados >= parar_em:
+            log.info("amostra de %d selecionados atingida após avaliar %d de %d candidatos", parar_em, i, len(busca.candidatos))
+            break
+    if ao_avaliar is not None:
+        ao_avaliar(res)
+    return res

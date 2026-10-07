@@ -65,3 +65,13 @@ def test_hook_aceita_commit_com_numero(repo_com_hook):
     r = repo_com_hook("commit", "-m", "feat(pipeline): cria estrutura inicial (#3)")
     assert r.returncode == 0, r.stderr
     assert "(#3)" in repo_com_hook("log", "--format=%s").stdout
+
+
+def test_assunto_comecando_com_numero_da_issue_e_aceito():
+    from scripts.check_commit_msg import tem_referencia
+    assert tem_referencia("#16 - pacote kanban e snapshot da Sprint S01\n")
+
+
+def test_comentario_de_editor_continua_ignorado():
+    from scripts.check_commit_msg import tem_referencia
+    assert not tem_referencia("ajustes\n\n# Please enter the commit message... #12\n")

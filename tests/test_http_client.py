@@ -174,3 +174,79 @@ def test_token_enviado_no_header_authorization():
 # ---- constante usada nos testes de esgotamento ----
 
 from pipeline.http_client import MAX_TENTATIVAS
+
+
+# ---- auditoria S01 (P4): rate limit em 403/429, erros de rede, log com epoch ----
+
+def test_403_com_cota_zerada_espera_e_repete():
+    reset = int(time.time() + 30)
+    respostas = [
+        Resp(status=403, headers={"X-RateLimit-Remaining": "0", "X-RateLimit-Reset": str(reset)}),
+        Resp(status=200, dados={"ok": True}),
+    ]
+    client, sleeps = _cliente(respostas)
+    resp = client.get("/x")
+    assert resp.status_code == 200
+    assert len(sleeps) == 1 and 25 <= sleeps[0] <= 35
+
+
+def test_429_com_retry_after_espera_e_repete():
+    client, sleeps = _cliente([Resp(status=429, headers={"Retry-After": "10"}), Resp(status=200)])
+    assert client.get("/x").status_code == 200
+    assert sleeps == [10.0]
+
+
+def test_403_comum_sem_sinal_de_rate_limit_e_devolvido(  ):
+    client, sleeps = _cliente([Resp(status=403, headers={"X-RateLimit-Remaining": "50"})])
+    assert client.get("/x").status_code == 403
+    assert sleeps == []
+
+
+def test_rate_limit_persistente_desiste_no_limite_de_esperas():
+    from pipeline.http_client import MAX_ESPERAS_RATE_LIMIT
+    resp = lambda: Resp(status=429, headers={"Retry-After": "1"})
+    client, sleeps = _cliente([resp() for _ in range(MAX_ESPERAS_RATE_LIMIT + 1)])
+    assert client.get("/x").status_code == 429
+    assert len(sleeps) == MAX_ESPERAS_RATE_LIMIT
+
+
+def test_log_informa_epoch_do_reset(caplog):
+    import logging
+    reset = int(time.time() + 30)
+    client, _ = _cliente([Resp(status=200, headers={"X-RateLimit-Remaining": "0", "X-RateLimit-Reset": str(reset)})])
+    with caplog.at_level(logging.WARNING):
+        client.get("/x")
+    assert f"aguardando até {reset}" in caplog.text
+
+
+def test_erro_de_rede_usa_backoff_e_recupera():
+    import requests
+
+    class Sessao:
+        def __init__(self):
+            self.n = 0
+
+        def get(self, url, params=None):
+            self.n += 1
+            if self.n < 3:
+                raise requests.ConnectionError("rede")
+            return Resp(status=200)
+
+    client, sleeps = _cliente([])
+    client._session = Sessao()
+    assert client.get("/x").status_code == 200
+    assert sleeps == [1, 2]
+
+
+def test_erro_de_rede_persistente_propaga_apos_limite():
+    import requests
+
+    class Sessao:
+        def get(self, url, params=None):
+            raise requests.Timeout("lento")
+
+    client, sleeps = _cliente([])
+    client._session = Sessao()
+    with pytest.raises(requests.Timeout):
+        client.get("/x")
+    assert sleeps == [1, 2, 4, 8]
