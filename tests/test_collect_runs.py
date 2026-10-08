@@ -145,3 +145,23 @@ def test_log_mensal_emitido(caplog):
     with caplog.at_level(logging.INFO, logger="pipeline.collect_runs"):
         collect_runs(client, "org/repo", "main", date(2025, 1, 1), date(2025, 2, 28))
     assert any("2025/1" in m or "2025/2" in m for m in caplog.messages)
+
+
+def test_dia_saturado_e_registrado_na_lista(caplog):
+    """Auditoria S01: o teto em dia único (dado incompleto) deixa marca nos dados, não só no log."""
+    from datetime import date
+    from pipeline.collect_runs import collect_runs
+
+    class Api:
+        def get(self, path, params=None):
+            class R:
+                status_code = 200
+                headers = {}
+
+                def json(self_):
+                    return {"total_count": 1000, "workflow_runs": []}
+            return R()
+
+    saturados = []
+    collect_runs(Api(), "o/r", "main", date(2025, 3, 5), date(2025, 3, 5), saturados)
+    assert saturados == ["2025-03-05"]

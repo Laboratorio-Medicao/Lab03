@@ -26,11 +26,21 @@ def classify_conclusion(conclusion: str | None) -> str:
     return _CONCLUSAO.get(conclusion, "ignored")
 
 
+def so_push(runs: list[dict]) -> list[dict]:
+    """Filtro defensivo (E§3): descarta runs cujo `event` não seja `push` (`schedule`, `workflow_dispatch`…).
+
+    A coleta já filtra por `event=push` na query; aqui protege o cálculo de dados vindos de outro lugar.
+    Runs sem o campo `event` são mantidos.
+    """
+    return [r for r in runs if r.get("event", "push") == "push"]
+
+
 def cfr(runs: list[dict]) -> float | None:
     """CFR(a): proporção de falhas entre os runs válidos (success + failure).
 
     Retorna None se não houver runs válidos (sem divisão por zero).
     """
+    runs = so_push(runs)
     validos = [r for r in runs if classify_conclusion(r.get("conclusion")) != "ignored"]
     if not validos:
         return None

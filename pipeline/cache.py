@@ -36,14 +36,28 @@ class CachedHttpClient:
         self._client = client
         self._cache_dir = Path(cache_dir)
         self._cache_dir.mkdir(parents=True, exist_ok=True)
+        self._hits = 0
+        self._misses = 0
+
+    def estatisticas(self) -> dict:
+        """Contadores desta instância: `cache_hits` (sem chamada HTTP) e `cache_misses` (chamadas à API)."""
+        return {"cache_hits": self._hits, "cache_misses": self._misses}
 
     def get(self, path: str, params=None):
         arquivo = self._arquivo(path, params)
         if arquivo.exists():
-            log.debug("cache hit: %s", path)
-            return _ler(arquivo)
+            cacheada = _ler(arquivo)
+            if _cacheavel(cacheada):  # ignora erros transitórios gravados por versões antigas
+                log.debug("cache hit: %s", path)
+                self._hits += 1
+                return cacheada
+        self._misses += 1
         resp = self._client.get(path, params)
-        _salvar(arquivo, resp)
+        if _cacheavel(resp):
+            _salvar(arquivo, resp)
+        else:
+            log.warning("resposta HTTP %s de %s não foi cacheada (será refeita na próxima execução)",
+                        resp.status_code, path)
         return resp
 
     def paginar(self, path: str, params=None):
@@ -61,6 +75,14 @@ class CachedHttpClient:
 
     def _arquivo(self, path: str, params) -> Path:
         return self._cache_dir / f"{_chave(path, params)}.json"
+
+
+def _cacheavel(resp) -> bool:
+    """Só 2xx e 404 (resultado estável, ex.: `compare` de tag apagada) vão para o disco.
+
+    403/429 (rate limit), 5xx e demais erros são transitórios: gravá-los faria a retomada repetir o erro.
+    """
+    return 200 <= resp.status_code < 300 or resp.status_code == 404
 
 
 def _chave(path: str, params) -> str:

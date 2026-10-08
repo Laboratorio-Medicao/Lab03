@@ -1,15 +1,22 @@
-"""Tempo de recuperação de falhas por workflow (Issue #14).
+"""Tempo de recuperação de falhas por workflow (RQ04, Issue #14).
 
-Para cada run com falha, o episódio começa em `run_started_at` e termina em
-`updated_at` do próximo sucesso no mesmo workflow. Falhas sem recuperação
-posterior são censuradas (excluídas da lista retornada).
+Dentro de um mesmo workflow, em ordem cronológica de `run_started_at`, um **episódio de falha**
+começa na primeira falha após um sucesso e termina no próximo sucesso. Falhas seguidas pertencem
+ao mesmo episódio. O tempo é `updated_at` do sucesso − `run_started_at` da primeira falha.
+
+Execuções ignoradas (`cancelled`, `skipped`, `neutral`, `action_required`, `stale`, em andamento)
+não abrem nem fecham episódios. Um episódio sem sucesso posterior na janela é **censurado**: não
+entra nos tempos, mas é contado (`n_censurados`), como exige a Fonte da Verdade (TRV-009).
+
+Decisão do grupo (o enunciado não define): uma falha que aparece antes de qualquer sucesso do
+workflow na janela também abre um episódio.
 """
 
 from __future__ import annotations
 
 from datetime import datetime, timezone
 
-from metricas.cfr import classify_conclusion
+from metricas.cfr import classify_conclusion, so_push
 
 
 def _dt(valor) -> datetime:
@@ -20,33 +27,37 @@ def _dt(valor) -> datetime:
     return valor
 
 
-def recovery_times(runs: list[dict]) -> list[float]:
-    """Horas de recuperação para cada episódio de falha não censurado.
+def _inicio(run: dict) -> datetime:
+    return _dt(run.get("run_started_at") or run["created_at"])
 
-    Agrupa por `workflow_id`. Para cada falha, busca o próximo sucesso
-    (por `run_started_at`) no mesmo workflow. Falhas sem sucesso posterior
-    são censuradas e não entram na lista.
-    """
+
+def episodios(runs: list[dict]) -> dict:
+    """`{"tempos_h": [...], "n_episodios": int, "n_censurados": int}` agregando todos os workflows."""
     por_workflow: dict = {}
-    for r in runs:
-        wid = r.get("workflow_id")
-        por_workflow.setdefault(wid, []).append(r)
+    for r in so_push(runs):
+        por_workflow.setdefault(r.get("workflow_id"), []).append(r)
 
     tempos: list[float] = []
+    censurados = 0
     for wf_runs in por_workflow.values():
-        ordenados = sorted(
-            wf_runs,
-            key=lambda r: _dt(r["run_started_at"]),
-        )
-        for i, run in enumerate(ordenados):
-            if classify_conclusion(run.get("conclusion")) != "failure":
-                continue
-            # Procura o próximo sucesso após esta falha
-            for proximo in ordenados[i + 1:]:
-                if classify_conclusion(proximo.get("conclusion")) == "success":
-                    inicio = _dt(run["run_started_at"])
-                    fim = _dt(proximo["updated_at"])
-                    tempos.append((fim - inicio).total_seconds() / 3600)
-                    break
+        inicio_falha: datetime | None = None
+        for run in sorted(wf_runs, key=_inicio):
+            classe = classify_conclusion(run.get("conclusion"))
+            if classe == "failure":
+                if inicio_falha is None:
+                    inicio_falha = _inicio(run)
+            elif classe == "success" and inicio_falha is not None:
+                tempos.append((_dt(run["updated_at"]) - inicio_falha).total_seconds() / 3600)
+                inicio_falha = None
+        if inicio_falha is not None:
+            censurados += 1
+    return {
+        "tempos_h": tempos,
+        "n_episodios": len(tempos) + censurados,
+        "n_censurados": censurados,
+    }
 
-    return tempos
+
+def recovery_times(runs: list[dict]) -> list[float]:
+    """Horas de recuperação de cada episódio não censurado (ver `episodios` para a contagem)."""
+    return episodios(runs)["tempos_h"]

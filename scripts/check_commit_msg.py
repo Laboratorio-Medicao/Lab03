@@ -13,7 +13,10 @@ EXEMPLO = "feat(pipeline): cria estrutura inicial (#3)"
 
 def tem_referencia(mensagem: str) -> bool:
     # O git descarta linhas iniciadas por '#' (comentários do editor); ignorar igual.
-    linhas = [l for l in mensagem.splitlines() if not l.startswith("#")]
+    todas = mensagem.splitlines()
+    if todas and REFERENCIA.match(todas[0]):  # assunto "#16 - texto": é a Issue, não um comentário
+        return True
+    linhas = [l for l in todas if not l.startswith("#")]
     texto = "\n".join(linhas)
     if texto.startswith("Merge "):  # merges automáticos do git
         return True

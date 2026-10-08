@@ -38,6 +38,7 @@ class Config:
     cache_dir: Path
     saidas_dir: Path
     selecao: SelecaoConfig = SelecaoConfig()
+    coletar_tags: bool = True  # coleta de tags (variante C3 da RQ07); desligar reduz muito as chamadas
 
     @property
     def janela_definida(self) -> bool:
@@ -101,6 +102,7 @@ def load_config(path: str | Path) -> Config:
     github = raw.get("github") or {}
     janela = raw.get("janela") or {}
     caminhos = raw.get("caminhos") or {}
+    coleta = raw.get("coleta") or {}
 
     inicio = _parse_data(janela.get("inicio"), "janela.inicio")
     fim = _parse_data(janela.get("fim"), "janela.fim")
@@ -111,6 +113,7 @@ def load_config(path: str | Path) -> Config:
 
     return Config(
         selecao=_parse_selecao(raw.get("selecao") or {}),
+        coletar_tags=bool(coleta.get("tags", True)),
         token_env=str(github.get("token_env") or DEFAULT_TOKEN_ENV),
         janela_inicio=inicio,
         janela_fim=fim,

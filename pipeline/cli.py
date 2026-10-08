@@ -35,14 +35,11 @@ def criar_cliente(token: str, cache_dir=None):
     return client
 
 
-def criar_etapas() -> Etapas | None:
-    """Coleta por repositório e cálculo das métricas (Issues #7-#10, #13, #14).
+def criar_etapas(config) -> Etapas:
+    """Seleção incremental + coleta (releases, tags, commits, runs) + métricas de cada repositório."""
+    from pipeline.etapas import criar_etapas as montar
 
-    Devolve None enquanto essas Issues não entregarem as funções com o contrato de
-    `pipeline.execucao` (coletar(client, repo, inicio, fim) e calcular(repo, dados, inicio, fim)).
-    Quando existirem, basta importá-las aqui e montar `Etapas(coletar=..., calcular=...)`.
-    """
-    return None
+    return montar(config, tags=config.coletar_tags)
 
 
 def run(config, token: str, client=None, etapas: Etapas | None = None) -> None:
@@ -61,7 +58,7 @@ def run(config, token: str, client=None, etapas: Etapas | None = None) -> None:
         log.warning("seleção não executada: pipeline.http_client (Issue #11) ainda não disponível")
         return
     if etapas is None:
-        log.warning("coleta e métricas (Issues #7-#10, #13, #14) ainda não disponíveis: só seleção e funil")
+        log.warning("sem etapas de coleta/métricas: só seleção e funil")
         etapas = Etapas(coletar=None, calcular=None)
     handler = anexar_log_em_arquivo(config.saidas_dir)  # outputs/execucao.log
     try:
@@ -83,7 +80,7 @@ def main(argv=None) -> int:
         log.error("%s", exc)
         return 1
     try:
-        run(config, token, criar_cliente(token, config.cache_dir), criar_etapas())
+        run(config, token, criar_cliente(token, config.cache_dir), criar_etapas(config))
     except ApiError as exc:
         log.error("execução interrompida: %s (confira o token e a cota da API)", exc)
         return 1

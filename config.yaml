@@ -34,3 +34,7 @@ selecao:
   idade_referencia: fim          # idade = created_at até janela.fim (lacuna L16); ou "inicio"
   amostra_alvo: 100              # tamanho da amostra da S01 (E§10); se mais de 100 passarem nos filtros, o corte
                                  # (primeiros na ordem da seleção) NÃO é definido pela Fonte da Verdade (L17)
+
+# Etapas de coleta por repositório (releases, commits entre releases e runs são sempre coletados).
+coleta:
+  tags: true                     # tags (variante C3 da RQ07): 1 chamada por commit distinto; false = pula

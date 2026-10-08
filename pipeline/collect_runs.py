@@ -25,16 +25,18 @@ def collect_runs(
     branch: str,
     inicio: date,
     fim: date,
+    saturados: list | None = None,
 ) -> list[dict]:
     """Retorna todos os workflow runs de `full_name` na janela [inicio, fim].
 
     Fatia a janela por mês; subdivide o intervalo se total_count >= 1.000.
-    Loga a contagem de runs por mês e avisa quando o teto é atingido.
+    Loga a contagem de runs por mês e avisa quando o teto é atingido. Se `saturados` for uma lista,
+    nela entram os dias que continuaram no teto de 1.000 resultados (dado incompleto, indivisível).
     """
     todos: list[dict] = []
     for ini_mes, fim_mes in meses_da_janela(inicio, fim):
         antes = len(todos)
-        _coletar_intervalo(client, full_name, branch, ini_mes, fim_mes, todos)
+        _coletar_intervalo(client, full_name, branch, ini_mes, fim_mes, todos, saturados)
         n_mes = len(todos) - antes
         log.info("%s %s/%s: %d runs coletados", full_name, ini_mes.year, ini_mes.month, n_mes)
     return todos
@@ -47,6 +49,7 @@ def _coletar_intervalo(
     ini: date,
     fim: date,
     acumulador: list[dict],
+    saturados: list | None = None,
 ) -> None:
     params = {
         "branch": branch,
@@ -64,13 +67,15 @@ def _coletar_intervalo(
                 "%s runs %s..%s: total_count=%d atingiu o teto; subdividindo",
                 full_name, ini, fim, total,
             )
-            _coletar_intervalo(client, full_name, branch, ini, meio, acumulador)
-            _coletar_intervalo(client, full_name, branch, meio + timedelta(days=1), fim, acumulador)
+            _coletar_intervalo(client, full_name, branch, ini, meio, acumulador, saturados)
+            _coletar_intervalo(client, full_name, branch, meio + timedelta(days=1), fim, acumulador, saturados)
             return
         log.warning(
             "%s runs em %s atingiram o teto de %d e não podem ser subdivididos; dados incompletos",
             full_name, ini, TETO_RESULTADOS,
         )
+        if saturados is not None:
+            saturados.append(ini.isoformat())
 
     runs = list(resp.json().get("workflow_runs", []))
     proxima = _link(resp.headers, "next")
