@@ -17,6 +17,7 @@ from urllib.parse import parse_qsl, urlparse
 import requests
 
 BASE_URL = "https://api.github.com"
+TIMEOUT_S = 30  # sem timeout, uma conexão perdida trava a execução para sempre
 MAX_TENTATIVAS = 5
 MAX_ESPERAS_RATE_LIMIT = 10
 
@@ -64,7 +65,7 @@ class HttpClient:
         esperas_rate_limit = 0
         while True:
             try:
-                resp = self._session.get(url, params=params)
+                resp = self._session.get(url, params=params, timeout=TIMEOUT_S)
             except (requests.ConnectionError, requests.Timeout) as exc:
                 tentativa += 1
                 if tentativa >= MAX_TENTATIVAS:

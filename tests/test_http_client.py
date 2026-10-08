@@ -24,7 +24,7 @@ class FakeSession:
         self._respostas = iter(respostas)
         self.chamadas: list[tuple[str, dict | None]] = []
 
-    def get(self, url, params=None):
+    def get(self, url, params=None, timeout=None):
         self.chamadas.append((url, params))
         return next(self._respostas)
 
@@ -226,7 +226,7 @@ def test_erro_de_rede_usa_backoff_e_recupera():
         def __init__(self):
             self.n = 0
 
-        def get(self, url, params=None):
+        def get(self, url, params=None, timeout=None):
             self.n += 1
             if self.n < 3:
                 raise requests.ConnectionError("rede")
@@ -242,7 +242,7 @@ def test_erro_de_rede_persistente_propaga_apos_limite():
     import requests
 
     class Sessao:
-        def get(self, url, params=None):
+        def get(self, url, params=None, timeout=None):
             raise requests.Timeout("lento")
 
     client, sleeps = _cliente([])
