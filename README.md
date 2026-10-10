@@ -176,3 +176,14 @@ python -m scripts.sample_gold --config config.yaml
 - **Janela oficial do professor:** edite só `janela.inicio`/`janela.fim` no `config.yaml`, rode `python -m pipeline` (apague o cache de commits/runs se a janela mudou) e rode o comando acima de novo. O sorteio muda com a janela e com a lista; `sorteio.json` registra ambas.
 - **Proteção:** se alguma planilha já tiver rótulos, o script aborta para não apagar o trabalho dos avaliadores; `--forcar` sobrescreve.
 - **Preenchimento:** tipo do projeto e "releases = entregas reais" vão na primeira linha de cada repositório; "corretiva" em todas. Valores válidos em `data/amostra_ouro/LEIAME.md`.
+
+## Concordância e consenso (S02, Issue #26)
+
+Depois que os três avaliadores commitarem seus `labels_<nome>.csv`:
+
+```
+python -m scripts.agreement data/amostra_ouro/labels_marcos.csv \
+    data/amostra_ouro/labels_arthur.csv data/amostra_ouro/labels_guilherme.csv
+```
+
+Gera em `data/amostra_ouro/`: `concordancia.csv` (kappa de Fleiss por dimensão, com interpretação de Landis & Koch) e `consenso.csv` (rótulo de consenso por item). Unanimidade e maioria 2-1 são automáticas; casos 1-1-1 ficam `pendente` (o comando sai com código 2) até a reunião, quando as decisões vão em `data/amostra_ouro/desempate.csv` (`dimensao,item_id,rotulo,justificativa`) e o comando é rodado de novo. Regras completas em `data/amostra_ouro/PROTOCOLO_CONSENSO.md`.

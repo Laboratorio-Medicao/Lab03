@@ -30,16 +30,12 @@ def _releases(n, prerelease_em=()):
 
 def _cache(tmp_path, nomes, n_releases=8):
     cache = tmp_path / "cache"
-    for nome in nomes:
+    for k, nome in enumerate(nomes):
         arq = arquivo_cache(cache, nome)
         arq.parent.mkdir(parents=True, exist_ok=True)
-        rels = [{**r, "id": r["id"] + hash_estavel(nome)} for r in _releases(n_releases)]
+        rels = [{**r, "id": r["id"] + 1000 * (k + 1)} for r in _releases(n_releases)]  # ids únicos, como no GitHub
         arq.write_text(json.dumps({"full_name": nome, "releases": rels}), encoding="utf-8")
     return cache
-
-
-def hash_estavel(nome):
-    return sum(ord(c) for c in nome) * 100
 
 
 def _csv_repos(tmp_path, nomes, nome="repos.csv"):
