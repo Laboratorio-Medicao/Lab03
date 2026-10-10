@@ -187,3 +187,11 @@ python -m scripts.agreement data/amostra_ouro/labels_marcos.csv \
 ```
 
 Gera em `data/amostra_ouro/`: `concordancia.csv` (kappa de Fleiss por dimensão, com interpretação de Landis & Koch) e `consenso.csv` (rótulo de consenso por item). Unanimidade e maioria 2-1 são automáticas; casos 1-1-1 ficam `pendente` (o comando sai com código 2) até a reunião, quando as decisões vão em `data/amostra_ouro/desempate.csv` (`dimensao,item_id,rotulo,justificativa`) e o comando é rodado de novo. Regras completas em `data/amostra_ouro/PROTOCOLO_CONSENSO.md`.
+
+## Qualidade dos dados e invariantes (S02, Issue #29)
+
+```
+python -m scripts.data_quality --config config.yaml [--metricas data/metrics.csv] [--dicionario DICIONARIO_DE_DADOS.csv]
+```
+
+Gera `outputs/data_quality.md` e `outputs/data_quality.csv` com: vazios por coluna, duplicatas, datas (commits após a release, sem data), censurados, 404, dias de runs saturados e distribuição por linguagem. As **invariantes** (0 ≤ CFR ≤ 1, lead time ≥ 0, avaliadas + ignoradas/censuradas = releases da janela, colunas no dicionário, somas do funil e amostra final = dataset) saem `OK`, `FALHA` ou `N/A` (coluna/arquivo ainda inexistente, como as colunas do CFR (b) da #21 e o dicionário da #20). Qualquer `FALHA` faz o comando sair com código 1. Os nomes das colunas do CFR (b) esperados estão nas constantes `COL_*` de `scripts/data_quality.py`.

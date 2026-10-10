@@ -1,0 +1,45 @@
+﻿grupo,verificacao,status,valor,detalhe
+invariante,0 ≤ CFR (a) ≤ 1,OK,0,100 itens verificados
+invariante,0 ≤ CFR (b) ≤ 1,N/A,,coluna ou arquivo necessário ausente
+invariante,lead time ≥ 0 (lt_release_median_h),OK,0,100 itens verificados
+invariante,lead time ≥ 0 (lt_commit_median_h),OK,0,100 itens verificados
+invariante,releases avaliadas + ignoradas = releases da janela (lead time),OK,0,100 itens verificados
+invariante,releases avaliadas + censuradas = releases da janela (CFR b),N/A,,coluna ou arquivo necessário ausente
+invariante,toda coluna do CSV está no dicionário de dados,N/A,,coluna ou arquivo necessário ausente
+invariante,funil: entram − saem = restam em cada etapa,OK,0,4 itens verificados
+invariante,funil: selecionados + descartados = candidatos avaliados,OK,0,891 itens verificados
+invariante,funil: amostra final = repositórios do dataset,OK,0,100 itens verificados
+duplicatas,full_name repetido (sem diferenciar caixa),OK,0,100 únicos
+nulos,language,ALERTA,2,2.0% das linhas vazias
+nulos,rec_median_h,ALERTA,4,4.0% das linhas vazias
+nulos,prop_episodios_censurados,ALERTA,4,4.0% das linhas vazias
+nulos,rec_class,ALERTA,4,4.0% das linhas vazias
+nulos,dora_geral,ALERTA,4,4.0% das linhas vazias
+censura,episódios de falha censurados (RQ04),INFO,58,58 de 2838 episódios; 35 de 100 repositórios com ao menos um
+404,releases ignoradas por 404 no compare,INFO,2,2 de 100 repositórios afetados
+cobertura,releases sem anterior (1ª da história),INFO,31,31 de 100 repositórios afetados
+cobertura,releases sem commits novos,INFO,600,15 de 100 repositórios afetados
+datas,commits com data posterior à release (excluídos),INFO,135,12 de 100 repositórios afetados
+cobertura,dias de runs saturados (teto de 1.000 da API),INFO,0,0 de 100 repositórios afetados
+datas,commits sem author_date ou com data ilegível,INFO,0,de 140716 commits no cache
+datas,commits com author_date depois do fim da janela (2026-10-02),INFO,0,
+linguagem,Python,INFO,17,17.0%
+linguagem,Rust,INFO,16,16.0%
+linguagem,TypeScript,INFO,15,15.0%
+linguagem,Go,INFO,12,12.0%
+linguagem,C++,INFO,7,7.0%
+linguagem,JavaScript,INFO,7,7.0%
+linguagem,C,INFO,4,4.0%
+linguagem,Kotlin,INFO,4,4.0%
+linguagem,C#,INFO,3,3.0%
+linguagem,(sem linguagem),INFO,2,2.0%
+linguagem,PHP,INFO,2,2.0%
+linguagem,Shell,INFO,2,2.0%
+linguagem,Swift,INFO,2,2.0%
+linguagem,Elixir,INFO,1,1.0%
+linguagem,Java,INFO,1,1.0%
+linguagem,Nix,INFO,1,1.0%
+linguagem,PowerShell,INFO,1,1.0%
+linguagem,SQF,INFO,1,1.0%
+linguagem,Scala,INFO,1,1.0%
+linguagem,Vue,INFO,1,1.0%
