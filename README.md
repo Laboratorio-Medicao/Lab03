@@ -163,3 +163,16 @@ outputs/               saídas geradas pelo pipeline
 config.yaml            configuração (sem segredos)
 requirements.txt       dependências fixadas
 ```
+
+## Amostra-ouro e planilhas de rotulagem (S02, Issue #22)
+
+`scripts/sample_gold.py` sorteia 60 repositórios (semente 42) e 5 releases por repositório, iguais para os três avaliadores, e gera `data/amostra_ouro/rotulos_A.csv`, `rotulos_B.csv` e `rotulos_C.csv` com links das releases. Lê só o cache; não chama a API.
+
+```
+python -m scripts.sample_gold --config config.yaml
+```
+
+- **Lista:** `data/repos_final.csv` se existir (lista final congelada); senão `outputs/resultados.csv`. Troque com `--repos`.
+- **Janela oficial do professor:** edite só `janela.inicio`/`janela.fim` no `config.yaml`, rode `python -m pipeline` (apague o cache de commits/runs se a janela mudou) e rode o comando acima de novo. O sorteio muda com a janela e com a lista; `sorteio.json` registra ambas.
+- **Proteção:** se alguma planilha já tiver rótulos, o script aborta para não apagar o trabalho dos avaliadores; `--forcar` sobrescreve.
+- **Preenchimento:** tipo do projeto e "releases = entregas reais" vão na primeira linha de cada repositório; "corretiva" em todas. Valores válidos em `data/amostra_ouro/LEIAME.md`.
