@@ -105,7 +105,7 @@ def test_gerar_planilhas_identicas_nas_releases_e_sem_heuristica(tmp_path):
 
     conteudos = {}
     for nome in sg.AVALIADORES_PADRAO:
-        with (saida / f"rotulos_{nome}.csv").open(encoding="utf-8-sig", newline="") as f:
+        with (saida / f"labels_{nome}.csv").open(encoding="utf-8-sig", newline="") as f:
             leitor = csv.DictReader(f)
             assert tuple(leitor.fieldnames) == sg.COLUNAS_PLANILHA
             conteudos[nome] = list(leitor)
@@ -167,7 +167,7 @@ def test_recusa_sobrescrever_planilha_preenchida(tmp_path):
     assert sg.planilhas_preenchidas(saida) == []
     sg.gerar(repos, cache, INI, FIM, saida)  # em branco: pode regerar
 
-    planilha = saida / "rotulos_A.csv"
+    planilha = saida / "labels_A.csv"
     planilha.write_text(planilha.read_text(encoding="utf-8-sig").replace(",,,", ",outro,sim,", 1),
                         encoding="utf-8-sig")
     assert sg.planilhas_preenchidas(saida) == [planilha]

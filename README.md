@@ -166,7 +166,7 @@ requirements.txt       dependências fixadas
 
 ## Amostra-ouro e planilhas de rotulagem (S02, Issue #22)
 
-`scripts/sample_gold.py` sorteia 60 repositórios (semente 42) e 5 releases por repositório, iguais para os três avaliadores, e gera `data/amostra_ouro/rotulos_A.csv`, `rotulos_B.csv` e `rotulos_C.csv` com links das releases. Lê só o cache; não chama a API.
+`scripts/sample_gold.py` sorteia 60 repositórios (semente 42) e 5 releases por repositório, iguais para os três avaliadores, e gera `data/amostra_ouro/labels_A.csv`, `labels_B.csv` e `labels_C.csv` com links das releases. Lê só o cache; não chama a API.
 
 ```
 python -m scripts.sample_gold --config config.yaml

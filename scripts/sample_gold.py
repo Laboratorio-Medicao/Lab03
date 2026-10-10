@@ -12,7 +12,7 @@ O que faz, sem chamar a API (lê só o cache de releases já coletado pelo pipel
 3. Grava em `--saida` (padrão `data/amostra_ouro/`):
    - `amostra_ouro.csv`: sorteio completo (uma linha por release sorteada);
    - `sorteio.json`: semente, tamanhos, janela e hash da lista de entrada (reprodutibilidade);
-   - `rotulos_<avaliador>.csv`: uma planilha por avaliador, com os links da release e as colunas
+   - `labels_<avaliador>.csv`: uma planilha por avaliador, com os links da release e as colunas
      (i) tipo do projeto, (ii) releases = entregas reais, (iii) corretiva sim/não;
    - `LEIAME.md`: instruções e valores válidos.
 
@@ -172,9 +172,9 @@ CAMPOS_ROTULO = ("tipo_projeto", "releases_sao_entregas_reais", "corretiva", "ob
 
 
 def planilhas_preenchidas(saida: Path) -> list[Path]:
-    """Planilhas `rotulos_*.csv` já existentes com algum rótulo preenchido (regerar as apagaria)."""
+    """Planilhas `labels_*.csv` já existentes com algum rótulo preenchido (regerar as apagaria)."""
     achadas = []
-    for arquivo in sorted(Path(saida).glob("rotulos_*.csv")):
+    for arquivo in sorted(Path(saida).glob("labels_*.csv")):
         with arquivo.open(encoding="utf-8-sig", newline="") as f:
             if any((linha.get(c) or "").strip() for linha in csv.DictReader(f) for c in CAMPOS_ROTULO):
                 achadas.append(arquivo)
@@ -196,7 +196,7 @@ def _sha256(arquivo: Path) -> str:
 def _leiame(avaliadores: tuple[str, ...]) -> str:
     return f"""# Rotulagem da amostra-ouro
 
-Cada avaliador ({", ".join(avaliadores)}) preenche **somente o seu arquivo** `rotulos_<avaliador>.csv`,
+Cada avaliador ({", ".join(avaliadores)}) preenche **somente o seu arquivo** `labels_<avaliador>.csv`,
 sem consultar os demais e sem ver a saída da heurística de release corretiva. As releases são as
 mesmas nos três arquivos.
 
@@ -251,7 +251,7 @@ def gerar(
     saida.mkdir(parents=True, exist_ok=True)
     _escrever_csv(saida / "amostra_ouro.csv", COLUNAS_AMOSTRA, amostra)
     for nome in avaliadores:
-        _escrever_csv(saida / f"rotulos_{nome}.csv", COLUNAS_PLANILHA, linhas_planilha(amostra))
+        _escrever_csv(saida / f"labels_{nome}.csv", COLUNAS_PLANILHA, linhas_planilha(amostra))
     (saida / "sorteio.json").write_text(
         json.dumps({
             "seed": seed,
