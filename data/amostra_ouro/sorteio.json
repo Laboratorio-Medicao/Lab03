@@ -1,0 +1,17 @@
+{
+  "seed": 42,
+  "n_repos": 60,
+  "n_releases_por_repo": 5,
+  "n_linhas": 300,
+  "janela": {
+    "inicio": "2025-10-02",
+    "fim": "2026-10-02"
+  },
+  "lista_entrada": "resultados.csv",
+  "lista_entrada_sha256": "c0af075cc45995740ca97ee1af51474ada9a24a70ec5189412ac28de69deb271",
+  "avaliadores": [
+    "GuilhermeVieira05",
+    "marcosffp",
+    "ALuiz19"
+  ]
+}
