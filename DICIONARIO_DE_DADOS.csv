@@ -1,0 +1,99 @@
+arquivo,coluna,tipo,unidade,valores_validos,formula_origem
+resultados.csv,full_name,str,-,-,GitHub: owner/repo
+resultados.csv,status,str,-,"concluido, erro",Pipeline: concluido se coleta e cálculo OK; erro caso contrário
+resultados.csv,erro,str,-,-,Mensagem da exceção quando status=erro; vazio se concluido
+resultados.csv,stars,int,estrelas,>=0,GitHub API: stargazers_count
+resultados.csv,language,str,-,-,GitHub API: language (primária; null → vazio)
+resultados.csv,contributors,int,pessoas,>=0,GitHub API: /contributors?anon=1 (contagem paginada)
+resultados.csv,age_days,float,dias,>=0,"idade = (janela.fim − created_at) em dias; janela.fim definido em config.yaml"
+resultados.csv,default_branch,str,-,-,GitHub API: default_branch
+resultados.csv,n_releases_total,int,releases,>=0,Contagem total de releases do repositório (sem filtro de janela)
+resultados.csv,n_releases_deploy_total,int,releases,>=0,"Releases não-draft, não-prerelease e com published_at (proxy de deploy, sem filtro de janela)"
+resultados.csv,deployment_frequency,float,deploys/dia,>=0,"DORA DF: n_releases_deploy_total / duração_janela_dias; janela = config janela.inicio..fim"
+resultados.csv,lt_release_median_h,float,horas,>=0,"Lead time (a) por release: published_at(R) − author_date(commit mais antigo de R); mediana entre releases avaliáveis na janela (E§3)"
+resultados.csv,lt_commit_median_h,float,horas,>=0,"Lead time (b) por commit: published_at(R) − author_date(c) para cada commit c; mediana de todos os commits de todas as releases avaliáveis (E§3)"
+resultados.csv,n_releases_avaliadas,int,releases,>=0,Releases com status=ok e ≥1 commit válido usadas no cálculo do lead time
+resultados.csv,n_releases_ignored_404,int,releases,>=0,Releases excluídas do lead time por 404 no endpoint /compare (E§11)
+resultados.csv,n_sem_anterior,int,releases,>=0,"Releases sem release anterior (1ª da história); compare_url vazio, excluídas do lead time (E§5)"
+resultados.csv,n_sem_commits_novos,int,releases,>=0,"Releases com compare OK mas sem commits novos no intervalo; excluídas do lead time (L07)"
+resultados.csv,n_commits_negativos,int,commits,>=0,"Commits com author_date posterior a published_at (dado incoerente da API); excluídos do lead time (L07)"
+resultados.csv,n_runs_coletados,int,runs,>=0,"Total de workflow runs coletados na janela (todos os eventos, todos os workflows)"
+resultados.csv,n_runs_dias_saturados,int,dias,>=0,"Dias em que a contagem da API atingiu o teto de 1.000 runs; dados desses dias podem estar incompletos"
+resultados.csv,n_runs_fora_de_push,int,runs,>=0,"Runs excluídos do cálculo de CFR e recovery por não serem evento push (schedule, workflow_dispatch, etc.)"
+resultados.csv,n_runs_sucesso,int,runs,>=0,"Runs push com conclusion=success usados no cálculo de CFR(a)"
+resultados.csv,n_runs_falha,int,runs,>=0,"Runs push com conclusion∈{failure, timed_out, startup_failure} usados no cálculo de CFR(a)"
+resultados.csv,cfr_a,float,proporção,"[0, 1]","CFR(a): n_runs_falha / (n_runs_sucesso + n_runs_falha); None/vazio se sem runs válidos (E§4)"
+resultados.csv,rec_median_h,float,horas,>=0,"Recovery time: mediana dos episódios failure→success por workflow_id; episódio = run_started_at(1ª falha)..updated_at(1º sucesso seguinte) (E§5)"
+resultados.csv,n_episodios,int,episódios,>=0,Total de episódios de falha identificados (recuperados + censurados)
+resultados.csv,n_episodios_censurados,int,episódios,>=0,"Episódios sem sucesso subsequente na janela (censurados: excluídos do cálculo de rec_median_h, mas contados)"
+resultados.csv,prop_episodios_censurados,float,proporção,"[0, 1]",n_episodios_censurados / n_episodios; None/vazio se n_episodios=0
+resultados.csv,n_tags,int,tags,>=0,"Contagem de git tags do repositório (variante C3 da RQ07); None/vazio se coleta.tags=false em config.yaml"
+resultados.csv,df_class,str,-,"Elite, High, Medium, Low, vazio","Classificação DORA de Deployment Frequency (E§2); vazio se df indefinido"
+resultados.csv,lt_class,str,-,"Elite, High, Medium, Low, vazio","Classificação DORA de Lead Time (E§2); vazio se lt indefinido"
+resultados.csv,cfr_class,str,-,"Elite, High, Medium, Low, vazio","Classificação DORA de CFR (E§2); vazio se cfr indefinido"
+resultados.csv,rec_class,str,-,"Elite, High, Medium, Low, vazio","Classificação DORA de Recovery Time (E§2); vazio se rec indefinido"
+resultados.csv,dora_geral,str,-,"Elite, High, Medium, Low, vazio","Classificação DORA geral: pior nota entre as 4 métricas; vazio se qualquer métrica indefinida (L10)"
+repos_final.csv,full_name,str,-,-,Mesmo que resultados.csv — lista congelada dos 300 repos concluídos para o sorteio da amostra-ouro (#19)
+repos_final.csv,stars,int,estrelas,>=0,Idem resultados.csv
+repos_final.csv,language,str,-,-,Idem resultados.csv
+repos_final.csv,contributors,int,pessoas,>=0,Idem resultados.csv
+repos_final.csv,age_days,float,dias,>=0,Idem resultados.csv
+repos_final.csv,default_branch,str,-,-,Idem resultados.csv
+repos_final.csv,n_releases_total,int,releases,>=0,Idem resultados.csv
+repos_final.csv,n_releases_deploy_total,int,releases,>=0,Idem resultados.csv
+repos_final.csv,deployment_frequency,float,deploys/dia,>=0,Idem resultados.csv
+repos_final.csv,lt_release_median_h,float,horas,>=0,Idem resultados.csv
+repos_final.csv,lt_commit_median_h,float,horas,>=0,Idem resultados.csv
+repos_final.csv,n_releases_avaliadas,int,releases,>=0,Idem resultados.csv
+repos_final.csv,n_releases_ignored_404,int,releases,>=0,Idem resultados.csv
+repos_final.csv,n_sem_anterior,int,releases,>=0,Idem resultados.csv
+repos_final.csv,n_sem_commits_novos,int,releases,>=0,Idem resultados.csv
+repos_final.csv,n_commits_negativos,int,commits,>=0,Idem resultados.csv
+repos_final.csv,n_runs_coletados,int,runs,>=0,Idem resultados.csv
+repos_final.csv,n_runs_dias_saturados,int,dias,>=0,Idem resultados.csv
+repos_final.csv,n_runs_fora_de_push,int,runs,>=0,Idem resultados.csv
+repos_final.csv,n_runs_sucesso,int,runs,>=0,Idem resultados.csv
+repos_final.csv,n_runs_falha,int,runs,>=0,Idem resultados.csv
+repos_final.csv,cfr_a,float,proporção,"[0, 1]",Idem resultados.csv
+repos_final.csv,rec_median_h,float,horas,>=0,Idem resultados.csv
+repos_final.csv,n_episodios,int,episódios,>=0,Idem resultados.csv
+repos_final.csv,n_episodios_censurados,int,episódios,>=0,Idem resultados.csv
+repos_final.csv,prop_episodios_censurados,float,proporção,"[0, 1]",Idem resultados.csv
+repos_final.csv,n_tags,int,tags,>=0,Idem resultados.csv
+repos_final.csv,df_class,str,-,"Elite, High, Medium, Low, vazio",Idem resultados.csv
+repos_final.csv,lt_class,str,-,"Elite, High, Medium, Low, vazio",Idem resultados.csv
+repos_final.csv,cfr_class,str,-,"Elite, High, Medium, Low, vazio",Idem resultados.csv
+repos_final.csv,rec_class,str,-,"Elite, High, Medium, Low, vazio",Idem resultados.csv
+repos_final.csv,dora_geral,str,-,"Elite, High, Medium, Low, vazio",Idem resultados.csv
+funil.csv,full_name,str,-,-,GitHub: owner/repo
+funil.csv,stars,int,estrelas,>=0,GitHub API: stargazers_count
+funil.csv,language,str,-,-,GitHub API: language
+funil.csv,default_branch,str,-,-,GitHub API: default_branch
+funil.csv,created_at,str,ISO 8601,-,GitHub API: created_at
+funil.csv,status,str,-,"candidato, selecionado, descartado",Status do repo no funil de seleção
+funil.csv,etapa,str,-,-,Etapa em que o repo foi avaliado/descartado
+funil.csv,motivo,str,-,-,"Motivo do descarte: no_actions, lt_5_releases, lt_50_runs, etc.; vazio se selecionado"
+funil.csv,workflows_total_count,int,workflows,>=0,Total de workflows do repositório verificados na seleção
+funil.csv,n_releases_window,int,releases,>=0,Releases na janela de observação usadas no filtro de seleção
+funil.csv,runs_consultados,int,runs,>=0,Runs consultados durante a seleção (amostragem para filtro min_runs_validos)
+funil.csv,n_runs_valid_window,int,runs,>=0,Runs válidos (push) na janela usados no filtro min_runs_validos
+funil.csv,contributors,int,pessoas,>=0,Idem resultados.csv
+funil.csv,age_days,float,dias,>=0,Idem resultados.csv
+amostra_ouro.csv,full_name,str,-,-,GitHub: owner/repo (um dos 60 repos sorteados)
+amostra_ouro.csv,repo_url,str,URL,-,https://github.com/<full_name>
+amostra_ouro.csv,release_id,int,-,>=1,GitHub API: id da release
+amostra_ouro.csv,tag_name,str,-,-,GitHub API: tag_name da release
+amostra_ouro.csv,published_at,str,ISO 8601,-,GitHub API: published_at da release
+amostra_ouro.csv,release_url,str,URL,-,Página da release no GitHub (html_url)
+amostra_ouro.csv,compare_url,str,URL,-,"URL de diff com a release anterior (/compare/tag_anterior...tag); vazio se 1ª release da história"
+labels_<avaliador>.csv,full_name,str,-,-,Idem amostra_ouro.csv
+labels_<avaliador>.csv,repo_url,str,URL,-,Idem amostra_ouro.csv
+labels_<avaliador>.csv,tipo_projeto,str,-,"biblioteca_framework, aplicacao_servico, ferramenta_cli, outro","Rótulo por repositório (preencher só na 1ª linha do repo); vazio até rotulagem manual (E§6)"
+labels_<avaliador>.csv,releases_sao_entregas_reais,str,-,"sim, nao, incerto","Rótulo por repositório: releases representam entregas reais de software? (E§6); vazio até rotulagem"
+labels_<avaliador>.csv,release_id,int,-,>=1,Idem amostra_ouro.csv
+labels_<avaliador>.csv,tag_name,str,-,-,Idem amostra_ouro.csv
+labels_<avaliador>.csv,published_at,str,ISO 8601,-,Idem amostra_ouro.csv
+labels_<avaliador>.csv,release_url,str,URL,-,Idem amostra_ouro.csv
+labels_<avaliador>.csv,compare_url,str,URL,-,Idem amostra_ouro.csv
+labels_<avaliador>.csv,corretiva,str,-,"sim, nao","Rótulo por release: release é corretiva? (E§6); vazio até rotulagem manual"
+labels_<avaliador>.csv,observacoes,str,-,-,Observações livres do avaliador; opcional
