@@ -193,6 +193,37 @@ python -m scripts.evaluate_heuristic --config config.yaml
 - **Escolha:** fica a v1, definida antes de ver os dados, se F1 ≥ 0,70; senão, a de maior F1 (empate → menor número). Como as versões são comparadas na mesma amostra, sem conjunto de validação separado, o F1 da escolhida tende a ser otimista. O relatório traz todas as versões e o número de corretivas do consenso; isso entra em Ameaças à validade.
 - **Depois da rodada:** se a escolhida não for a v1, atualizar `HEURISTIC_VERSION` em `metricas/heuristica.py` e recalcular o CFR (b) (#21). Uma versão nova (v8+, desenhada a partir dos erros da #30) entra em `VERSOES` e vira coluna de `heuristica_amostra.csv`, o que exige atualizar o dicionário de dados (o `test_dicionario` cobra).
 
+## Análise de erros da heurística (Issue #30, bônus)
+
+Depois da rodada da #28, `scripts/analise_erros_heuristica.py` detalha os erros de uma versão (padrão: a escolhida em `avaliacao_heuristica.csv`). O resultado alimenta Ameaças à validade (construto) e ideias de novas versões (v8+).
+
+```
+python -m scripts.analise_erros_heuristica [--versao vN]
+```
+
+- **Lê** em `data/amostra_ouro/`: `heuristica_amostra.csv`, `avaliacao_heuristica.csv` e `consenso.csv`, que precisam existir; os links vêm de `amostra_ouro.csv`. Não lê os arquivos de rótulos. Se a matriz recalculada divergir de `avaliacao_heuristica.csv`, o comando para, porque os arquivos seriam de rodadas diferentes.
+- **Gera:**
+  - `erros_heuristica.csv`: um FP ou FN por linha, com `causa_automatica` e a coluna `causa_manual` para o grupo anotar lendo os commits (ex.: "fix em docs");
+  - `erros_heuristica.md`: matriz de confusão, contagem por causa, comparação entre versões e lista de FP/FN com links. Na comparação, "corrige" conta as releases que uma versão acerta e a analisada erra, e "piora" o contrário. O relatório termina com um resumo para Ameaças à validade.
+- **Anotações manuais:** ao rodar de novo, a `causa_manual` é mantida por `release_id`, mesmo trocando de versão. As anotações de releases que deixaram de ser erro saem do CSV, com aviso e contagem; o histórico fica no git.
+- **Taxonomia automática** (uma causa por erro, na ordem abaixo). A "palavra" é o sinal que a própria versão usa: estrita em v1–v4, ampla em v5–v7 (`PALAVRA_DA_VERSAO`; uma v8 exige atualizar esse mapa, e o script recusa versões fora dele).
+
+  | Tipo | Causa | Quando |
+  |---|---|---|
+  | FP | `palavra_sem_semver` | tags não comparáveis e palavra-chave |
+  | FP | `patch_e_palavra_sem_correcao` | patch e palavra, sem correção real (ex.: `fix` em docs ou CI) |
+  | FP | `patch_sem_palavra` | patch bump sem bug (versões que aceitam só patch) |
+  | FP | `palavra_sem_patch` | minor/major com palavra (versões OU / só palavra) |
+  | FN | `sem_release_anterior` | 1ª release da história |
+  | FN | `commits_indisponiveis` | `compare` 404 ou truncado, **e** a palavra mudaria a predição |
+  | FN | `palavra_ampla_nao_estrita` | versões estritas: trocar pela palavra ampla (`fixes`, `fixed`…) **corrigiria** o erro |
+  | FN | `palavra_sem_patch` | há palavra (estrita ou ampla), mas não é bump de patch (backport, final de RC, minor com correção) |
+  | FN | `patch_sem_palavra` | correção num patch sem palavra-chave |
+  | FN | `nao_semver_sem_palavra` | tags não comparáveis e sem palavra |
+  | FN | `sem_sinal` | nem patch nem palavra |
+
+  `commits_indisponiveis` e `palavra_ampla_nao_estrita` são **contrafactuais**: a regra da versão é reaplicada com o sinal alterado, e a causa só vale se o resultado mudar. A precedência e os contrafactuais foram conferidos para v1–v7.
+
 ## Testes e cobertura
 
 ```bash
