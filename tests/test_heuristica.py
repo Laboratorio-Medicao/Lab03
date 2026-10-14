@@ -1,4 +1,4 @@
-"""Testes de metricas.heuristica (Issue #27) — exemplos da E§5 e bordas da fonte_vdd.
+"""Testes de metricas.heuristica (Issues #27 e #28) — exemplos da E§5, bordas da fonte_vdd e versões.
 
 Fixtures fictícias, feitas à mão: nenhum repositório ou tag da amostra-ouro.
 """
@@ -7,11 +7,14 @@ import pytest
 
 from metricas.heuristica import (
     HEURISTIC_VERSION,
+    VERSOES,
     SemVer,
     apenas_patch,
     avaliar,
     classificar_releases,
+    corretiva,
     parse_semver,
+    sinais_da_release,
     tem_palavra_corretiva,
 )
 
@@ -119,6 +122,7 @@ def test_exemplo_professor_patch_com_fix_e_corretiva():
         "heuristic_version": HEURISTIC_VERSION,
         "semver_patch": True,
         "palavra_chave": True,
+        "palavra_chave_ampla": True,
     }
 
 
@@ -189,3 +193,61 @@ def test_classificar_releases_repassa_id_e_ignora_mensagens_fora_do_ok():
     saida = classificar_releases([r])[0]
     assert saida["id"] == 7
     assert saida["palavra_chave"] is False
+
+
+# ---- palavra-chave ampla e versões candidatas (Issue #28) ----
+
+
+@pytest.mark.parametrize("mensagem", ["fixes #10", "fixed the build", "fixing tests", "bugfix release",
+                                      "Reverted change", "reverts #3", "hotfixes", "fix: x"])
+def test_palavra_ampla_casa(mensagem):
+    assert tem_palavra_corretiva([mensagem], ampla=True) is True
+
+
+@pytest.mark.parametrize("mensagem", ["feat: add prefix option", "test: new fixture", "fixer upper", ""])
+def test_palavra_ampla_nao_casa(mensagem):
+    assert tem_palavra_corretiva([mensagem], ampla=True) is False
+
+
+def test_sinais_sem_anterior_e_com_anterior():
+    assert sinais_da_release(None, "v1.0.1", ["fix: x"]) == {
+        "semver_patch": None, "palavra_chave": False, "palavra_chave_ampla": False,
+    }
+    assert sinais_da_release("v1.0.0", "v1.0.1", (m for m in ["fixes #2"])) == {
+        "semver_patch": True, "palavra_chave": False, "palavra_chave_ampla": True,
+    }
+
+
+def sinais(patch, estrita, ampla):
+    return {"semver_patch": patch, "palavra_chave": estrita, "palavra_chave_ampla": ampla}
+
+
+# (semver_patch, estrita, ampla) -> resultado esperado de v1..v7
+TABELA_VERSOES = [
+    ((True, True, True), [True, True, True, True, True, True, True]),
+    ((True, False, False), [False, True, False, True, False, True, False]),
+    ((True, False, True), [False, True, False, True, True, True, True]),
+    ((False, True, True), [False, True, True, False, False, True, True]),
+    ((False, False, True), [False, False, False, False, False, True, True]),
+    ((False, False, False), [False] * 7),
+    ((None, True, True), [True, True, True, True, True, True, True]),
+    ((None, False, True), [False, False, False, False, True, True, True]),
+    ((None, False, False), [False] * 7),
+]
+
+
+@pytest.mark.parametrize("entrada, esperado", TABELA_VERSOES)
+def test_regras_das_versoes(entrada, esperado):
+    obtido = [corretiva(sinais(*entrada), f"v{i}") for i in range(1, 8)]
+    assert obtido == esperado
+
+
+def test_versoes_registradas_com_descricao_e_v1_padrao():
+    assert list(VERSOES) == [f"v{i}" for i in range(1, 8)]
+    assert all(v.descricao for v in VERSOES.values())
+    assert HEURISTIC_VERSION == "v1"
+
+
+def test_avaliar_com_outra_versao():
+    r = avaliar("v2.3.0", "v2.3.1", ["feat: x"], versao="v2")
+    assert r["heuristic_corrective"] is True and r["heuristic_version"] == "v2"
