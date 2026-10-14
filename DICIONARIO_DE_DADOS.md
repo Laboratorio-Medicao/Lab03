@@ -141,3 +141,19 @@ Precisão, recall e F1 de cada versão da heurística frente ao consenso (E§6, 
 | `recall` | float | proporção | TP / (TP + FN) |
 | `f1` | float | proporção | 2·P·R / (P + R) |
 | `escolhida` | str | `sim` · `nao` | v1 se F1 ≥ 0,70; senão a de maior F1 (empate → menor número) |
+
+## `data/amostra_ouro/erros_heuristica.csv`
+
+Falsos positivos e falsos negativos de uma versão da heurística frente ao consenso, gerado por
+`scripts/analise_erros_heuristica.py` (#30, bônus) a partir das saídas da #28.
+
+| Coluna | Tipo | Valores válidos | Descrição |
+|---|---|---|---|
+| `versao` | str | `v1`, `v2`… | Versão analisada (padrão: a escolhida em `avaliacao_heuristica.csv`) |
+| `release_id`, `full_name`, `tag_name` | — | — | Idem `amostra_ouro.csv` |
+| `base` | str | — | Idem `heuristica_amostra.csv` |
+| `tipo_erro` | str | `FP` · `FN` | FP: heurística = corretiva e consenso = não; FN: o contrário |
+| `causa_automatica` | str | ver README (#30) | Triagem pelos sinais da versão, uma causa por erro |
+| `semver_patch`, `palavra_chave`, `palavra_chave_ampla`, `mensagens_incompletas` | str | `sim` · `nao` (· vazio) | Idem `heuristica_amostra.csv` |
+| `release_url`, `compare_url` | str | URL | Idem `amostra_ouro.csv` |
+| `causa_manual` | str | — | Anotação do grupo lendo os commits; preservada por `release_id` ao regravar |

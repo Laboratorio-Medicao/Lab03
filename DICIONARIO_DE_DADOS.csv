@@ -124,3 +124,17 @@ avaliacao_heuristica.csv,precisao,float,proporção,"[0, 1]","TP / (TP + FP); 0 
 avaliacao_heuristica.csv,recall,float,proporção,"[0, 1]","TP / (TP + FN)"
 avaliacao_heuristica.csv,f1,float,proporção,"[0, 1]","2·P·R / (P + R)"
 avaliacao_heuristica.csv,escolhida,str,-,"sim, nao","Versão final: v1 se F1 >= 0,70; senão a de maior F1 (empate: menor número)"
+erros_heuristica.csv,versao,str,-,"v1, v2, ...",Versão da heurística analisada (padrão: a escolhida em avaliacao_heuristica.csv)
+erros_heuristica.csv,release_id,int,-,>=1,Idem amostra_ouro.csv
+erros_heuristica.csv,full_name,str,-,-,Idem amostra_ouro.csv
+erros_heuristica.csv,tag_name,str,-,-,Idem amostra_ouro.csv
+erros_heuristica.csv,base,str,-,-,Idem heuristica_amostra.csv
+erros_heuristica.csv,tipo_erro,str,-,"FP, FN","FP: heurística = corretiva e consenso = não; FN: o contrário"
+erros_heuristica.csv,causa_automatica,str,-,"FP: palavra_sem_semver, patch_e_palavra_sem_correcao, patch_sem_palavra, palavra_sem_patch; FN: sem_release_anterior, commits_indisponiveis, palavra_ampla_nao_estrita, palavra_sem_patch, patch_sem_palavra, nao_semver_sem_palavra, sem_sinal","Triagem automática pelos sinais da versão, uma causa por erro (precedência no README, Issue #30)"
+erros_heuristica.csv,semver_patch,str,-,"sim, nao, vazio",Idem heuristica_amostra.csv
+erros_heuristica.csv,palavra_chave,str,-,"sim, nao",Idem heuristica_amostra.csv
+erros_heuristica.csv,palavra_chave_ampla,str,-,"sim, nao",Idem heuristica_amostra.csv
+erros_heuristica.csv,mensagens_incompletas,str,-,"sim, nao",Idem heuristica_amostra.csv
+erros_heuristica.csv,release_url,str,URL,-,Idem amostra_ouro.csv
+erros_heuristica.csv,compare_url,str,URL,-,Idem amostra_ouro.csv
+erros_heuristica.csv,causa_manual,str,-,-,"Anotação do grupo lendo os commits (ex.: fix em docs); preservada por release_id ao regravar"
