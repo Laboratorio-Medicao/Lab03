@@ -122,6 +122,47 @@ Se nenhuma release for avaliável (por exemplo, repo com uma única release), as
 
 `metricas/cfr.py`: `cfr = falhas / (falhas + sucessos)` sobre runs `event=push` (filtro defensivo `so_push`); `classify_conclusion` trata os 9 valores de `conclusion`. `metricas/recovery.py`: por workflow, em ordem de `run_started_at`, o episódio começa na **primeira** falha após um sucesso (falhas seguidas fazem parte dele) e termina no próximo sucesso (`updated_at`); falhas sem sucesso até o fim da janela são **censuradas**: `episodios()` devolve `tempos_h`, `n_episodios` e `n_censurados` (em `resultados.csv`: `n_episodios_censurados` e `prop_episodios_censurados`). Uma falha antes de qualquer sucesso também abre episódio (decisão do grupo).
 
+## Heurística de release corretiva e CFR (b) (Issue #27)
+
+`metricas/heuristica.py` marca uma release S como **corretiva** comparando-a com a release de deploy anterior (a mesma `base` do `compare`) e olhando os commits entre as duas. A versão da regra sai em `heuristic_version`. A validação contra a amostra-ouro e o refino (v2, v3…, registradas em `VERSOES`) ficam na #28.
+
+**Regra v1** (exemplo do professor, E§5: "só muda o patch **e** contém o commit fix"):
+
+| Situação | S é corretiva se |
+|---|---|
+| Tags SemVer comparáveis | só o *patch* subiu **e** algum commit cita `revert`, `hotfix` ou `fix` |
+| Tags não comparáveis (fora de SemVer ou prefixos diferentes) | algum commit cita `revert`, `hotfix` ou `fix` |
+| Sem release anterior (1ª da história) | nunca |
+
+- **SemVer:** `MAJOR.MINOR.PATCH[-pre][+build]` com números sem zero à esquerda e prefixo opcional (`v`, `release-`, `pkg@`, `@scope/pkg@`, `pkg-v`). O `v` isolado ou logo após `-`, `_`, `@` ou `/` é só marca de versão (`v2.3.0 → 2.3.1` é comparável). Prefixos diferentes (`a@1.0.0 → b@1.0.1`) indicam pacotes diferentes num monorepo e não são comparáveis. `1.2`, `1.2.3.4`, `release-2020-01` e `2026.10.01` não são SemVer.
+- **Só o patch:** mesmo major e minor, patch maior e S sem pré-release. `2.3.0 → 2.3.1-rc1` e `2.3.1-rc1 → 2.3.1` (a final de um RC) não contam.
+- **Palavra-chave:** palavra inteira, sem diferenciar caixa, em qualquer parte da mensagem (assunto e corpo). Casa `fix:`, `fix(ui):`, `Revert "..."`, `hotfix`, `bug-fix`, `user/fix-crash`. Não casa `prefix`, `fixture`, `fixes`, `fixed` nem `bugfix`.
+
+`metricas/cfr_entrega.py` calcula o CFR (b) a partir das releases de deploy já marcadas:
+
+- R **falhou** se **qualquer** release de deploy S com `R < S ≤ R + 7 dias` for corretiva (L08). Não precisa ser a próxima, e exatamente 7 d 0 h depois ainda conta.
+- R com `published_at + 7 dias > fim da janela` é **censurada** e fica fora do denominador.
+- `cfr_b = falhas / avaliadas`. É `None` (indefinido) sem avaliadas ou com **menos de 2 releases de deploy na janela**. Decisão do grupo: a fonte diz "repo com 1 release → indefinido"; contamos na janela porque só as releases da janela podem ser S. Os contadores continuam preenchidos, e `n_releases_avaliadas_cfr_b + n_releases_censuradas_cfr_b = n_releases_janela` (invariante do `data_quality`).
+
+Para calcular por repositório (#21), uma chamada com a saída de `collect_commits` e a janela de `etapas._janela`:
+
+```python
+from metricas.cfr_entrega import resumo_cfr_entrega
+resumo_cfr_entrega(dados["commits"]["releases"], _janela(inicio, fim))
+# {"cfr_b", "n_releases_avaliadas_cfr_b", "n_releases_censuradas_cfr_b", "n_releases_janela",
+#  "n_releases_falha_cfr_b", "n_releases_mensagens_incompletas_cfr_b", "heuristic_version"}
+```
+
+`n_releases_mensagens_incompletas_cfr_b` é diagnóstico, não entra na invariante. Ele conta as releases da janela cujo `compare` deu 404 ou veio truncado: nelas a palavra-chave pode ter faltado por falta de dado, o que puxa o CFR (b) para baixo. A variante com pré-releases (C2) usa a mesma chamada sobre os pares de `pares_com_anterior(..., incluir_prerelease=True)`.
+
+**Limitações conhecidas** (insumo para a #28 e a #30):
+- Backport publicado depois da linha nova (`0.11.0 → 0.10.2`) não é "só patch" em relação à anterior por data.
+- CalVer sem zero à esquerda (`2026.10.1`) é lido como SemVer.
+- A palavra inteira deixa de fora `fixes`, `fixed` e `bugfix`.
+- A saída por release (`classificar_releases`) não tem `release_id`, que o `collect_commits` não guarda. A #28 junta com os rótulos por `(full_name, tag_name)`.
+
+**Independência dos rótulos (E§6):** a heurística não foi calibrada nos rótulos e não é rodada sobre a amostra-ouro antes de os três arquivos `labels_*.csv` passarem no `validar_rotulos`.
+
 ## Testes e cobertura
 
 ```bash
