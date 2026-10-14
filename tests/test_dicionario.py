@@ -19,6 +19,8 @@ CSVS_SAIDA = {
     RAIZ / "outputs" / "repos_final.csv": "repos_final.csv",
     RAIZ / "outputs" / "funil.csv": "funil.csv",
     RAIZ / "data" / "amostra_ouro" / "amostra_ouro.csv": "amostra_ouro.csv",
+    RAIZ / "data" / "amostra_ouro" / "heuristica_amostra.csv": "heuristica_amostra.csv",
+    RAIZ / "data" / "amostra_ouro" / "avaliacao_heuristica.csv": "avaliacao_heuristica.csv",
 }
 
 LABELS_DIR = RAIZ / "data" / "amostra_ouro"

@@ -14,8 +14,11 @@ Regra v1 (exemplo do professor, E§5: "só muda o patch **e** contém o commit f
 - tags não comparáveis (não-SemVer ou prefixos diferentes) → só `palavra_chave` (o critério SemVer
   não se aplica).
 
-A heurística **precisa** ser validada contra a amostra-ouro (E§6): a avaliação e o refino ficam na
-Issue #28, que acrescenta novas versões em `VERSOES`. A versão usada sai em `heuristic_version`.
+A heurística **precisa** ser validada contra a amostra-ouro (E§6). Para o refino (Issue #28), `VERSOES`
+registra variantes candidatas combinando os mesmos sinais, mais uma **palavra-chave ampla** (`fixes`,
+`fixed`, `bugfix`, `reverted`…); `scripts.evaluate_heuristic` avalia todas e escolhe a final. Em todas as
+versões, tags não comparáveis usam só a palavra-chave da versão, e release sem anterior nunca é corretiva.
+A versão usada sai em `heuristic_version`.
 """
 
 from __future__ import annotations
@@ -34,6 +37,9 @@ _SEMVER = re.compile(
 # `v`/`V` sozinho ou logo após um separador é só marca de versão: `v1.0.0` ≡ `1.0.0`, `pkg-v1.0.0` ≡ `pkg-1.0.0`.
 _MARCA_V = re.compile(r"(?:^|(?<=[-_@/]))[vV]$")
 _PALAVRA_CORRETIVA = re.compile(r"\b(?:revert|hotfix|fix)\b", re.IGNORECASE)
+_PALAVRA_CORRETIVA_AMPLA = re.compile(
+    r"\b(?:revert(?:s|ed)?|hotfix(?:es)?|fix(?:es|ed|ing)?|bugfix(?:es)?)\b", re.IGNORECASE
+)
 
 STATUS_OK = "ok"
 STATUS_404 = "404"
@@ -81,18 +87,43 @@ def apenas_patch(tag_anterior: str | None, tag: str | None) -> bool | None:
     )
 
 
-def tem_palavra_corretiva(mensagens: Iterable[str | None]) -> bool:
-    """Algum commit cita `revert`, `hotfix` ou `fix` como palavra inteira (`prefix`/`fixes` não contam)."""
-    return any(_PALAVRA_CORRETIVA.search(m) for m in mensagens if m)
+def tem_palavra_corretiva(mensagens: Iterable[str | None], ampla: bool = False) -> bool:
+    """Algum commit cita `revert`, `hotfix` ou `fix` como palavra inteira (`prefix`/`fixes` não contam).
+
+    `ampla=True` aceita também flexões e `bugfix` (`fixes`, `fixed`, `fixing`, `reverted`, `hotfixes`…).
+    """
+    padrao = _PALAVRA_CORRETIVA_AMPLA if ampla else _PALAVRA_CORRETIVA
+    return any(padrao.search(m) for m in mensagens if m)
 
 
-def _regra_v1(semver_patch: bool | None, palavra_chave: bool) -> bool:
-    if semver_patch is None:
-        return palavra_chave
-    return semver_patch and palavra_chave
+class Versao(NamedTuple):
+    descricao: str
+    regra: Callable[[Mapping], bool]
 
 
-VERSOES: dict[str, Callable[[bool | None, bool], bool]] = {"v1": _regra_v1}
+def _combina(operador: str, palavra: str) -> Callable[[Mapping], bool]:
+    """Regra que junta `semver_patch` à palavra-chave `palavra`; tags não comparáveis → só a palavra."""
+    def regra(sinais: Mapping) -> bool:
+        patch, chave = sinais["semver_patch"], sinais[palavra]
+        if patch is None or operador == "palavra":
+            return chave
+        if operador == "e":
+            return patch and chave
+        if operador == "ou":
+            return patch or chave
+        return patch  # operador "patch"
+    return regra
+
+
+VERSOES: dict[str, Versao] = {
+    "v1": Versao("só patch E palavra estrita", _combina("e", "palavra_chave")),
+    "v2": Versao("só patch OU palavra estrita", _combina("ou", "palavra_chave")),
+    "v3": Versao("só palavra estrita (ignora SemVer)", _combina("palavra", "palavra_chave")),
+    "v4": Versao("só patch (não comparável: palavra estrita)", _combina("patch", "palavra_chave")),
+    "v5": Versao("só patch E palavra ampla", _combina("e", "palavra_chave_ampla")),
+    "v6": Versao("só patch OU palavra ampla", _combina("ou", "palavra_chave_ampla")),
+    "v7": Versao("só palavra ampla (ignora SemVer)", _combina("palavra", "palavra_chave_ampla")),
+}
 
 
 def avaliar(
@@ -104,20 +135,29 @@ def avaliar(
     """Classifica `tag` em relação à release anterior e aos commits entre as duas.
 
     Devolve `heuristic_corrective`, `heuristic_version` e os sinais usados (`semver_patch`,
-    `palavra_chave`), úteis para a análise de erros da heurística.
+    `palavra_chave`, `palavra_chave_ampla`), úteis para a análise de erros da heurística.
     """
     if versao not in VERSOES:
         raise ValueError(f"versão da heurística desconhecida: {versao!r} (conhecidas: {sorted(VERSOES)})")
+    sinais = sinais_da_release(tag_anterior, tag, mensagens)
+    return {"heuristic_corrective": corretiva(sinais, versao), "heuristic_version": versao, **sinais}
+
+
+def sinais_da_release(tag_anterior: str | None, tag: str | None, mensagens: Iterable[str | None]) -> dict:
+    """Sinais da heurística para `tag`; sem release anterior não há sinal (nunca corretiva)."""
     if tag_anterior is None:
-        return {"heuristic_corrective": False, "heuristic_version": versao, "semver_patch": None, "palavra_chave": False}
-    semver_patch = apenas_patch(tag_anterior, tag)
-    palavra_chave = tem_palavra_corretiva(mensagens)
+        return {"semver_patch": None, "palavra_chave": False, "palavra_chave_ampla": False}
+    mensagens = list(mensagens)
     return {
-        "heuristic_corrective": VERSOES[versao](semver_patch, palavra_chave),
-        "heuristic_version": versao,
-        "semver_patch": semver_patch,
-        "palavra_chave": palavra_chave,
+        "semver_patch": apenas_patch(tag_anterior, tag),
+        "palavra_chave": tem_palavra_corretiva(mensagens),
+        "palavra_chave_ampla": tem_palavra_corretiva(mensagens, ampla=True),
     }
+
+
+def corretiva(sinais: Mapping, versao: str = HEURISTIC_VERSION) -> bool:
+    """Aplica a regra de `versao` aos sinais de `sinais_da_release`."""
+    return bool(VERSOES[versao].regra(sinais))
 
 
 def classificar_releases(releases_commits: Iterable[Mapping], versao: str = HEURISTIC_VERSION) -> list[dict]:

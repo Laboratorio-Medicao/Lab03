@@ -124,7 +124,7 @@ Se nenhuma release for avaliável (por exemplo, repo com uma única release), as
 
 ## Heurística de release corretiva e CFR (b) (Issue #27)
 
-`metricas/heuristica.py` marca uma release S como **corretiva** comparando-a com a release de deploy anterior (a mesma `base` do `compare`) e olhando os commits entre as duas. A versão da regra sai em `heuristic_version`. A validação contra a amostra-ouro e o refino (v2, v3…, registradas em `VERSOES`) ficam na #28.
+`metricas/heuristica.py` marca uma release S como **corretiva** comparando-a com a release de deploy anterior (a mesma `base` do `compare`) e olhando os commits entre as duas. A versão da regra sai em `heuristic_version`. A validação contra a amostra-ouro e o refino ficam na #28 (versões candidatas em `VERSOES`, ver [Avaliação da heurística](#avaliação-da-heurística-issue-28)). O padrão continua sendo a v1 até a avaliação escolher a versão final.
 
 **Regra v1** (exemplo do professor, E§5: "só muda o patch **e** contém o commit fix"):
 
@@ -162,6 +162,36 @@ resumo_cfr_entrega(dados["commits"]["releases"], _janela(inicio, fim))
 - A saída por release (`classificar_releases`) não tem `release_id`, que o `collect_commits` não guarda. A #28 junta com os rótulos por `(full_name, tag_name)`.
 
 **Independência dos rótulos (E§6):** a heurística não foi calibrada nos rótulos e não é rodada sobre a amostra-ouro antes de os três arquivos `labels_*.csv` passarem no `validar_rotulos`.
+
+## Avaliação da heurística (Issue #28)
+
+`scripts/evaluate_heuristic.py` mede precisão, recall e F1 de cada versão da heurística contra o consenso da amostra-ouro, com `precision_recall_fscore_support` (E§6).
+
+**Pré-requisitos:** os três `labels_<avaliador>.csv` completos e o `consenso.csv` gerado por `scripts.agreement`, sem `pendente`. Os commits de cada release sorteada vêm do cache de commits do pipeline (`cache/commits/`). O que faltar vai à API, o que exige `GITHUB_TOKEN`; sem token, só o cache é usado e uma comparação ausente gera erro.
+
+```
+python -m scripts.evaluate_heuristic --config config.yaml
+```
+
+- **Guarda de independência:** se algum dos três rótulos (avaliadores de `sorteio.json`) não passar no `validar_rotulos`, o comando sai com código 1 **antes** de aplicar a heurística na amostra-ouro. Ele mostra só o número de pendências por arquivo. Com consenso incompleto, sai com código 2.
+- **Gera** em `data/amostra_ouro/`:
+  - `heuristica_amostra.csv`: sinais e resultado de cada versão por release;
+  - `avaliacao_heuristica.csv`: TP/FP/FN/TN, precisão, recall e F1 por versão;
+  - `avaliacao_heuristica.md`: tabela versão → F1 para a Metodologia (#31).
+- **Versões candidatas** (`metricas.heuristica.VERSOES`), combinando os dois sinais do enunciado. A palavra ampla aceita também `fixes`, `fixed`, `fixing`, `bugfix`, `reverted`… Em todas, tags não comparáveis usam só a palavra-chave e uma release sem anterior nunca é corretiva.
+
+  | Versão | Regra |
+  |---|---|
+  | v1 | só patch **e** palavra estrita (padrão) |
+  | v2 | só patch **ou** palavra estrita |
+  | v3 | só palavra estrita |
+  | v4 | só patch |
+  | v5 | só patch **e** palavra ampla |
+  | v6 | só patch **ou** palavra ampla |
+  | v7 | só palavra ampla |
+
+- **Escolha:** fica a v1, definida antes de ver os dados, se F1 ≥ 0,70; senão, a de maior F1 (empate → menor número). Como as versões são comparadas na mesma amostra, sem conjunto de validação separado, o F1 da escolhida tende a ser otimista. O relatório traz todas as versões e o número de corretivas do consenso; isso entra em Ameaças à validade.
+- **Depois da rodada:** se a escolhida não for a v1, atualizar `HEURISTIC_VERSION` em `metricas/heuristica.py` e recalcular o CFR (b) (#21). Uma versão nova (v8+, desenhada a partir dos erros da #30) entra em `VERSOES` e vira coluna de `heuristica_amostra.csv`, o que exige atualizar o dicionário de dados (o `test_dicionario` cobra).
 
 ## Testes e cobertura
 

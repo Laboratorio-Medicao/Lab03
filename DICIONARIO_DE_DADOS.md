@@ -109,3 +109,35 @@ arquivos. Gerado por `scripts/sample_gold.py` (#22); preenchido manualmente (#23
 | `compare_url` | str | URL | Idem `amostra_ouro.csv` |
 | `corretiva` | str | `sim` · `nao` | Esta release é corretiva? (rótulo **por release**) |
 | `observacoes` | str | — | Texto livre; opcional |
+
+## `data/amostra_ouro/heuristica_amostra.csv`
+
+Saída da heurística de release corretiva sobre as 300 releases da amostra-ouro, gerada por
+`scripts/evaluate_heuristic.py` (#28) **só depois** de os três rótulos estarem completos (E§6). Valores
+`sim`/`nao`. Uma versão nova em `metricas.heuristica.VERSOES` vira coluna nova e precisa entrar aqui.
+
+| Coluna | Tipo | Valores válidos | Descrição |
+|---|---|---|---|
+| `release_id` | int | ≥1 | Idem `amostra_ouro.csv`; junta com `item_id` de `consenso.csv` |
+| `full_name`, `tag_name` | str | — | Idem `amostra_ouro.csv` |
+| `base` | str | — | Tag da release anterior (do `compare_url`); vazio na 1ª release da história |
+| `status` | str | `ok` · `404` · `sem_anterior` | Status do `compare/{base}...{tag}` |
+| `mensagens_incompletas` | str | `sim` · `nao` | `compare` com 404 ou truncado: a palavra-chave pode faltar por falta de dado |
+| `semver_patch` | str | `sim` · `nao` · vazio | Só o patch subiu; vazio se as tags não são comparáveis ou sem anterior |
+| `palavra_chave` | str | `sim` · `nao` | `revert`/`hotfix`/`fix` como palavra inteira em algum commit |
+| `palavra_chave_ampla` | str | `sim` · `nao` | Também `fixes`, `fixed`, `fixing`, `bugfix`, `reverted`… |
+| `v1` … `v7` | str | `sim` · `nao` | Release corretiva segundo cada versão (regras em `avaliacao_heuristica.csv`) |
+
+## `data/amostra_ouro/avaliacao_heuristica.csv`
+
+Precisão, recall e F1 de cada versão da heurística frente ao consenso (E§6, #28). Positivo = corretiva.
+
+| Coluna | Tipo | Unidade | Descrição |
+|---|---|---|---|
+| `versao`, `descricao` | str | — | Versão e regra |
+| `n` | int | releases | Releases avaliadas |
+| `tp`, `fp`, `fn`, `tn` | int | releases | Matriz de confusão (heurística × consenso) |
+| `precisao` | float | proporção | TP / (TP + FP); 0 sem positivos previstos |
+| `recall` | float | proporção | TP / (TP + FN) |
+| `f1` | float | proporção | 2·P·R / (P + R) |
+| `escolhida` | str | `sim` · `nao` | v1 se F1 ≥ 0,70; senão a de maior F1 (empate → menor número) |
