@@ -103,6 +103,7 @@ heuristica_amostra.csv,tag_name,str,-,-,Idem amostra_ouro.csv
 heuristica_amostra.csv,base,str,-,-,"Tag da release anterior (extraída do compare_url); vazio se 1ª release da história"
 heuristica_amostra.csv,status,str,-,"ok, 404, sem_anterior","Status do compare/{base}...{tag} (pipeline.collect_commits)"
 heuristica_amostra.csv,mensagens_incompletas,str,-,"sim, nao","sim se o compare deu 404 ou veio truncado (palavra-chave pode faltar por falta de dado)"
+heuristica_amostra.csv,notas_indisponiveis,str,-,"sim, nao","sim se a release tem anterior e as release notes deram HTTP 404/410 (release ou repositório removido); só aceito para repositórios em --permitir-sem-notas"
 heuristica_amostra.csv,semver_patch,str,-,"sim, nao, vazio","Só o patch SemVer subiu em relação à base; vazio se as tags não são comparáveis ou sem anterior (metricas.heuristica.apenas_patch)"
 heuristica_amostra.csv,palavra_chave,str,-,"sim, nao","Algum commit cita revert/hotfix/fix como palavra inteira"
 heuristica_amostra.csv,palavra_chave_ampla,str,-,"sim, nao","Algum commit cita revert(s|ed), hotfix(es), fix(es|ed|ing) ou bugfix(es)"
@@ -118,10 +119,10 @@ heuristica_amostra.csv,v5,str,-,"sim, nao","Release corretiva segundo a versão 
 heuristica_amostra.csv,v6,str,-,"sim, nao","Release corretiva segundo a versão v6 de metricas.heuristica.VERSOES (descrição em avaliacao_heuristica.csv)"
 heuristica_amostra.csv,v7,str,-,"sim, nao","Release corretiva segundo a versão v7 de metricas.heuristica.VERSOES (descrição em avaliacao_heuristica.csv)"
 heuristica_amostra.csv,v8,str,-,"sim, nao","Release corretiva segundo a versão v8 de metricas.heuristica.VERSOES (descrição em avaliacao_heuristica.csv)"
-heuristica_amostra.csv,v9,str,-,"sim, nao","Release corretiva segundo a versão v9 de metricas.heuristica.VERSOES (descrição em avaliacao_heuristica.csv)"
+heuristica_amostra.csv,v9,str,-,"sim, nao, vazio","Release corretiva segundo a versão v9 de metricas.heuristica.VERSOES (descrição em avaliacao_heuristica.csv); vazio = não avaliável (sem release notes)"
 avaliacao_heuristica.csv,versao,str,-,"v1, v2, ...",Versão da heurística (metricas.heuristica.VERSOES)
 avaliacao_heuristica.csv,descricao,str,-,-,Regra da versão
-avaliacao_heuristica.csv,n,int,releases,>=1,Releases da amostra-ouro avaliadas
+avaliacao_heuristica.csv,n,int,releases,>=1,"Releases avaliáveis por esta versão (v9: sem as releases sem release notes); base de tp/fp/fn/tn, precisao, recall e f1"
 avaliacao_heuristica.csv,tp,int,releases,>=0,"Verdadeiros positivos: heurística = corretiva e consenso = corretiva"
 avaliacao_heuristica.csv,fp,int,releases,>=0,"Falsos positivos: heurística = corretiva e consenso = não"
 avaliacao_heuristica.csv,fn,int,releases,>=0,"Falsos negativos: heurística = não e consenso = corretiva"
@@ -129,7 +130,11 @@ avaliacao_heuristica.csv,tn,int,releases,>=0,"Verdadeiros negativos: heurística
 avaliacao_heuristica.csv,precisao,float,proporção,"[0, 1]","TP / (TP + FP); 0 sem positivos previstos (precision_recall_fscore_support, zero_division=0)"
 avaliacao_heuristica.csv,recall,float,proporção,"[0, 1]","TP / (TP + FN)"
 avaliacao_heuristica.csv,f1,float,proporção,"[0, 1]","2·P·R / (P + R)"
-avaliacao_heuristica.csv,escolhida,str,-,"sim, nao","Regra interna do script: v1 se F1 >= 0,70; senão a de maior F1 (empate: menor número). NÃO indica validação: nenhuma versão atingiu F1 >= 0,70 (ver docs/refino_heuristica.md)"
+avaliacao_heuristica.csv,n_comum,int,releases,>=1,Releases avaliáveis por todas as versões (subconjunto comum usado na comparação e na escolha)
+avaliacao_heuristica.csv,precisao_comum,float,proporção,"[0, 1]",Precisão no subconjunto comum
+avaliacao_heuristica.csv,recall_comum,float,proporção,"[0, 1]",Recall no subconjunto comum
+avaliacao_heuristica.csv,f1_comum,float,proporção,"[0, 1]",F1 no subconjunto comum
+avaliacao_heuristica.csv,escolhida,str,-,"sim, nao","Regra interna do script: v1 se f1_comum >= 0,70; senão a de maior f1_comum (empate: menor número). NÃO indica validação: nenhuma versão atingiu F1 >= 0,70 (ver docs/refino_heuristica.md)"
 erros_heuristica.csv,versao,str,-,"v1, v2, ...",Versão da heurística analisada (padrão: a escolhida em avaliacao_heuristica.csv)
 erros_heuristica.csv,release_id,int,-,>=1,Idem amostra_ouro.csv
 erros_heuristica.csv,full_name,str,-,-,Idem amostra_ouro.csv
@@ -193,3 +198,18 @@ metrics.csv,df_c3_class,str,-,"Elite, High, Medium, Low",Classificação DORA de
 metrics.csv,dora_c1,str,-,"Elite, High, Medium, Low, vazio","Classificação DORA geral da combinação C1 (release | LT(a) | CFR(a) | recovery): mediana floor das 4 notas; vazio se qualquer métrica indefinida (E§7 RQ07)"
 metrics.csv,dora_c2,str,-,"Elite, High, Medium, Low, vazio","Classificação DORA geral da combinação C2 (release+pré-release | LT(b) | CFR(b) | recovery); vazio se cfr_b indefinido"
 metrics.csv,dora_c3,str,-,"Elite, High, Medium, Low, vazio","Classificação DORA geral da combinação C3 (tag | LT(b) | CFR(a) | recovery)"
+concordancia.csv,dimensao,str,-,"tipo_projeto, entrega_real, corretiva",Dimensão rotulada (E§6)
+concordancia.csv,n_itens,int,itens,>=1,"Itens avaliados (repositórios em tipo_projeto/entrega_real; releases em corretiva)"
+concordancia.csv,n_avaliadores,int,avaliadores,>=2,Avaliadores (planilhas labels_<avaliador>.csv)
+concordancia.csv,kappa_fleiss,float,-,"[-1, 1], vazio","Kappa de Fleiss (statsmodels aggregate_raters + fleiss_kappa); vazio se não há variação nos rótulos"
+concordancia.csv,interpretacao,str,-,"pobre, leve, razoável, moderada, substancial, quase perfeita, indefinido",Landis & Koch (1977)
+concordancia.csv,concordancia_simples,float,proporção,"[0, 1]",Fração de itens em que todos os avaliadores deram o mesmo rótulo (informativa)
+consenso.csv,dimensao,str,-,"tipo_projeto, entrega_real, corretiva",Idem concordancia.csv
+consenso.csv,item_id,str,-,-,"full_name (dimensões por repositório) ou release_id (corretiva)"
+consenso.csv,descricao,str,-,-,"full_name, ou full_name + tag_name da release"
+consenso.csv,GuilhermeVieira05,str,-,-,Rótulo do avaliador GuilhermeVieira05 (labels_GuilhermeVieira05.csv)
+consenso.csv,marcosffp,str,-,-,Rótulo do avaliador marcosffp (labels_marcosffp.csv)
+consenso.csv,ALuiz19,str,-,-,Rótulo do avaliador ALuiz19 (labels_ALuiz19.csv)
+consenso.csv,rotulo_consenso,str,-,-,"Rótulo de consenso (PROTOCOLO_CONSENSO.md); vazio se pendente"
+consenso.csv,metodo,str,-,"unanimidade, maioria, reuniao, pendente","Como o consenso foi obtido (1-1-1 decidido em reunião via desempate.csv)"
+consenso.csv,justificativa,str,-,-,Justificativa da decisão em reunião (só método reuniao)

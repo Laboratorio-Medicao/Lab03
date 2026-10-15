@@ -103,9 +103,14 @@ def _acertou(linha: dict, versao: str, consenso: dict[str, int]) -> bool:
     return (linha[versao] == "sim") == bool(consenso[linha["release_id"]])
 
 
+def _avaliaveis(linhas: list[dict], *versoes: str) -> list[dict]:
+    """Linhas em que todas as `versoes` são avaliáveis (coluna vazia = sem release notes, ex.: v9)."""
+    return [l for l in linhas if all(l[v] != "" for v in versoes)]
+
+
 def matriz(linhas: list[dict], consenso: dict[str, int], versao: str) -> dict[str, int]:
     contagem = Counter()
-    for l in linhas:
+    for l in _avaliaveis(linhas, versao):
         previsto, real = l[versao] == "sim", bool(consenso[l["release_id"]])
         contagem[("t" if previsto == real else "f") + ("p" if previsto else "n")] += 1
     return {k: contagem[k] for k in ("tp", "fp", "fn", "tn")}
@@ -113,7 +118,7 @@ def matriz(linhas: list[dict], consenso: dict[str, int], versao: str) -> dict[st
 
 def listar_erros(linhas: list[dict], consenso: dict[str, int], versao: str, links: dict[str, dict]) -> list[dict]:
     erros = []
-    for l in linhas:
+    for l in _avaliaveis(linhas, versao):
         if _acertou(l, versao, consenso):
             continue
         tipo = "FP" if l[versao] == "sim" else "FN"
@@ -138,12 +143,16 @@ def preservar_anotacoes(erros: list[dict], anteriores: list[dict]) -> tuple[list
 
 
 def comparar_versoes(linhas: list[dict], consenso: dict[str, int], versao: str, avaliacao: list[dict]) -> list[dict]:
-    """Métricas de cada versão (de `avaliacao_heuristica.csv`) + quantas releases ela corrige/piora frente à `versao`."""
+    """Métricas de cada versão (de `avaliacao_heuristica.csv`) + quantas releases ela corrige/piora frente à `versao`.
+
+    Corrige/piora contados no subconjunto comum (todas as versões avaliáveis), o mesmo da escolha da #28.
+    """
+    comuns = _avaliaveis(linhas, *(a["versao"] for a in avaliacao))
     tabela = []
     for a in avaliacao:
         outra = a["versao"]
-        corrige = sum(1 for l in linhas if not _acertou(l, versao, consenso) and _acertou(l, outra, consenso))
-        piora = sum(1 for l in linhas if _acertou(l, versao, consenso) and not _acertou(l, outra, consenso))
+        corrige = sum(1 for l in comuns if not _acertou(l, versao, consenso) and _acertou(l, outra, consenso))
+        piora = sum(1 for l in comuns if _acertou(l, versao, consenso) and not _acertou(l, outra, consenso))
         tabela.append({**a, "corrige": corrige, "piora": piora})
     return tabela
 
@@ -178,14 +187,16 @@ def relatorio_md(versao: str, m: dict, erros: list[dict], comparacao: list[dict]
         "",
         f"## Comparação entre versões (frente à {versao})",
         "",
+        "No subconjunto comum (releases avaliáveis por todas as versões, o mesmo da escolha da #28). "
         "\"Corrige\": releases que a versão acerta e a analisada erra; \"piora\": o contrário.",
         "",
-        "| Versão | Regra | Precisão | Recall | F1 | TP | FP | FN | TN | Corrige | Piora |",
-        "|---|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|",
+        "| Versão | Regra | n comum | Precisão | Recall | F1 | Corrige | Piora |",
+        "|---|---|---:|---:|---:|---:|---:|---:|",
     ]
     partes += [
-        f"| {c['versao']} | {c['descricao']} | {float(c['precisao']):.2f} | {float(c['recall']):.2f} "
-        f"| {float(c['f1']):.2f} | {c['tp']} | {c['fp']} | {c['fn']} | {c['tn']} | {c['corrige']} | {c['piora']} |"
+        f"| {c['versao']} | {c['descricao']} | {c.get('n_comum', c['n'])} "
+        f"| {float(c.get('precisao_comum', c['precisao'])):.2f} | {float(c.get('recall_comum', c['recall'])):.2f} "
+        f"| {float(c.get('f1_comum', c['f1'])):.2f} | {c['corrige']} | {c['piora']} |"
         for c in comparacao
     ]
     partes += ["", "## Falsos positivos e falsos negativos", "",
