@@ -1,45 +1,72 @@
 ﻿grupo,verificacao,status,valor,detalhe
-invariante,0 ≤ CFR (a) ≤ 1,OK,0,100 itens verificados
-invariante,0 ≤ CFR (b) ≤ 1,N/A,,coluna ou arquivo necessário ausente
-invariante,lead time ≥ 0 (lt_release_median_h),OK,0,100 itens verificados
-invariante,lead time ≥ 0 (lt_commit_median_h),OK,0,100 itens verificados
-invariante,releases avaliadas + ignoradas = releases da janela (lead time),OK,0,100 itens verificados
-invariante,releases avaliadas + censuradas = releases da janela (CFR b),N/A,,coluna ou arquivo necessário ausente
+invariante,0 ≤ CFR (a) ≤ 1,OK,0,300 itens verificados
+invariante,0 ≤ CFR (b) ≤ 1,OK,0,298 itens verificados
+invariante,lead time ≥ 0 (lt_release_median_h),OK,0,300 itens verificados
+invariante,lead time ≥ 0 (lt_commit_median_h),OK,0,300 itens verificados
+invariante,releases avaliadas + ignoradas = releases da janela (lead time),OK,0,300 itens verificados
+invariante,releases avaliadas + censuradas = releases da janela (CFR b),OK,0,299 itens verificados
 invariante,toda coluna do CSV está no dicionário de dados,N/A,,coluna ou arquivo necessário ausente
 invariante,funil: entram − saem = restam em cada etapa,OK,0,4 itens verificados
-invariante,funil: selecionados + descartados = candidatos avaliados,OK,0,891 itens verificados
-invariante,funil: amostra final = repositórios do dataset,OK,0,100 itens verificados
-duplicatas,full_name repetido (sem diferenciar caixa),OK,0,100 únicos
-nulos,language,ALERTA,2,2.0% das linhas vazias
-nulos,rec_median_h,ALERTA,4,4.0% das linhas vazias
-nulos,prop_episodios_censurados,ALERTA,4,4.0% das linhas vazias
-nulos,rec_class,ALERTA,4,4.0% das linhas vazias
-nulos,dora_geral,ALERTA,4,4.0% das linhas vazias
-censura,episódios de falha censurados (RQ04),INFO,58,58 de 2838 episódios; 35 de 100 repositórios com ao menos um
-404,releases ignoradas por 404 no compare,INFO,2,2 de 100 repositórios afetados
-cobertura,releases sem anterior (1ª da história),INFO,31,31 de 100 repositórios afetados
-cobertura,releases sem commits novos,INFO,600,15 de 100 repositórios afetados
-datas,commits com data posterior à release (excluídos),INFO,135,12 de 100 repositórios afetados
-cobertura,dias de runs saturados (teto de 1.000 da API),INFO,0,0 de 100 repositórios afetados
-datas,commits sem author_date ou com data ilegível,INFO,0,de 140716 commits no cache
+invariante,funil: selecionados + descartados = candidatos avaliados,OK,0,2677 itens verificados
+invariante,funil: amostra final = repositórios do dataset,OK,0,300 itens verificados
+duplicatas,full_name repetido (sem diferenciar caixa),OK,0,300 únicos
+nulos,language,ALERTA,2,0.7% das linhas vazias
+nulos,rec_median_h,ALERTA,23,7.7% das linhas vazias
+nulos,prop_episodios_censurados,ALERTA,17,5.7% das linhas vazias
+nulos,rec_class,ALERTA,23,7.7% das linhas vazias
+nulos,dora_geral,ALERTA,23,7.7% das linhas vazias
+nulos,cfr_b,ALERTA,2,0.7% das linhas vazias
+nulos,cfr_b_class,ALERTA,2,0.7% das linhas vazias
+nulos,n_releases_avaliadas_cfr_b,ALERTA,1,0.3% das linhas vazias
+nulos,n_releases_censuradas_cfr_b,ALERTA,1,0.3% das linhas vazias
+nulos,n_releases_janela,ALERTA,1,0.3% das linhas vazias
+nulos,n_releases_falha_cfr_b,ALERTA,1,0.3% das linhas vazias
+nulos,n_releases_mensagens_incompletas_cfr_b,ALERTA,1,0.3% das linhas vazias
+nulos,heuristic_version,ALERTA,1,0.3% das linhas vazias
+nulos,n_releases_deploy_c2,ALERTA,1,0.3% das linhas vazias
+nulos,df_c2,ALERTA,1,0.3% das linhas vazias
+nulos,df_c2_class,ALERTA,1,0.3% das linhas vazias
+nulos,n_tags_janela,ALERTA,1,0.3% das linhas vazias
+nulos,df_c3,ALERTA,1,0.3% das linhas vazias
+nulos,df_c3_class,ALERTA,1,0.3% das linhas vazias
+nulos,n_compare_divergentes,ALERTA,1,0.3% das linhas vazias
+nulos,n_compare_truncados,ALERTA,1,0.3% das linhas vazias
+nulos,dora_c1,ALERTA,1,0.3% das linhas vazias
+nulos,dora_c2,ALERTA,1,0.3% das linhas vazias
+nulos,dora_c3,ALERTA,1,0.3% das linhas vazias
+nulos,n_metricas_dora_c1,ALERTA,1,0.3% das linhas vazias
+nulos,n_metricas_dora_c2,ALERTA,1,0.3% das linhas vazias
+nulos,n_metricas_dora_c3,ALERTA,1,0.3% das linhas vazias
+censura,episódios de falha censurados (RQ04),INFO,176,176 de 9062 episódios; 105 de 300 repositórios com ao menos um
+censura,releases censuradas no CFR (b) (últimos 7 dias),INFO,397,
+404,releases ignoradas por 404 no compare,INFO,6,5 de 300 repositórios afetados
+cobertura,releases sem anterior (1ª da história),INFO,93,93 de 300 repositórios afetados
+cobertura,releases sem commits novos,INFO,1686,51 de 300 repositórios afetados
+datas,commits com data posterior à release (excluídos),INFO,381,32 de 300 repositórios afetados
+cobertura,dias de runs saturados (teto de 1.000 da API),INFO,0,0 de 300 repositórios afetados
+datas,commits sem author_date ou com data ilegível,INFO,0,de 346044 commits no cache
 datas,commits com author_date depois do fim da janela (2026-10-02),INFO,0,
-linguagem,Python,INFO,17,17.0%
-linguagem,Rust,INFO,16,16.0%
-linguagem,TypeScript,INFO,15,15.0%
-linguagem,Go,INFO,12,12.0%
-linguagem,C++,INFO,7,7.0%
-linguagem,JavaScript,INFO,7,7.0%
-linguagem,C,INFO,4,4.0%
-linguagem,Kotlin,INFO,4,4.0%
-linguagem,C#,INFO,3,3.0%
-linguagem,(sem linguagem),INFO,2,2.0%
-linguagem,PHP,INFO,2,2.0%
-linguagem,Shell,INFO,2,2.0%
-linguagem,Swift,INFO,2,2.0%
-linguagem,Elixir,INFO,1,1.0%
-linguagem,Java,INFO,1,1.0%
-linguagem,Nix,INFO,1,1.0%
-linguagem,PowerShell,INFO,1,1.0%
-linguagem,SQF,INFO,1,1.0%
-linguagem,Scala,INFO,1,1.0%
-linguagem,Vue,INFO,1,1.0%
+linguagem,TypeScript,INFO,67,22.3%
+linguagem,Python,INFO,54,18.0%
+linguagem,Go,INFO,41,13.7%
+linguagem,Rust,INFO,30,10.0%
+linguagem,C++,INFO,21,7.0%
+linguagem,JavaScript,INFO,18,6.0%
+linguagem,Java,INFO,12,4.0%
+linguagem,Kotlin,INFO,9,3.0%
+linguagem,C,INFO,8,2.7%
+linguagem,C#,INFO,7,2.3%
+linguagem,Swift,INFO,6,2.0%
+linguagem,HTML,INFO,4,1.3%
+linguagem,PHP,INFO,4,1.3%
+linguagem,Scala,INFO,4,1.3%
+linguagem,Shell,INFO,3,1.0%
+linguagem,(sem linguagem),INFO,2,0.7%
+linguagem,Elixir,INFO,2,0.7%
+linguagem,Ruby,INFO,2,0.7%
+linguagem,Dart,INFO,1,0.3%
+linguagem,Nix,INFO,1,0.3%
+linguagem,PowerShell,INFO,1,0.3%
+linguagem,SQF,INFO,1,0.3%
+linguagem,Vala,INFO,1,0.3%
+linguagem,Vue,INFO,1,0.3%
