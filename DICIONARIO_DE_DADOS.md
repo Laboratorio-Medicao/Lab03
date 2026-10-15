@@ -47,7 +47,8 @@ O teste `tests/test_dicionario.py` falha se qualquer coluna dos CSVs não tiver 
 | `lt_class` | str | — | Classificação DORA de Lead Time (E§2); vazio se indefinido |
 | `cfr_class` | str | — | Classificação DORA de CFR (E§2); vazio se indefinido |
 | `rec_class` | str | — | Classificação DORA de Recovery (E§2); vazio se indefinido |
-| `dora_geral` | str | — | Pior nota entre as 4 métricas; vazio se qualquer uma indefinida (L10) |
+| `dora_geral` | str | — | Mediana (floor) das notas das métricas definidas; vazio só sem nenhuma (L10, decisão do grupo validada com o professor) |
+| `n_metricas_dora` | int | contagem | Métricas (de 4) que entraram em `dora_geral`; <4 = classificação parcial |
 
 ---
 
@@ -187,7 +188,7 @@ Todas as colunas de `repos_final.csv` são copiadas sem alteração. Consulte a 
 | `n_releases_janela` | int | releases | Total de releases de deploy na janela; `n_avaliadas + n_censuradas` |
 | `n_releases_falha_cfr_b` | int | releases | Releases avaliadas marcadas como falha (seguidas de corretiva ≤7 dias) |
 | `n_releases_mensagens_incompletas_cfr_b` | int | releases | Releases da janela com `compare` 404 ou truncado (diagnóstico; não entra na invariante) |
-| `heuristic_version` | str | — | Versão da heurística usada; `v8` na geração inicial |
+| `heuristic_version` | str | — | Versão da heurística usada no CFR (b); final congelada: `v12` |
 
 ### Colunas novas: variantes da RQ07
 
@@ -197,11 +198,14 @@ Todas as colunas de `repos_final.csv` são copiadas sem alteração. Consulte a 
 | `df_c2` | float | deploys/semana | DF **(C2)**: `n_releases_deploy_c2 / semanas_janela` (conta pré-releases) |
 | `df_c2_class` | str | — | Classificação DORA de DF para C2 |
 | `n_tags_janela` | int | tags | Tags com `author_date` dentro da janela: unidade de deploy da combinação C3 |
+| `n_compare_divergentes` | int | contagem | Releases da janela com `compare` `diverged` (anterior em outra linha de versão; LT pode inflar) |
+| `n_compare_truncados` | int | contagem | Releases da janela com `compare` truncado pelo limite da API |
 | `df_c3` | float | deploys/semana | DF **(C3)**: `n_tags_janela / semanas_janela` |
 | `df_c3_class` | str | — | Classificação DORA de DF para C3 |
 | `dora_c1` | str | — | Classificação DORA geral C1 (release · LT(a) · CFR(a) · recovery): mediana floor das 4 notas |
 | `dora_c2` | str | — | Classificação DORA geral C2 (release+pré-release · LT(b) · CFR(b) · recovery); vazio se `cfr_b` indefinido |
 | `dora_c3` | str | — | Classificação DORA geral C3 (tag · LT(b) · CFR(a) · recovery) |
+| `n_metricas_dora_c1`, `n_metricas_dora_c2`, `n_metricas_dora_c3` | int | contagem | Métricas definidas em cada combinação (<4 = parcial) |
 
 ---
 
