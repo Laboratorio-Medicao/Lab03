@@ -62,13 +62,17 @@ def deployment_frequency(releases: Iterable[Mapping], window: tuple) -> float:
     return n / semanas
 
 
-def classify_df(releases_por_semana: float) -> str:
+def classify_df(releases_por_semana: float, semanas: float | None = None) -> str:
+    """`semanas`: duração da janela em semanas. O corte "1 release/mês" é 12 releases na janela
+    (12/semanas); a janela oficial inclui o dia final e tem 366 dias, então usar o corte fixo de 365
+    dias rebaixaria para Low quem publica exatamente 12 releases. Sem `semanas`, usa 84/365."""
     v = _valida(releases_por_semana, "deployment frequency")
+    corte = 12 / semanas if semanas else DF_UM_POR_MES
     if v >= 7:
         return ELITE
     if v >= 1:
         return HIGH
-    if v >= DF_UM_POR_MES:
+    if v >= corte:
         return MEDIUM
     return LOW
 
@@ -109,6 +113,25 @@ def classify_recovery(horas: float) -> str:
     if v < HORAS_SEMANA:
         return MEDIUM
     return LOW
+
+
+def semanas_da_janela(window: tuple) -> float:
+    """Duração da janela (início, fim) em semanas, a mesma usada em `deployment_frequency`."""
+    return (_dt(window[1]) - _dt(window[0])).total_seconds() / (7 * 86400)
+
+
+def classify_overall_parcial(scores: Sequence[int]) -> str:
+    """Categoria geral com as métricas definidas (1 a 4 notas): mediana com floor.
+
+    Decisão do grupo (L10, validada com o professor): métrica indefinida não exclui o repositório;
+    o chamador deve sinalizar a classificação parcial (`n_metricas_dora` < 4).
+    """
+    notas = list(scores)
+    if not 1 <= len(notas) <= 4:
+        raise ValueError(f"esperadas de 1 a 4 notas, recebidas {len(notas)}")
+    if any(isinstance(n, bool) or not isinstance(n, int) or not 1 <= n <= 4 for n in notas):
+        raise ValueError(f"notas devem ser inteiros em 1..4: {notas!r}")
+    return _POR_SCORE[math.floor(statistics.median(notas))]
 
 
 def classify_overall(scores: Sequence[int]) -> str:

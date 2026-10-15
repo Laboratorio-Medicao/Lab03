@@ -6,9 +6,7 @@
 github:
   token_env: GITHUB_TOKEN        # nome da variável de ambiente (nunca o valor do token)
 
-# Janela de observação (12 meses, fixada pelo professor na abertura da S01).
-# ATENÇÃO — DATAS PROVISÓRIAS: o professor ainda não informou as datas (lacuna L01).
-# Os valores abaixo são só para testar (últimos 12 meses em 2026-10-02) e NÃO são oficiais.
+# Janela de observação (12 meses, OFICIAL: fixada pelo professor). O dia final é inclusivo (366 dias).
 # Para trocar, edite apenas estas duas linhas (AAAA-MM-DD, UTC); nada no código depende delas.
 # Se mudar a janela depois de coletar, refaça seleção e coleta (e limpe o cache).
 janela:

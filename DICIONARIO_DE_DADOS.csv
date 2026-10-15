@@ -15,7 +15,7 @@ resultados.csv,lt_commit_median_h,float,horas,>=0,"Lead time (b) por commit: pub
 resultados.csv,n_releases_avaliadas,int,releases,>=0,Releases com status=ok e ≥1 commit válido usadas no cálculo do lead time
 resultados.csv,n_releases_ignored_404,int,releases,>=0,Releases excluídas do lead time por 404 no endpoint /compare (E§11)
 resultados.csv,n_sem_anterior,int,releases,>=0,"Releases sem release anterior (1ª da história); compare_url vazio, excluídas do lead time (E§5)"
-resultados.csv,n_sem_commits_novos,int,releases,>=0,"Releases com compare OK mas sem commits novos no intervalo; excluídas do lead time (L07)"
+resultados.csv,n_sem_commits_novos,int,releases,>=0,"Releases com compare OK sem commit utilizável: sem commits novos no intervalo ou só com commits de data posterior à release (excluídos); fora do lead time (L07)"
 resultados.csv,n_commits_negativos,int,commits,>=0,"Commits com author_date posterior a published_at (dado incoerente da API); excluídos do lead time (L07)"
 resultados.csv,n_runs_coletados,int,runs,>=0,"Total de workflow runs coletados na janela (todos os eventos, todos os workflows)"
 resultados.csv,n_runs_dias_saturados,int,dias,>=0,"Dias em que a contagem da API atingiu o teto de 1.000 runs; dados desses dias podem estar incompletos"
@@ -32,7 +32,8 @@ resultados.csv,df_class,str,-,"Elite, High, Medium, Low, vazio","Classificação
 resultados.csv,lt_class,str,-,"Elite, High, Medium, Low, vazio","Classificação DORA de Lead Time (E§2); vazio se lt indefinido"
 resultados.csv,cfr_class,str,-,"Elite, High, Medium, Low, vazio","Classificação DORA de CFR (E§2); vazio se cfr indefinido"
 resultados.csv,rec_class,str,-,"Elite, High, Medium, Low, vazio","Classificação DORA de Recovery Time (E§2); vazio se rec indefinido"
-resultados.csv,dora_geral,str,-,"Elite, High, Medium, Low, vazio","Classificação DORA geral: pior nota entre as 4 métricas; vazio se qualquer métrica indefinida (L10)"
+resultados.csv,dora_geral,str,-,"Elite, High, Medium, Low, vazio","Classificação DORA geral: mediana (floor) das notas das métricas definidas; vazio só se nenhuma definida (L10, decisão do grupo validada com o professor); ver n_metricas_dora"
+resultados.csv,n_metricas_dora,int,contagem,"0–4","Quantas das 4 métricas (DF, LT a, CFR a, recuperação) entraram em dora_geral; <4 = classificação parcial"
 repos_final.csv,full_name,str,-,-,Mesmo que resultados.csv — lista congelada dos 300 repos concluídos para o sorteio da amostra-ouro (#19)
 repos_final.csv,stars,int,estrelas,>=0,Idem resultados.csv
 repos_final.csv,language,str,-,-,Idem resultados.csv
@@ -189,16 +190,21 @@ metrics.csv,n_releases_censuradas_cfr_b,int,releases,>=0,"Releases nos últimos 
 metrics.csv,n_releases_janela,int,releases,>=0,Total de releases de deploy (não-draft não-prerelease) na janela de observação
 metrics.csv,n_releases_falha_cfr_b,int,releases,>=0,"Releases avaliadas classificadas como falha (seguidas de corretiva em ≤7 dias)"
 metrics.csv,n_releases_mensagens_incompletas_cfr_b,int,releases,>=0,"Releases da janela com compare 404 ou truncado: palavra-chave pode ter faltado (diagnóstico; não entra na invariante de contagem)"
-metrics.csv,heuristic_version,str,-,-,"Versão da heurística usada no CFR (b): v8 na geração inicial; recalcular com versão final após refinamento (docs/refino_heuristica.md)"
+metrics.csv,heuristic_version,str,-,-,"Versão da heurística usada no CFR (b); versão final congelada: v12 (docs/validacao-independente.md)"
 metrics.csv,n_releases_deploy_c2,int,releases,>=0,"Releases + pré-releases na janela (não-draft, com published_at): unidade de deploy da combinação C2 da RQ07"
 metrics.csv,df_c2,float,deploys/semana,>=0,"DF variante C2 (E§7 RQ07): n_releases_deploy_c2 / semanas_janela (conta pré-releases)"
 metrics.csv,df_c2_class,str,-,"Elite, High, Medium, Low",Classificação DORA de DF para a combinação C2
 metrics.csv,n_tags_janela,int,tags,>=0,"Número de git tags com author_date dentro da janela: unidade de deploy da combinação C3 (E§7 RQ07)"
+metrics.csv,n_compare_divergentes,int,contagem,">= 0","Releases da janela cujo `compare` com a release anterior retornou status `diverged` (anterior em outra linha de versão; o lead time pode inflar) — pipeline.collect_commits"
+metrics.csv,n_compare_truncados,int,contagem,">= 0","Releases da janela cujo `compare` foi truncado pelo limite de commits da API — pipeline.collect_commits"
 metrics.csv,df_c3,float,deploys/semana,>=0,"DF variante C3 (E§7 RQ07): n_tags_janela / semanas_janela"
 metrics.csv,df_c3_class,str,-,"Elite, High, Medium, Low",Classificação DORA de DF para a combinação C3
 metrics.csv,dora_c1,str,-,"Elite, High, Medium, Low, vazio","Classificação DORA geral da combinação C1 (release | LT(a) | CFR(a) | recovery): mediana floor das 4 notas; vazio se qualquer métrica indefinida (E§7 RQ07)"
 metrics.csv,dora_c2,str,-,"Elite, High, Medium, Low, vazio","Classificação DORA geral da combinação C2 (release+pré-release | LT(b) | CFR(b) | recovery); vazio se cfr_b indefinido"
 metrics.csv,dora_c3,str,-,"Elite, High, Medium, Low, vazio","Classificação DORA geral da combinação C3 (tag | LT(b) | CFR(a) | recovery)"
+metrics.csv,n_metricas_dora_c1,int,contagem,"0–4","Métricas definidas na combinação C1 (<4 = classificação parcial)"
+metrics.csv,n_metricas_dora_c2,int,contagem,"0–4","Métricas definidas na combinação C2"
+metrics.csv,n_metricas_dora_c3,int,contagem,"0–4","Métricas definidas na combinação C3"
 concordancia.csv,dimensao,str,-,"tipo_projeto, entrega_real, corretiva",Dimensão rotulada (E§6)
 concordancia.csv,n_itens,int,itens,>=1,"Itens avaliados (repositórios em tipo_projeto/entrega_real; releases em corretiva)"
 concordancia.csv,n_avaliadores,int,avaliadores,>=2,Avaliadores (planilhas labels_<avaliador>.csv)
@@ -214,3 +220,8 @@ consenso.csv,ALuiz19,str,-,-,Rótulo do avaliador ALuiz19 (labels_ALuiz19.csv)
 consenso.csv,rotulo_consenso,str,-,-,"Rótulo de consenso (PROTOCOLO_CONSENSO.md); vazio se pendente"
 consenso.csv,metodo,str,-,"unanimidade, maioria, reuniao, pendente","Como o consenso foi obtido (1-1-1 decidido em reunião via desempate.csv)"
 consenso.csv,justificativa,str,-,-,Justificativa da decisão em reunião (só método reuniao)
+data/kanban-snapshots/kanban-snapshot-*.csv,number,int,-,-,"Número da Issue no GitHub — kanban/exporter.py"
+data/kanban-snapshots/kanban-snapshot-*.csv,title,str,-,-,"Título da Issue — kanban/exporter.py"
+data/kanban-snapshots/kanban-snapshot-*.csv,status,str,-,-,"Coluna do GitHub Projects: Backlog, Ready, In progress, In review ou Done — kanban/exporter.py"
+data/kanban-snapshots/kanban-snapshot-*.csv,assignees,str,-,-,"Responsáveis, separados por "|" — kanban/exporter.py"
+data/kanban-snapshots/kanban-snapshot-*.csv,labels,str,-,-,"Rótulos da Issue, separados por "|" — kanban/exporter.py"

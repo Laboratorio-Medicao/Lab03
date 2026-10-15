@@ -1,0 +1,51 @@
+number,title,status,assignees,labels
+1,"[FEAT] Sprint S01 — Pipeline de Coleta, Testes e CI",Done,ALuiz19|GuilhermeVieira05|marcosffp,feat|sprint-s01|lab03
+2,[REFINAMENTO] S0 - Sprint S01,Done,marcosffp,refinamento|sprint-s01|lab03
+3,"[S1] Sprint S01 — Esqueleto do repo, config, README base, CLI de comando único, CI (testes.yml) e hook de commit com #N",Done,marcosffp,tarefa|sprint-s01|lab03
+4,"[S2] Sprint S01 — Seleção de repositórios com fatiamento, descarte sem Actions, funil e coleta de metadados",Done,marcosffp,tarefa|sprint-s01|lab03
+5,[S3] Sprint S01 — Deployment frequency e classificação DORA (funções + testes de fronteira),Done,marcosffp,tarefa|sprint-s01|lab03
+6,[S4] Sprint S01 — Integração do pipeline e execução completa para 100 repositórios,Done,marcosffp,tarefa|sprint-s01|lab03
+7,[S5] Sprint S01 — Coleta de releases (incluindo as anteriores à janela),Done,ALuiz19,tarefa|sprint-s01|lab03
+8,[S6] Sprint S01 — Coleta de tags (variante da RQ07),Done,ALuiz19,tarefa|sprint-s01|lab03
+9,[S7] Sprint S01 — Coleta de commits entre releases (compare paginado e tratamento de 404),Done,ALuiz19,tarefa|sprint-s01|lab03
+10,[S8] Sprint S01 — Lead time (a) por release e (b) por commit + testes,Done,ALuiz19,tarefa|sprint-s01|lab03
+11,[S9] Sprint S01 — http_client com rate limit e backoff exponencial,Done,GuilhermeVieira05,tarefa|sprint-s01|lab03
+12,[S10] Sprint S01 — Cache local e retomada da coleta,Done,GuilhermeVieira05,tarefa|sprint-s01|lab03
+13,[S11] Sprint S01 — Coleta de workflow runs (fatiada por mês),Done,GuilhermeVieira05,tarefa|sprint-s01|lab03
+14,[S12] Sprint S01 — CFR (a) e tempo de recuperação + testes,Done,GuilhermeVieira05,tarefa|sprint-s01|lab03
+15,[S13] Sprint S01 — Artigo — Introdução e hipóteses informais por RQ,Done,marcosffp,tarefa|sprint-s01|lab03
+16,[S14] Sprint S01 — Snapshot do Kanban,Done,GuilhermeVieira05,tarefa|sprint-s01|lab03
+17,"[FEAT] Sprint S02 — Amostra Completa, Métricas e Validação Manual",Done,ALuiz19|GuilhermeVieira05|marcosffp,feat|sprint-s02|lab03
+18,[REFINAMENTO] S0 - Sprint S02,Done,ALuiz19,refinamento|sprint-s02|lab03
+19,[S1] Sprint S02 — Coleta completa (≥ 300 repositórios) e consolidação do dataset,Done,GuilhermeVieira05,tarefa|sprint-s02|lab03
+20,[S2] Sprint S02 — Dicionário de dados com verificação automática,Done,GuilhermeVieira05,tarefa|sprint-s02|lab03
+21,[S3] Sprint S02 — Cálculo de todas as variantes e `metrics.csv` (incluindo colunas da RQ07),Done,GuilhermeVieira05,tarefa|sprint-s02|lab03
+22,[S4] Sprint S02 — Sorteio da amostra-ouro (60 repos) e geração das planilhas de rotulagem,Done,marcosffp,tarefa|sprint-s02|lab03
+23,[S5] Sprint S02 — Rotulagem independente — Marcos (labels_marcos.csv),Done,marcosffp,tarefa|sprint-s02|lab03
+24,[S6] Sprint S02 — Rotulagem independente — Arthur (labels_arthur.csv),Done,ALuiz19,tarefa|sprint-s02|lab03
+25,[S7] Sprint S02 — Rotulagem independente — Guilherme (labels_guilherme.csv),Done,GuilhermeVieira05,tarefa|sprint-s02|lab03
+26,"[S8] Sprint S02 — Kappa de Fleiss (3 dimensões), consenso e protocolo de desempate",Done,marcosffp,tarefa|sprint-s02|lab03
+27,[S9] Sprint S02 — Heurística de release corretiva e CFR (b) + testes,Done,ALuiz19,tarefa|sprint-s02|lab03
+28,[S10] Sprint S02 — Avaliação (precisão/recall/F1) e refinamento da heurística,Done,ALuiz19,tarefa|sprint-s02|lab03
+29,[S11] Sprint S02 — (Bônus) Relatório de qualidade dos dados e invariantes automáticos,Done,marcosffp,tarefa|bonus|sprint-s02|lab03
+30,[S12] Sprint S02 — (Bônus) Análise de erros da heurística corretiva,Done,ALuiz19,tarefa|bonus|sprint-s02|lab03
+31,[S13] Sprint S02 — Artigo — Metodologia completa,Done,ALuiz19|GuilhermeVieira05|marcosffp,tarefa|sprint-s02|lab03
+32,[S14] Sprint S02 — Snapshot do Kanban,Done,ALuiz19,tarefa|sprint-s02|lab03
+33,[FEAT] Sprint S03 — Análise Estatística RQ01–RQ07,Backlog,ALuiz19|GuilhermeVieira05|marcosffp,feat|sprint-s03|lab03
+34,[REFINAMENTO] S0 - Sprint S03,Backlog,GuilhermeVieira05,refinamento|sprint-s03|lab03
+35,[S1] Sprint S03 — RQ01–RQ04 (mediana/IQR) e classificação DORA de referência (C1),Backlog,marcosffp,tarefa|sprint-s03|lab03
+36,[S2] Sprint S03 — Opção --repos-file e teste do README em máquina limpa,Backlog,marcosffp,tarefa|sprint-s03|lab03
+37,[S3] Sprint S03 — RQ05 — Spearman entre DF e CFR (a) e (b),Backlog,ALuiz19,tarefa|sprint-s03|lab03
+38,"[S4] Sprint S03 — RQ06 — Fatores × métricas: testes, Holm e tamanho de efeito",Backlog,ALuiz19,tarefa|sprint-s03|lab03
+39,[S5] Sprint S03 — (Bônus oficial +1) RQ08 — Rework rate,Backlog,ALuiz19,tarefa|bonus|sprint-s03|lab03
+40,[S6] Sprint S03 — RQ07 — Análise de sensibilidade (≥ 3 combinações),Backlog,GuilhermeVieira05,tarefa|sprint-s03|lab03
+41,[S7] Sprint S03 — (Bônus) Sensibilidade ampliada,Backlog,GuilhermeVieira05,tarefa|bonus|sprint-s03|lab03
+42,[S8] Sprint S03 — Artigo — Resultados e Discussão,Backlog,ALuiz19|GuilhermeVieira05|marcosffp,tarefa|sprint-s03|lab03
+43,[S9] Sprint S03 — Snapshot do Kanban,Backlog,marcosffp,tarefa|sprint-s03|lab03
+44,"[FEAT] Entrega Final — Replicação cruzada, Issues e Artigo completo",Backlog,ALuiz19|GuilhermeVieira05|marcosffp,feat|entrega-final|lab03
+45,[REFINAMENTO] S0 - Entrega Final,Backlog,ALuiz19,refinamento|entrega-final|lab03
+46,[S1] Entrega Final — Executar o pipeline do outro grupo (log e script em replicacao/),Backlog,marcosffp,tarefa|entrega-final|lab03
+47,[S2] Entrega Final — Comparar com o CSV original e abrir Issues no repo do grupo autor,Backlog,ALuiz19,tarefa|entrega-final|lab03
+48,[S3] Entrega Final — Tratar as Issues recebidas do grupo replicador,Backlog,GuilhermeVieira05,tarefa|entrega-final|lab03
+49,"[S4] Entrega Final — Artigo — Ameaças à validade, Replicação cruzada e revisão final",Backlog,ALuiz19|GuilhermeVieira05|marcosffp,tarefa|entrega-final|lab03
+50,[S5] Entrega Final — Snapshot do Kanban,Backlog,ALuiz19,tarefa|entrega-final|lab03

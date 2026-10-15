@@ -99,8 +99,9 @@ def resumo_lead_time(releases: Iterable[Mapping]) -> dict:
         "n_releases_avaliadas": len(por_release),
         "n_releases_ignored_404": sum(1 for r in releases if r.get("status") == STATUS_404),
         "n_sem_anterior": sum(1 for r in releases if r.get("status") == STATUS_SEM_ANTERIOR),
+        # sem commit utilizável: sem commits novos OU só com commits posteriores à release (excluídos)
         "n_sem_commits_novos": sum(
-            1 for r in releases if r.get("status") == STATUS_OK and not r.get("commits")
+            1 for r in releases if r.get("status") == STATUS_OK and not _duracoes(r)[0]
         ),
         "n_commits_negativos": n_negativos,
     }

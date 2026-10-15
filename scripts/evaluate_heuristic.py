@@ -43,8 +43,8 @@ ROTULO = {"sim": 1, "nao": 0}
 ARQ_HEURISTICA = "heuristica_amostra.csv"
 ARQ_AVALIACAO = "avaliacao_heuristica.csv"
 ARQ_RELATORIO = "avaliacao_heuristica.md"
-COLUNAS_SINAIS = ("semver_patch", "palavra_chave", "palavra_chave_ampla")
-COLUNAS_CONTEUDO = ("n_correcoes", "n_features", "nota_correcao", "nota_novidade")  # v8/v9
+COLUNAS_SINAIS = ("semver_patch", "patch_da_tag", "palavra_chave", "palavra_chave_ampla")
+COLUNAS_CONTEUDO = ("n_correcoes", "n_features", "nota_correcao", "nota_novidade", "nota_correcao_forte")  # v8–v11
 COLUNAS_HEURISTICA = (
     "release_id", "full_name", "tag_name", "base", "status", "mensagens_incompletas", *COLUNAS_SINAIS, *COLUNAS_CONTEUDO, *VERSOES,
 )
@@ -156,8 +156,14 @@ def coletar_notas(linhas_amostra: list[dict], client) -> dict[str, str | None]:
     """
     notas: dict[str, str | None] = {}
     for linha in linhas_amostra:
-        resp = client.get(f"/repos/{linha['full_name']}/releases/{linha['release_id']}")
-        corpo = resp.json() if resp.status_code == 200 else None
+        caminho = f"/repos/{linha['full_name']}/releases/{linha['release_id']}"
+        resp = client.get(caminho)
+        if resp.status_code in (404, 410):  # release removida: notas vazias (dado ausente, não erro)
+            notas[str(linha["release_id"])] = ""
+            continue
+        if resp.status_code != 200:  # falha transitória não pode encolher a amostra em silêncio
+            raise AvaliacaoError(f"HTTP {resp.status_code} ao buscar as release notes ({caminho}); nada foi gravado")
+        corpo = resp.json()
         notas[str(linha["release_id"])] = (corpo.get("body") or "") if isinstance(corpo, dict) else ""
     return notas
 

@@ -1,0 +1,20 @@
+{
+  "usuario_informado": "ALuiz19",
+  "exportado_em": "2026-10-15T16:11:41+00:00",
+  "labels_sha256": "b7d0e695dd9e360017ae69a82ce189a3f2c71e4a10e7d660c966831b94458797",
+  "completo": true,
+  "pendencias": 0,
+  "n_decisoes_registradas": 295,
+  "n_decisoes_finais": 0,
+  "n_finais_apos_ver_sugestao": 0,
+  "n_finais_iguais_a_sugestao": 0,
+  "n_sugestoes_exibidas": 0,
+  "decisoes_por_origem": {
+    "correcao_do_tipo_informada_pelo_usuario_como_resposta_do_avaliador": 15,
+    "transcricao_de_gabarito_preenchido_pelo_avaliador_no_md": 280
+  },
+  "autenticacao": "nenhuma: o nome é apenas informado",
+  "fonte_sugestoes": [
+    "IA (Claude Sonnet 5.5): leitura de notas truncadas e títulos de commits; não executou nem viu a heurística; sugestão única, igual para os 3 avaliadores"
+  ]
+}

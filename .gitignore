@@ -3,8 +3,9 @@
 .env.*
 *.token
 
-# Cache local da coleta (respostas da API)
+# Cache local da coleta (respostas da API) e log da execução
 cache/
+pipeline.log
 
 # Python
 __pycache__/

@@ -32,7 +32,7 @@ Sem a variável definida, o comando falha com uma mensagem explicando o que faze
 | Chave | Descrição |
 |---|---|
 | `github.token_env` | Nome da variável de ambiente que guarda o token (padrão `GITHUB_TOKEN`). |
-| `janela.inicio` / `janela.fim` | Janela de observação de 12 meses (`AAAA-MM-DD`, UTC). **Datas provisórias** no `config.yaml` até o professor informar as oficiais (L01); basta editar essas duas linhas. |
+| `janela.inicio` / `janela.fim` | Janela de observação de 12 meses (`AAAA-MM-DD`, UTC). Datas **oficiais** (fixadas pelo professor): 2025-10-02 a 2026-10-02, dia final inclusivo (366 dias). |
 | `caminhos.cache` | Pasta do cache local (ignorada pelo Git). |
 | `caminhos.saidas` | Pasta das saídas geradas (`funil.csv`, CSVs finais). |
 
@@ -42,7 +42,7 @@ Sem a variável definida, o comando falha com uma mensagem explicando o que faze
 python -m pipeline --config config.yaml
 ```
 
-O comando faz tudo: busca e filtra candidatos até completar `selecao.amostra_alvo` (100) repositórios, coleta os dados de cada um e grava em `outputs/`: `funil.csv`, `funil.md`, `resultados.csv` e `execucao.log`. O funil é regravado a cada 10 repositórios avaliados. A primeira execução leva horas (limite de 5.000 chamadas/hora); o pipeline espera sozinho quando a cota acaba.
+O comando faz tudo: busca e filtra candidatos até completar `selecao.amostra_alvo` (300) repositórios, coleta os dados de cada um e grava em `outputs/`: `funil.csv`, `funil.md`, `resultados.csv` e `execucao.log`. O funil é regravado a cada 10 repositórios avaliados. A primeira execução leva horas (limite de 5.000 chamadas/hora); o pipeline espera sozinho quando a cota acaba.
 
 **Interrupção e retomada.** Se parar (`Ctrl+C`, rede, rate limit), rode o mesmo comando: as respostas já feitas estão em `cache/` e não são repetidas. O log da 2ª execução mostra `cache_misses: 0` quando tudo já estava em cache. Só respostas 2xx e 404 vão para o cache; erros transitórios (403 de rate limit, 5xx) são refeitos.
 
@@ -69,7 +69,7 @@ Decisões do grupo (lacunas do enunciado, configuráveis em `selecao:`): critér
 
 `pipeline/execucao.py` encadeia **seleção → validação da amostra → coleta → métricas → resultados → funil → log** no mesmo comando. Ele só orquestra: seleção/funil vêm da #4; coleta, métricas, `http_client` e cache vêm das Issues #7–#14 e são injetados (`Etapas`, `client`).
 
-- **Amostra:** só repositórios `selecionado` no funil, sem duplicatas (`full_name` sem diferenciar caixa). `selecao.amostra_alvo` (100) não relaxa filtros nem completa a amostra: se passarem menos, o log avisa; se passarem mais, mantém os primeiros na ordem da seleção (critério de corte **não definido**, L17).
+- **Amostra:** só repositórios `selecionado` no funil, sem duplicatas (`full_name` sem diferenciar caixa). `selecao.amostra_alvo` (300) não relaxa filtros nem completa a amostra: se passarem menos, o log avisa; se passarem mais, mantém os primeiros na ordem da seleção (critério de corte **não definido**, L17).
 - **Erros:** falha em um repositório é registrada (`status=erro` em `resultados.csv` e no log) e a execução segue (política não definida no enunciado).
 - **Cache:** se o cliente expõe `estatisticas()`, o log registra o consumo da execução (diferença antes/depois) — útil para comparar a 1ª e a 2ª execução.
 - **Saídas** em `caminhos.saidas`: `funil.csv`/`funil.md`, `resultados.csv`, `execucao.log` (append; cada execução tem início e fim datados; o token nunca é logado).
@@ -190,11 +190,15 @@ python -m scripts.evaluate_heuristic --config config.yaml
   | v6 | só patch **ou** palavra ampla |
   | v7 | só palavra ampla |
   | v8 | commit de correção e nenhum de feature (olha o conteúdo dos commits) |
-  | v9 | v8 **ou** release notes com correção e sem novidade (exige `body`; fora do dataset final) |
+  | v9 | v8 **ou** release notes com correção e sem novidade (exige `body`) |
+  | v10 | rejeita bump major/minor; para patch, aceita notas amplas de correção |
+  | v11 | v10 **ou** patch cuja nota se declara release de correção/segurança |
+  | v12 | v11, com "patch" também pelo número da própria tag (cobre backports) — **versão final congelada** |
 
 - **Escolha (regra do script):** a v1, definida antes de ver os dados, só se F1 ≥ 0,70; senão, a de maior F1 (empate → menor número). Como nenhuma versão chegou a 0,70, `escolhida` em `avaliacao_heuristica.csv` é só essa regra interna, **não** validação. Como as versões são comparadas na mesma amostra, sem conjunto de validação separado, o F1 da escolhida tende a ser otimista. O relatório traz todas as versões e o número de corretivas do consenso; isso entra em Ameaças à validade.
-- **Status:** nenhuma versão atingiu F1 ≥ 0,70; a heurística é **não validada** e o CFR (b) é exploratório (v8 principal, v4 sensibilidade, v9 fora do dataset). Ver `docs/refino_heuristica.md`.
-- **Depois da rodada:** quem calcula o CFR (b) (#21) passa a versão explicitamente; nenhuma versão está validada. Uma versão nova (v8+, desenhada a partir dos erros da #30) entra em `VERSOES` e vira coluna de `heuristica_amostra.csv`, o que exige atualizar o dicionário de dados (o `test_dicionario` cobra).
+- **Status:** a v12 (F1 de desenvolvimento 0,722) foi avaliada uma única vez em amostra independente de 40 repositórios / 200 releases: **F1 = 0,689, IC95% 0,563–0,790**, abaixo da meta de 0,70. O professor aceitou o CFR (b) como medida **exploratória**; `data/metrics.csv` usa a v12 (`heuristic_version`). A v13 (`experimental/v13`) não foi promovida. Ver `docs/validacao-independente.md` e `docs/v13-registro.md`.
+- **Classificação geral com métrica indefinida:** usa a mediana (floor) das métricas definidas; `n_metricas_dora` (e `n_metricas_dora_c1..c3`) indica quando é parcial. Decisão do grupo, aceita pelo professor.
+- **Depois da rodada:** `scripts.compute_metrics` usa a v12 por padrão (`--versao` troca) e exige o `body` das releases. Para completar o cache a partir do zero: `GITHUB_TOKEN=... python -m scripts.recoletar_cache` (só coleta o que falta; recoleta releases sem `body`). Uma versão nova entra em `VERSOES` e vira coluna de `heuristica_amostra.csv`, o que exige atualizar o dicionário de dados (o `test_dicionario` cobra).
 
 ## Análise de erros da heurística (Issue #30, bônus)
 
@@ -277,8 +281,8 @@ requirements.txt       dependências fixadas
 python -m scripts.sample_gold --config config.yaml
 ```
 
-- **Lista:** `data/repos_final.csv` se existir (lista final congelada); senão `outputs/resultados.csv`. Troque com `--repos`.
-- **Janela oficial do professor:** edite só `janela.inicio`/`janela.fim` no `config.yaml`, rode `python -m pipeline` (apague o cache de commits/runs se a janela mudou) e rode o comando acima de novo. O sorteio muda com a janela e com a lista; `sorteio.json` registra ambas.
+- **Lista:** `outputs/resultados.csv` (a lista final congelada é `outputs/repos_final.csv`). Troque com `--repos`.
+- **Janela (oficial, fixada pelo professor):** só edite só `janela.inicio`/`janela.fim` no `config.yaml`, rode `python -m pipeline` (apague o cache de commits/runs se a janela mudou) e rode o comando acima de novo. O sorteio muda com a janela e com a lista; `sorteio.json` registra ambas.
 - **Proteção:** se alguma planilha já tiver rótulos, o script aborta para não apagar o trabalho dos avaliadores; `--forcar` sobrescreve.
 - **Preenchimento:** tipo do projeto e "releases = entregas reais" vão na primeira linha de cada repositório; "corretiva" em todas. Valores válidos em `data/amostra_ouro/LEIAME.md`.
 

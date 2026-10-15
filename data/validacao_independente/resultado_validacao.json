@@ -1,0 +1,65 @@
+{
+  "versao_heuristica": "v12",
+  "heuristica_sha256": "727b6c2bda1c9f58a64e6a79d212da82961035e465d0cdebc27f5e9328410048",
+  "avaliacao_independente": true,
+  "condicao": "independente apenas se os rótulos foram feitos conforme PROTOCOLO_ROTULAGEM_CEGA.md",
+  "n_releases": 200,
+  "n_repositorios": 40,
+  "n_positivas_consenso": 78,
+  "n": 200,
+  "tp": 51,
+  "fp": 19,
+  "fn": 27,
+  "tn": 103,
+  "precisao": 0.7285714285714285,
+  "recall": 0.6538461538461539,
+  "f1": 0.6891891891891891,
+  "intervalo_confianca": {
+    "b": 10000,
+    "seed": 20261015,
+    "n_repositorios": 40,
+    "f1_ic95": [
+      0.5629629629629629,
+      0.7901234567901235
+    ],
+    "precisao_ic95": [
+      0.6031746031746031,
+      0.8333333333333334
+    ],
+    "recall_ic95": [
+      0.5,
+      0.7894736842105263
+    ],
+    "p_f1_maior_igual_070": 0.427
+  },
+  "sem_itens_inacessiveis": null,
+  "n_inacessiveis": 0,
+  "concordancia": [
+    {
+      "dimensao": "tipo_projeto",
+      "n_itens": 40,
+      "n_avaliadores": 3,
+      "kappa_fleiss": "0.9175",
+      "interpretacao": "quase perfeita",
+      "concordancia_simples": "0.9250"
+    },
+    {
+      "dimensao": "entrega_real",
+      "n_itens": 40,
+      "n_avaliadores": 3,
+      "kappa_fleiss": "",
+      "interpretacao": "indefinido",
+      "concordancia_simples": "1.0000"
+    },
+    {
+      "dimensao": "corretiva",
+      "n_itens": 200,
+      "n_avaliadores": 3,
+      "kappa_fleiss": "0.8675",
+      "interpretacao": "quase perfeita",
+      "concordancia_simples": "0.9050"
+    }
+  ],
+  "meta_f1_070_atingida_no_ponto": false,
+  "calculado_em": "2026-10-15T16:12:28+00:00"
+}

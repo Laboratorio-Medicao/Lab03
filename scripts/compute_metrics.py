@@ -28,7 +28,7 @@ from pathlib import Path
 
 log = logging.getLogger("scripts.compute_metrics")
 
-VERSAO_HEURISTICA = "v8"
+VERSAO_HEURISTICA = "v12"  # versão final congelada (exige `body` nas releases); --versao troca
 
 
 class _ClienteSemHTTP:
@@ -67,13 +67,9 @@ def _categoria(funcao, valor) -> str:
 
 
 def _overall_c(notas: list[int]) -> str:
-    """Categoria geral da combinação: mediana das notas com floor."""
-    import math
-    import statistics
-    from metricas.dora import _POR_SCORE
-    if len(notas) != 4:
-        return ""
-    return _POR_SCORE[math.floor(statistics.median(notas))]
+    """Categoria geral da combinação: mediana (floor) das notas definidas; vazio sem nenhuma."""
+    from metricas.dora import classify_overall_parcial
+    return classify_overall_parcial(notas) if notas else ""
 
 
 def calcular_variantes(
@@ -81,8 +77,13 @@ def calcular_variantes(
     client,
     cache_dir: Path,
     janela: tuple[datetime, datetime],
+    versao: str = VERSAO_HEURISTICA,
 ) -> dict:
-    """Variantes de métricas para um repositório a partir do cache."""
+    """Variantes de métricas para um repositório a partir do cache.
+
+    `versao`: versão da heurística do CFR (b). Versões que leem as release notes (v9+) usam o `body`
+    das releases coletadas; sem ele, `DadosAusentesError` (nunca cai em outra regra).
+    """
     from pipeline.collect_commits import collect_commits
     from pipeline.collect_releases import collect_releases, pares_com_anterior
     from pipeline.collect_tags import collect_tags
@@ -101,8 +102,10 @@ def calcular_variantes(
 
     window_weeks = (janela[1] - janela[0]).total_seconds() / (7 * 86400)
 
-    # CFR (b) com heurística v8
-    cfr_b_dict = resumo_cfr_entrega(commits_data["releases"], janela, VERSAO_HEURISTICA)
+    # CFR (b): repassa as release notes (`body`) quando a coleta as guardou (a v9+ depende delas)
+    corpo = {r.get("tag_name"): r["body"] for r in releases if "body" in r}
+    itens = [{**r, "body": corpo[r["tag_name"]]} if r.get("tag_name") in corpo else r for r in commits_data["releases"]]
+    cfr_b_dict = resumo_cfr_entrega(itens, janela, versao)
 
     # C2: DF com release + pré-release (não-draft, com published_at, dentro da janela)
     n_c2 = sum(
@@ -121,18 +124,30 @@ def calcular_variantes(
 
     return {
         **cfr_b_dict,
+        "janela_semanas": window_weeks,
+        "n_compare_divergentes": commits_data.get("n_divergentes"),
+        "n_compare_truncados": commits_data.get("n_truncadas"),
         "n_releases_deploy_c2": n_c2,
         "df_c2": df_c2,
-        "df_c2_class": classify_df(df_c2),
+        "df_c2_class": classify_df(df_c2, window_weeks),
         "n_tags_janela": n_tags_janela,
         "df_c3": df_c3,
-        "df_c3_class": _categoria(classify_df, df_c3),
+        "df_c3_class": classify_df(df_c3, window_weeks) if df_c3 is not None else "",
     }
+
+
+def _num_s(v):
+    try:
+        return float(v) if v not in (None, "") else None
+    except (TypeError, ValueError):
+        return None
 
 
 def adicionar_classificacoes(linha_base: dict, variantes: dict) -> dict:
     """Computa classificações DORA para C1, C2 e C3 a partir das métricas base e variantes."""
     from metricas.dora import classify_cfr, classify_df, classify_lt, classify_recovery, score
+
+    semanas = _num_s(variantes.get("janela_semanas"))
 
     def _num(v):
         try:
@@ -153,38 +168,47 @@ def adicionar_classificacoes(linha_base: dict, variantes: dict) -> dict:
     def _score(fn, val):
         return score(fn(val)) if val is not None else None
 
+    def _score_df(val):
+        return score(classify_df(val, semanas)) if val is not None else None
+
     # C1: release | LT(a) | CFR(a) (reference — matches existing dora_geral)
     c1_notas = [
-        _score(classify_df, df_ref),
+        _score_df(df_ref),
         _score(classify_lt, lt_a),
         _score(classify_cfr, cfr_a),
         _score(classify_recovery, rec),
     ]
-    dora_c1 = _overall_c([n for n in c1_notas if n is not None]) if all(n is not None for n in c1_notas) else ""
+    n_c1 = [n for n in c1_notas if n is not None]
+    dora_c1 = _overall_c(n_c1)
 
     # C2: release+pré-release | LT(b) | CFR(b)
     c2_notas = [
-        _score(classify_df, df_c2),
+        _score_df(df_c2),
         _score(classify_lt, lt_b),
         _score(classify_cfr, cfr_b),
         _score(classify_recovery, rec),
     ]
-    dora_c2 = _overall_c([n for n in c2_notas if n is not None]) if all(n is not None for n in c2_notas) else ""
+    n_c2 = [n for n in c2_notas if n is not None]
+    dora_c2 = _overall_c(n_c2)
 
     # C3: tag | LT(b) | CFR(a)
     c3_notas = [
-        _score(classify_df, df_c3),
+        _score_df(df_c3),
         _score(classify_lt, lt_b),
         _score(classify_cfr, cfr_a),
         _score(classify_recovery, rec),
     ]
-    dora_c3 = _overall_c([n for n in c3_notas if n is not None]) if all(n is not None for n in c3_notas) else ""
+    n_c3 = [n for n in c3_notas if n is not None]
+    dora_c3 = _overall_c(n_c3)
 
     return {
         "cfr_b_class": _categoria(classify_cfr, cfr_b) if cfr_b is not None else "",
         "dora_c1": dora_c1,
         "dora_c2": dora_c2,
         "dora_c3": dora_c3,
+        "n_metricas_dora_c1": len(n_c1),
+        "n_metricas_dora_c2": len(n_c2),
+        "n_metricas_dora_c3": len(n_c3),
     }
 
 
@@ -203,9 +227,14 @@ COLUNAS_EXTRAS = [
     "n_tags_janela",
     "df_c3",
     "df_c3_class",
+    "n_compare_divergentes",
+    "n_compare_truncados",
     "dora_c1",
     "dora_c2",
     "dora_c3",
+    "n_metricas_dora_c1",
+    "n_metricas_dora_c2",
+    "n_metricas_dora_c3",
 ]
 
 
@@ -214,6 +243,7 @@ def compute(
     cache_dir: Path,
     saida: Path,
     janela: tuple[datetime, datetime],
+    versao: str = VERSAO_HEURISTICA,
 ) -> dict:
     """Lê repos_final.csv, calcula variantes e grava metrics.csv. Devolve contadores."""
     from pipeline.cache import CachedHttpClient
@@ -231,7 +261,7 @@ def compute(
         for i, linha in enumerate(linhas, 1):
             nome = linha["full_name"]
             try:
-                variantes = calcular_variantes(nome, client, cache_dir, janela)
+                variantes = calcular_variantes(nome, client, cache_dir, janela, versao)
                 classificacoes = adicionar_classificacoes(linha, variantes)
                 extra = {**variantes, **classificacoes}
                 row = {**linha, **{k: _f(extra.get(k)) for k in COLUNAS_EXTRAS}}
@@ -258,6 +288,7 @@ def main(argv: list[str] | None = None) -> None:
     parser.add_argument("--saida", default=None, help="caminho de saída (data/metrics.csv)")
     parser.add_argument("--inicio", default=None, help="início da janela YYYY-MM-DD")
     parser.add_argument("--fim", default=None, help="fim da janela YYYY-MM-DD")
+    parser.add_argument("--versao", default=VERSAO_HEURISTICA, help="versão da heurística do CFR (b)")
     args = parser.parse_args(argv)
 
     if args.repos and args.cache and args.saida and args.inicio and args.fim:
@@ -280,7 +311,7 @@ def main(argv: list[str] | None = None) -> None:
         sys.exit(1)
 
     janela = _janela(inicio, fim_d)
-    resultado = compute(repos_csv, cache_dir, saida, janela)
+    resultado = compute(repos_csv, cache_dir, saida, janela, args.versao)
     print(f"metrics.csv gravado: {resultado['n_ok']}/{resultado['n_total']} OK"
           + (f", {resultado['n_erros']} ERRO(S)" if resultado["n_erros"] else ""))
 

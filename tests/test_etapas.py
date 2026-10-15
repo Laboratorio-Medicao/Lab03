@@ -144,8 +144,10 @@ def test_calcular_metricas_classifica_e_conta_censura():
     assert (m["df_class"], m["rec_class"], m["dora_geral"]) == ("Low", "High", "Medium")
 
 
-def test_sem_metrica_definida_nao_inventa_classificacao_geral():
+def test_classificacao_geral_parcial_com_metricas_definidas_e_sinalizada():
     repo = RepoRecord("o/r", 10, None, "main", "2020-01-01T00:00:00Z")
     dados = {"releases": [], "commits": {"releases": []}, "runs": [], "tags": None}
     m = calcular_metricas(repo, dados, INICIO, FIM)
-    assert m["dora_geral"] == "" and m["lt_class"] == "" and m["cfr_a"] is None
+    # só DF é definida (0 releases → Low): classifica com ela e sinaliza 1 métrica
+    assert m["lt_class"] == "" and m["cfr_a"] is None
+    assert m["dora_geral"] == "Low" and m["n_metricas_dora"] == 1

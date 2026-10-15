@@ -1,0 +1,247 @@
+{
+  "versao_heuristica": "v12",
+  "descricao": "v11 com 'patch' também pelo número da própria tag (backports em outra linha)",
+  "heuristica_sha256": "727b6c2bda1c9f58a64e6a79d212da82961035e465d0cdebc27f5e9328410048",
+  "dados_congelados_sha256": "da6677befe265ea1aaaab1c6718539447935d133e5f0ea5a07a6bf9d9bf64e27",
+  "amostra_sha256": "ea0ffbe97a42ff93cfe98bee64a98427ab3bca327b93bc3b205f022076ed8624",
+  "sorteio_repos_sha256": "32a37fa18f9ac35cb44f4ba0088eae1476d6eff8857a465df5cab10dba7ef047",
+  "seed_releases": 7342,
+  "n_releases_por_repo": 5,
+  "janela": {
+    "inicio": "2025-10-02",
+    "fim": "2026-10-02"
+  },
+  "avaliadores": [
+    "GuilhermeVieira05",
+    "marcosffp",
+    "ALuiz19"
+  ],
+  "n_repos": 40,
+  "n_releases": 200,
+  "heuristica_executada_no_pacote": false,
+  "proveniencia": {
+    "caches_leitura_somente_leitura": [
+      "/Users/marcos/Developer/Lab03/cache"
+    ],
+    "cache_novo": "cache/validacao_independente",
+    "permitir_api": true,
+    "respostas_por_origem": {
+      "leitura": 121,
+      "cache_novo": 0,
+      "api": 245
+    },
+    "por_repositorio": {
+      "0-ai-ug/cate": {
+        "leitura": 6,
+        "cache_novo": 0,
+        "api": 0
+      },
+      "0xsline/openchatcut": {
+        "leitura": 7,
+        "cache_novo": 0,
+        "api": 0
+      },
+      "14790897/handwriting-web": {
+        "leitura": 6,
+        "cache_novo": 0,
+        "api": 0
+      },
+      "1panel-dev/maxkb": {
+        "leitura": 52,
+        "cache_novo": 0,
+        "api": 0
+      },
+      "?": {
+        "leitura": 3,
+        "cache_novo": 0,
+        "api": 13
+      },
+      "abpframework/abp": {
+        "leitura": 41,
+        "cache_novo": 0,
+        "api": 0
+      },
+      "acsandmann/rift": {
+        "leitura": 6,
+        "cache_novo": 0,
+        "api": 0
+      },
+      "aden-hive/hive": {
+        "leitura": 0,
+        "cache_novo": 0,
+        "api": 8
+      },
+      "adsbypasser/adsbypasser": {
+        "leitura": 0,
+        "cache_novo": 0,
+        "api": 6
+      },
+      "advplyr/audiobookshelf": {
+        "leitura": 0,
+        "cache_novo": 0,
+        "api": 7
+      },
+      "aeharding/voyager": {
+        "leitura": 0,
+        "cache_novo": 0,
+        "api": 6
+      },
+      "agegr/pi-web": {
+        "leitura": 0,
+        "cache_novo": 0,
+        "api": 6
+      },
+      "agentbay-ai/wuying-agentbay-sdk": {
+        "leitura": 0,
+        "cache_novo": 0,
+        "api": 8
+      },
+      "agentgateway/agentgateway": {
+        "leitura": 0,
+        "cache_novo": 0,
+        "api": 8
+      },
+      "agents365-ai/video-podcast-maker": {
+        "leitura": 0,
+        "cache_novo": 0,
+        "api": 6
+      },
+      "agenui/agenui": {
+        "leitura": 0,
+        "cache_novo": 0,
+        "api": 6
+      },
+      "ai-ql/tuui": {
+        "leitura": 0,
+        "cache_novo": 0,
+        "api": 6
+      },
+      "ai/nanoid": {
+        "leitura": 0,
+        "cache_novo": 0,
+        "api": 8
+      },
+      "aidanpark/openclaw-android": {
+        "leitura": 0,
+        "cache_novo": 0,
+        "api": 6
+      },
+      "aidoku/aidoku": {
+        "leitura": 0,
+        "cache_novo": 0,
+        "api": 8
+      },
+      "aidotnet/opendeepwiki": {
+        "leitura": 0,
+        "cache_novo": 0,
+        "api": 6
+      },
+      "ail-project/ail-framework": {
+        "leitura": 0,
+        "cache_novo": 0,
+        "api": 10
+      },
+      "aio-libs/yarl": {
+        "leitura": 0,
+        "cache_novo": 0,
+        "api": 7
+      },
+      "akaunting/akaunting": {
+        "leitura": 0,
+        "cache_novo": 0,
+        "api": 9
+      },
+      "akii09/pdfx": {
+        "leitura": 0,
+        "cache_novo": 0,
+        "api": 6
+      },
+      "akkadotnet/akka.net": {
+        "leitura": 0,
+        "cache_novo": 0,
+        "api": 6
+      },
+      "alasql/alasql": {
+        "leitura": 0,
+        "cache_novo": 0,
+        "api": 6
+      },
+      "alchemillahq/sylve": {
+        "leitura": 0,
+        "cache_novo": 0,
+        "api": 11
+      },
+      "alchemy-run/alchemy": {
+        "leitura": 0,
+        "cache_novo": 0,
+        "api": 6
+      },
+      "alexandergrooff/mermaid-ascii": {
+        "leitura": 0,
+        "cache_novo": 0,
+        "api": 6
+      },
+      "alexballas/go2tv": {
+        "leitura": 0,
+        "cache_novo": 0,
+        "api": 7
+      },
+      "alexheretic/ab-av1": {
+        "leitura": 0,
+        "cache_novo": 0,
+        "api": 6
+      },
+      "algorand/go-algorand": {
+        "leitura": 0,
+        "cache_novo": 0,
+        "api": 6
+      },
+      "alielsokary/caskhub": {
+        "leitura": 0,
+        "cache_novo": 0,
+        "api": 6
+      },
+      "alireza0/s-ui": {
+        "leitura": 0,
+        "cache_novo": 0,
+        "api": 6
+      },
+      "allenai/olmocr": {
+        "leitura": 0,
+        "cache_novo": 0,
+        "api": 8
+      },
+      "alloy-rs/alloy": {
+        "leitura": 0,
+        "cache_novo": 0,
+        "api": 6
+      },
+      "almond-sh/almond": {
+        "leitura": 0,
+        "cache_novo": 0,
+        "api": 7
+      },
+      "alpic-ai/skybridge": {
+        "leitura": 0,
+        "cache_novo": 0,
+        "api": 6
+      },
+      "alpinejs/alpine": {
+        "leitura": 0,
+        "cache_novo": 0,
+        "api": 6
+      },
+      "amalshaji/portr": {
+        "leitura": 0,
+        "cache_novo": 0,
+        "api": 6
+      }
+    }
+  },
+  "repositorios_com_falha": [],
+  "n_status_compare_404": 0,
+  "n_compare_truncado": 0,
+  "n_sem_corpo": 0,
+  "avisos": [],
+  "criado_em": "2026-10-15T15:08:16+00:00"
+}
