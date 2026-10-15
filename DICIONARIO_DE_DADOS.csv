@@ -220,3 +220,8 @@ consenso.csv,ALuiz19,str,-,-,Rótulo do avaliador ALuiz19 (labels_ALuiz19.csv)
 consenso.csv,rotulo_consenso,str,-,-,"Rótulo de consenso (PROTOCOLO_CONSENSO.md); vazio se pendente"
 consenso.csv,metodo,str,-,"unanimidade, maioria, reuniao, pendente","Como o consenso foi obtido (1-1-1 decidido em reunião via desempate.csv)"
 consenso.csv,justificativa,str,-,-,Justificativa da decisão em reunião (só método reuniao)
+data/kanban-snapshots/kanban-snapshot-*.csv,number,int,-,-,"Número da Issue no GitHub — kanban/exporter.py"
+data/kanban-snapshots/kanban-snapshot-*.csv,title,str,-,-,"Título da Issue — kanban/exporter.py"
+data/kanban-snapshots/kanban-snapshot-*.csv,status,str,-,-,"Coluna do GitHub Projects: Backlog, Ready, In progress, In review ou Done — kanban/exporter.py"
+data/kanban-snapshots/kanban-snapshot-*.csv,assignees,str,-,-,"Responsáveis, separados por "|" — kanban/exporter.py"
+data/kanban-snapshots/kanban-snapshot-*.csv,labels,str,-,-,"Rótulos da Issue, separados por "|" — kanban/exporter.py"
