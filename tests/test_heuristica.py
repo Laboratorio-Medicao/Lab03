@@ -14,7 +14,9 @@ from metricas.heuristica import (
     classificar_releases,
     corretiva,
     parse_semver,
+    sinais_conteudo,
     sinais_da_release,
+    DadosAusentesError,
     tem_palavra_corretiva,
 )
 
@@ -121,6 +123,7 @@ def test_exemplo_professor_patch_com_fix_e_corretiva():
         "heuristic_corrective": True,
         "heuristic_version": "v1",
         "semver_patch": True,
+        "patch_da_tag": True,
         "palavra_chave": True,
         "palavra_chave_ampla": True,
     }
@@ -211,10 +214,10 @@ def test_palavra_ampla_nao_casa(mensagem):
 
 def test_sinais_sem_anterior_e_com_anterior():
     assert sinais_da_release(None, "v1.0.1", ["fix: x"]) == {
-        "semver_patch": None, "palavra_chave": False, "palavra_chave_ampla": False,
+        "semver_patch": None, "patch_da_tag": None, "palavra_chave": False, "palavra_chave_ampla": False,
     }
     assert sinais_da_release("v1.0.0", "v1.0.1", (m for m in ["fixes #2"])) == {
-        "semver_patch": True, "palavra_chave": False, "palavra_chave_ampla": True,
+        "semver_patch": True, "patch_da_tag": True, "palavra_chave": False, "palavra_chave_ampla": True,
     }
 
 
@@ -243,7 +246,7 @@ def test_regras_das_versoes(entrada, esperado):
 
 
 def test_versoes_registradas_com_descricao_e_v1_padrao():
-    assert list(VERSOES) == [f"v{i}" for i in range(1, 11)]
+    assert list(VERSOES) == [f"v{i}" for i in range(1, 13)]
     assert all(v.descricao for v in VERSOES.values())
     assert HEURISTIC_VERSION == "v1"
 
@@ -425,3 +428,73 @@ def test_corretiva_versoes_anteriores_nao_exigem_sinais_de_notas():
     sinais = {"semver_patch": True, "palavra_chave": True, "palavra_chave_ampla": True}
     assert [corretiva(sinais, f"v{i}") for i in range(1, 8)] == [True] * 7
     assert corretiva({"n_correcoes": 1, "n_features": 0}, "v8") is True
+
+
+# --- v11 (refino pós-auditoria): v10 OU (só patch E nota declara release de correção/segurança) ---------
+
+def _sinais_v11(tag_anterior, tag, mensagens, notas):
+    return avaliar(tag_anterior, tag, mensagens, "v11", notas=notas)
+
+
+def test_v11_nota_de_security_release_em_patch_sem_palavra_nos_commits():
+    # FN da v10 na amostra-ouro: bump de patch, commits sem `fix`, nota "This is a security release"
+    r = _sinais_v11("5.3.4", "5.3.5", ["Return comments to users who have access"], "**This is a security release** addressing two issues. Added new features.")
+    assert r["nota_correcao_forte"] is True
+    assert r["heuristic_corrective"] is True
+    assert avaliar("5.3.4", "5.3.5", ["Return comments to users who have access"], "v10",
+                   notas="**This is a security release** addressing two issues. Added new features.")["heuristic_corrective"] is False
+
+
+def test_v11_nao_aplica_fora_de_patch():
+    # minor/major: mesmo com a nota forte, v11 mantém a rejeição da v10
+    assert _sinais_v11("2.3.0", "2.4.0", ["feat: x"], "This is a patch release")["heuristic_corrective"] is False
+    assert _sinais_v11("2.3.0", "3.0.0", ["feat: x"], "security release")["heuristic_corrective"] is False
+
+
+def test_v11_nota_fraca_nao_basta():
+    # menção passageira a `fixed` sem se declarar release de correção continua negativa (regra da v10)
+    r = _sinais_v11("1.0.0", "1.0.1", ["feat: add x", "feat: add y"], "Added x. Added y. Fixed typo. New features.")
+    assert r["nota_correcao_forte"] is False
+    assert r["heuristic_corrective"] is False
+
+
+def test_v11_nao_regride_o_que_a_v10_aceita():
+    msgs = ["fix: crash ao abrir arquivo"]
+    assert avaliar("2.3.0", "2.3.1", msgs, "v10", notas="")["heuristic_corrective"] is True
+    assert _sinais_v11("2.3.0", "2.3.1", msgs, "")["heuristic_corrective"] is True
+
+
+def test_v11_exige_notas_e_sem_anterior_nunca_e_corretiva():
+    with pytest.raises(DadosAusentesError):
+        avaliar("1.0.0", "1.0.1", ["x"], "v11")
+    assert avaliar(None, "1.0.0", [], "v11")["heuristic_corrective"] is False
+
+
+def test_sinais_conteudo_sem_notas_deixa_nota_correcao_forte_none():
+    assert sinais_conteudo(["fix: a"])["nota_correcao_forte"] is None
+
+
+# --- v12: "patch" também pelo número da própria tag (release anterior cronológica em outra linha) ---------
+
+def test_v12_backport_em_outra_linha_conta_como_patch_pela_propria_tag():
+    # 5.0.1 publicada logo após 4.4.3: vista pela base cronológica é "major", mas é patch da linha 5.0
+    notas = "Security fix: bounds the multiparameter position in search params"
+    msgs = ["Update gem release docs", "Add CI with Rails 8.1", "fix: bound parameter depth", "Add DeepWiki badge"]
+    v11 = avaliar("4.4.3", "5.0.1", msgs, "v11", notas=notas)
+    v12 = avaliar("4.4.3", "5.0.1", msgs, "v12", notas=notas)
+    assert v11["semver_patch"] is False and v11["patch_da_tag"] is True
+    assert v11["heuristic_corrective"] is False  # v10/v11 rejeitam major/minor
+    assert v12["heuristic_corrective"] is True
+
+
+def test_v12_nao_trata_x_y_0_nem_prerelease_como_patch():
+    notas = "This is a patch release. Fixes a crash."
+    assert avaliar("1.0.0", "1.1.0", ["fix: x"], "v12", notas=notas)["patch_da_tag"] is False
+    assert avaliar("1.0.0", "1.0.1-rc1", ["fix: x"], "v12", notas=notas)["patch_da_tag"] is False
+    assert avaliar("v2025.1", "v2025.2", ["feat: x"], "v12", notas=notas)["patch_da_tag"] is False  # não-SemVer
+
+
+def test_v12_sem_anterior_nunca_e_corretiva_e_exige_notas():
+    assert avaliar(None, "1.0.1", [], "v12")["heuristic_corrective"] is False
+    with pytest.raises(DadosAusentesError):
+        avaliar("1.0.0", "1.0.1", ["fix: x"], "v12")

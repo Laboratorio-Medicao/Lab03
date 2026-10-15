@@ -74,6 +74,13 @@ _NOTA_NOVIDADE = re.compile(
     r"|now (?:supports?|available))\b|✨|🚀|💝",
     re.IGNORECASE,
 )
+# v11: a nota se declara release de correção/segurança (não só menciona `fix` de passagem).
+_NOTA_CORRECAO_FORTE = re.compile(
+    r"\b(?:security (?:fix|release|update)|patch release|bug ?fix release|hotfix"
+    r"|fixes? (?:a )?(?:crash|regression|vulnerabilit\w+)|this is a (?:patch|bug ?fix)"
+    r"|mainly (?:a )?bug ?fix)\b",
+    re.IGNORECASE,
+)
 _LIMPA_NOTA = re.compile(r"https?://\S+|\(#\d+\)|#\d+")
 _MAX_NOTA = 1500
 
@@ -145,11 +152,13 @@ def sinais_conteudo(mensagens: Iterable[str | None], notas: str | None = None) -
         "n_features": sum(1 for a in substantivos if _ASSUNTO_FEATURE.search(a)),
         "nota_correcao": None,
         "nota_novidade": None,
+        "nota_correcao_forte": None,
     }
     if notas is not None:
         texto = _LIMPA_NOTA.sub(" ", notas)[:_MAX_NOTA]
         sinais["nota_correcao"] = bool(_NOTA_CORRECAO.search(texto))
         sinais["nota_novidade"] = bool(_NOTA_NOVIDADE.search(texto))
+        sinais["nota_correcao_forte"] = bool(_NOTA_CORRECAO_FORTE.search(texto))
     return sinais
 
 
@@ -200,6 +209,21 @@ def _v10(sinais: Mapping) -> bool:
     return v8 or nota
 
 
+def _v11(sinais: Mapping) -> bool:
+    """v11 = v10 OU (bump só de patch E a nota se declara release de correção/segurança)."""
+    return _v10(sinais) or (sinais.get("semver_patch") is True and bool(sinais.get("nota_correcao_forte")))
+
+
+def _v12(sinais: Mapping) -> bool:
+    """v12 = v11 com "patch" definido também pelo número da própria tag (`patch_da_tag`).
+
+    Corrige o caso em que a release anterior cronológica é de outra linha de versão e o bump parece
+    major/minor (ex.: `5.0.1` após `4.4.3`), o que a v10/v11 rejeitavam por desenho.
+    """
+    patch = True if sinais.get("patch_da_tag") else sinais.get("semver_patch")
+    return _v11({**sinais, "semver_patch": patch})
+
+
 VERSOES: dict[str, Versao] = {
     "v1": Versao("só patch E palavra estrita", _combina("e", "palavra_chave")),
     "v2": Versao("só patch OU palavra estrita", _combina("ou", "palavra_chave")),
@@ -218,6 +242,18 @@ VERSOES: dict[str, Versao] = {
     "v10": Versao(
         "rejeita major/minor; patch: v8 OU nota corretiva ampla (≥4 fixes); não-SemVer: v9",
         _v10,
+        usa_conteudo=True,
+        exige_notas=True,
+    ),
+    "v11": Versao(
+        "v10 OU (só patch E nota declara release de correção/segurança)",
+        _v11,
+        usa_conteudo=True,
+        exige_notas=True,
+    ),
+    "v12": Versao(
+        "v11 com 'patch' também pelo número da própria tag (backports em outra linha)",
+        _v12,
         usa_conteudo=True,
         exige_notas=True,
     ),
@@ -267,10 +303,14 @@ def avaliar(
 def sinais_da_release(tag_anterior: str | None, tag: str | None, mensagens: Iterable[str | None]) -> dict:
     """Sinais da heurística para `tag`; sem release anterior não há sinal (nunca corretiva)."""
     if tag_anterior is None:
-        return {"semver_patch": None, "palavra_chave": False, "palavra_chave_ampla": False}
+        return {"semver_patch": None, "patch_da_tag": None, "palavra_chave": False, "palavra_chave_ampla": False}
     mensagens = list(mensagens)
+    sv = parse_semver(tag)
     return {
         "semver_patch": apenas_patch(tag_anterior, tag),
+        # v12: a tag é por si só uma release de patch (X.Y.Z, Z > 0, sem pré-release), mesmo que a release
+        # anterior *cronológica* esteja em outra linha de versão (backports: 5.0.1 publicada depois de 4.4.3)
+        "patch_da_tag": bool(sv is not None and sv.pre is None and sv.patch > 0),
         "palavra_chave": tem_palavra_corretiva(mensagens),
         "palavra_chave_ampla": tem_palavra_corretiva(mensagens, ampla=True),
     }

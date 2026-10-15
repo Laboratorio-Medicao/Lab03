@@ -144,7 +144,7 @@ def test_df_c2_inclui_prerelease(cache_dir):
             raise RuntimeError("HTTP proibido")
 
     client = CachedHttpClient(_NoHTTP(), cache_dir)
-    v = calcular_variantes("test/repo", client, cache_dir, JANELA)
+    v = calcular_variantes("test/repo", client, cache_dir, JANELA, "v8")
     assert v["n_releases_deploy_c2"] == 3  # 2 releases + 1 pré-release
 
 
@@ -162,7 +162,7 @@ def test_df_c2_maior_que_c1(cache_dir):
             raise RuntimeError()
 
     client = CachedHttpClient(_NoHTTP(), cache_dir)
-    v = calcular_variantes("test/repo", client, cache_dir, JANELA)
+    v = calcular_variantes("test/repo", client, cache_dir, JANELA, "v8")
     window_weeks = (JANELA[1] - JANELA[0]).total_seconds() / (7 * 86400)
     df_c1 = 2 / window_weeks  # 2 releases não-prerelease
     assert v["df_c2"] >= df_c1
@@ -182,13 +182,13 @@ def test_df_c3_conta_tags_na_janela(cache_dir):
             raise RuntimeError()
 
     client = CachedHttpClient(_NoHTTP(), cache_dir)
-    v = calcular_variantes("test/repo", client, cache_dir, JANELA)
+    v = calcular_variantes("test/repo", client, cache_dir, JANELA, "v8")
     # _T4_FORA está em 2024 → fora; _T1, _T2, _T3 dentro
     assert v["n_tags_janela"] == 3
 
 
-def test_cfr_b_usa_versao_v8(cache_dir):
-    """heuristic_version deve ser v8."""
+def test_cfr_b_registra_a_versao_pedida(cache_dir):
+    """heuristic_version registra a versão passada (o padrão do módulo é a v12 congelada)."""
     releases = [_R1, _R2]
     _escrever_cache_releases(cache_dir, "test/repo", releases)
     _escrever_cache_tags(cache_dir, "test/repo", [_T1])
@@ -201,8 +201,8 @@ def test_cfr_b_usa_versao_v8(cache_dir):
             raise RuntimeError()
 
     client = CachedHttpClient(_NoHTTP(), cache_dir)
-    v = calcular_variantes("test/repo", client, cache_dir, JANELA)
-    assert v["heuristic_version"] == VERSAO_HEURISTICA
+    v = calcular_variantes("test/repo", client, cache_dir, JANELA, "v8")
+    assert v["heuristic_version"] == "v8"
 
 
 def test_cfr_b_retorna_contadores(cache_dir):
@@ -219,7 +219,7 @@ def test_cfr_b_retorna_contadores(cache_dir):
             raise RuntimeError()
 
     client = CachedHttpClient(_NoHTTP(), cache_dir)
-    v = calcular_variantes("test/repo", client, cache_dir, JANELA)
+    v = calcular_variantes("test/repo", client, cache_dir, JANELA, "v8")
     for campo in ("cfr_b", "n_releases_avaliadas_cfr_b", "n_releases_censuradas_cfr_b",
                   "n_releases_janela", "n_releases_falha_cfr_b"):
         assert campo in v, f"campo ausente: {campo}"
@@ -244,8 +244,8 @@ def test_classificacoes_c1_coerente_com_base():
     assert c["dora_c1"] == "High"  # mediana(3,3,4,3) = 3 = High (floor)
 
 
-def test_dora_c2_vazio_quando_cfr_b_indefinido():
-    """dora_c2 fica vazio se cfr_b for None (heurística sem releases suficientes)."""
+def test_dora_c2_parcial_quando_cfr_b_indefinido():
+    """cfr_b None (heurística sem releases suficientes): dora_c2 usa as 3 métricas definidas e sinaliza."""
     linha = {
         "deployment_frequency": "1.0",
         "lt_release_median_h": "12.0",
@@ -255,7 +255,22 @@ def test_dora_c2_vazio_quando_cfr_b_indefinido():
     }
     variantes = {"cfr_b": None, "df_c2": 1.5, "df_c3": 2.0}
     c = adicionar_classificacoes(linha, variantes)
-    assert c["dora_c2"] == ""
+    # DF 1,5 → High (3); LT 12 h → Elite (4); REC 0,5 h → Elite (4) → mediana 4 → Elite
+    assert c["dora_c2"] == "Elite" and c["n_metricas_dora_c2"] == 3
+
+
+def test_dora_sem_nenhuma_metrica_fica_vazio():
+    c = adicionar_classificacoes({}, {"cfr_b": None})
+    assert c["dora_c1"] == "" and c["n_metricas_dora_c1"] == 0
+
+
+def test_doze_releases_na_janela_de_366_dias_sao_medium():
+    """1 release/mês = 12 releases na janela: com 366 dias não pode cair em Low."""
+    from metricas.dora import classify_df, semanas_da_janela
+    janela = (datetime(2025, 10, 2, tzinfo=timezone.utc), datetime(2026, 10, 2, 23, 59, 59, tzinfo=timezone.utc))
+    semanas = semanas_da_janela(janela)
+    assert classify_df(12 / semanas, semanas) == "Medium"
+    assert classify_df(11 / semanas, semanas) == "Low"
 
 
 def test_dora_c3_usa_cfr_a():
@@ -334,7 +349,7 @@ def test_compute_gera_colunas_extras(tmp_path):
     _escrever_cache_tags(cache_dir, "test/repo", [_T1, _T2])
     _escrever_cache_commits(cache_dir, None, "test/repo", [_R1, _R2], JANELA)
 
-    resultado = compute(repos_csv, cache_dir, saida, JANELA)
+    resultado = compute(repos_csv, cache_dir, saida, JANELA, "v8")
 
     assert resultado["n_ok"] == 1
     assert saida.exists()
@@ -363,7 +378,7 @@ def test_compute_preserva_colunas_base(tmp_path):
     _escrever_cache_tags(cache_dir, "test/repo", [])
     _escrever_cache_commits(cache_dir, None, "test/repo", [_R1, _R2], JANELA)
 
-    compute(repos_csv, cache_dir, saida, JANELA)
+    compute(repos_csv, cache_dir, saida, JANELA, "v8")
 
     rows = list(csv.DictReader(saida.open()))
     assert rows[0]["stars"] == "1234"
@@ -385,7 +400,7 @@ def test_compute_erro_nao_interrompe(tmp_path):
     _escrever_cache_commits(cache_dir, None, "test/repo_ok", [_R1, _R2], JANELA)
     # repo_sem_cache: sem releases cache → erro
 
-    resultado = compute(repos_csv, cache_dir, saida, JANELA)
+    resultado = compute(repos_csv, cache_dir, saida, JANELA, "v8")
 
     assert resultado["n_total"] == 2
     rows = list(csv.DictReader(saida.open()))
@@ -398,3 +413,31 @@ def test_compute_colunas_extras_completas(tmp_path):
     for col in ("cfr_b", "df_c2", "df_c3", "dora_c1", "dora_c2", "dora_c3",
                 "heuristic_version", "n_releases_janela"):
         assert col in COLUNAS_EXTRAS
+
+
+def _client_sem_http(cache_dir):
+    from pipeline.cache import CachedHttpClient
+
+    class _NoHTTP:
+        def get(self, path, params=None):
+            raise RuntimeError("sem HTTP")
+
+    return CachedHttpClient(_NoHTTP(), cache_dir)
+
+
+def test_v11_sem_body_falha_explicitamente_e_com_body_registra_v11(cache_dir):
+    """Versões v9+ leem as release notes: sem `body` levantam erro; com `body`, rodam e registram a versão."""
+    from metricas.heuristica import DadosAusentesError
+
+    _escrever_cache_releases(cache_dir, "test/repo", [_R1, _R2])
+    _escrever_cache_tags(cache_dir, "test/repo", [])
+    _escrever_cache_commits(cache_dir, None, "test/repo", [_R1, _R2], JANELA)
+    client = _client_sem_http(cache_dir)
+    with pytest.raises(DadosAusentesError):
+        calcular_variantes("test/repo", client, cache_dir, JANELA, "v11")
+
+    com_body = [{**_R1, "body": "First release"}, {**_R2, "body": "This is a patch release. Fixes a crash."}]
+    _escrever_cache_releases(cache_dir, "test/repo", com_body)
+    v = calcular_variantes("test/repo", client, cache_dir, JANELA, "v11")
+    assert v["heuristic_version"] == "v11"
+    assert VERSAO_HEURISTICA == "v12"  # versão final congelada

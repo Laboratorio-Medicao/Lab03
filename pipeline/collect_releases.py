@@ -29,7 +29,7 @@ from pipeline.selection import POR_PAGINA, _data, _destino, _get, _link
 
 log = logging.getLogger("pipeline.collect_releases")
 
-CAMPOS = ("id", "tag_name", "draft", "prerelease", "published_at", "created_at", "target_commitish", "html_url")
+CAMPOS = ("id", "tag_name", "draft", "prerelease", "published_at", "created_at", "target_commitish", "html_url", "body")
 SUBPASTA_CACHE = "releases"
 
 

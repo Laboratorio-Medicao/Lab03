@@ -71,14 +71,15 @@ def calcular_metricas(repo: RepoRecord, dados: dict, inicio: date, fim: date) ->
     rec_mediana = statistics.median(rec["tempos_h"]) if rec["tempos_h"] else None
 
     categorias = {
-        "df_class": dora.classify_df(df),
+        "df_class": dora.classify_df(df, dora.semanas_da_janela(janela)),
         "lt_class": _categoria(dora.classify_lt, lt["lt_release_median_h"]),
         "cfr_class": _categoria(dora.classify_cfr, taxa_falha),
         "rec_class": _categoria(dora.classify_recovery, rec_mediana),
     }
     notas = [dora.score(c) for c in categorias.values() if c]
-    # L10: métrica indefinida não tem regra na Fonte da Verdade -> sem classificação geral.
-    geral = dora.classify_overall(notas) if len(notas) == 4 else ""
+    # L10 (decisão do grupo, validada com o professor): classifica com as métricas definidas e sinaliza
+    # a classificação parcial em `n_metricas_dora`.
+    geral = dora.classify_overall_parcial(notas) if notas else ""
 
     n_deploys = sum(
         1 for r in releases
@@ -108,6 +109,7 @@ def calcular_metricas(repo: RepoRecord, dados: dict, inicio: date, fim: date) ->
         "n_tags": len(tags) if tags is not None else None,
         **categorias,
         "dora_geral": geral,
+        "n_metricas_dora": len(notas),
     }
 
 

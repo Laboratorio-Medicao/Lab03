@@ -69,14 +69,16 @@ def cliente_paginas(*paginas):
 
 # ---- coleta ----
 
-def test_extrai_campos_da_issue_e_descarta_o_resto():
+def test_extrai_campos_da_issue_mantem_body_e_descarta_o_resto():
     bruta = rel("v1.0", "2025-03-01T10:00:00Z", body="notas longas", author={"login": "x"})
     resultado = collect_releases(cliente_paginas([bruta]), "org/repo")
     assert len(resultado) == 1
     r = resultado[0]
     for campo in ("draft", "prerelease", "published_at", "tag_name"):
         assert campo in r
-    assert "body" not in r and "author" not in r
+    # `body` (release notes) é mantido desde o refino pós-auditoria: a heurística v9+ depende dele
+    assert r["body"] == "notas longas"
+    assert "author" not in r
     assert r["tag_name"] == "v1.0"
 
 
