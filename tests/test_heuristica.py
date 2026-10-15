@@ -243,7 +243,7 @@ def test_regras_das_versoes(entrada, esperado):
 
 
 def test_versoes_registradas_com_descricao_e_v1_padrao():
-    assert list(VERSOES) == [f"v{i}" for i in range(1, 10)]
+    assert list(VERSOES) == [f"v{i}" for i in range(1, 11)]
     assert all(v.descricao for v in VERSOES.values())
     assert HEURISTIC_VERSION == "v1"
 
@@ -345,6 +345,72 @@ def test_corretiva_v9_direta_sem_sinais_de_notas_falha():
                    {**base, "nota_correcao": True, "nota_novidade": None}):
         with pytest.raises(DadosAusentesError, match="release notes"):
             corretiva(sinais, "v9")
+
+
+# ---- v10: rejeita major/minor; nota ampla para patch com ≥4 fixes ----
+
+def _sinais_v10(patch, n_cor, n_feat, nota_cor, nota_nov):
+    """Helper: dicionário de sinais de conteúdo completo para testar v10."""
+    return {
+        "semver_patch": patch, "palavra_chave": False, "palavra_chave_ampla": False,
+        "n_correcoes": n_cor, "n_features": n_feat,
+        "nota_correcao": nota_cor, "nota_novidade": nota_nov,
+    }
+
+
+def test_v10_major_minor_nunca_corretiva():
+    """Bump major ou minor: nunca corretiva, mesmo com commits de fix ou notas de correção."""
+    for n_cor, nota_cor in [(5, True), (10, False), (0, True)]:
+        s = _sinais_v10(False, n_cor, 0, nota_cor, False)
+        assert corretiva(s, "v10") is False
+
+
+def test_v10_patch_so_fix_corretiva():
+    """Patch + só commits de correção (sem features) → corretiva (mesma regra da v8)."""
+    assert corretiva(_sinais_v10(True, 2, 0, False, False), "v10") is True
+
+
+def test_v10_patch_nota_estrita_corretiva():
+    """Patch + nota de correção sem novidade → corretiva (mesma regra da v9)."""
+    assert corretiva(_sinais_v10(True, 0, 0, True, False), "v10") is True
+
+
+def test_v10_patch_nota_com_novidade_e_poucos_fixes_nao_corretiva():
+    """Patch + nota com correção E novidade, mas <4 commits de fix → não corretiva."""
+    assert corretiva(_sinais_v10(True, 3, 1, True, True), "v10") is False
+    assert corretiva(_sinais_v10(True, 0, 0, True, True), "v10") is False
+
+
+def test_v10_patch_nota_com_novidade_e_4_plus_fixes_dominando_corretiva():
+    """Patch + nota com ambos, mas ≥4 commits de fix dominando features → corretiva (novo em v10)."""
+    assert corretiva(_sinais_v10(True, 4, 1, True, True), "v10") is True
+    assert corretiva(_sinais_v10(True, 8, 3, True, True), "v10") is True
+
+
+def test_v10_patch_nota_com_novidade_fixes_iguais_nao_corretiva():
+    """Patch + nota com ambos, fixes == features (sem dominância) → não corretiva."""
+    assert corretiva(_sinais_v10(True, 4, 4, True, True), "v10") is False
+
+
+def test_v10_nao_semver_usa_regra_estrita_da_v9():
+    """Não-SemVer: nota com correção E novidade (sem commits de fix) → não corretiva (regra estrita, igual à v9)."""
+    # n_cor=0, n_feat=0: v8 não dispara; notas com ambos os sinais → não corretiva (igual à v9)
+    assert corretiva(_sinais_v10(None, 0, 0, True, True), "v10") is False
+    # n_cor=1, n_feat=0: v8 dispara → corretiva (independente das notas)
+    assert corretiva(_sinais_v10(None, 1, 0, True, True), "v10") is True
+    # nota estrita (sem novidade) → corretiva
+    assert corretiva(_sinais_v10(None, 0, 0, True, False), "v10") is True
+
+
+def test_v10_sem_release_anterior_nao_e_corretiva():
+    r = avaliar(None, "v1.0.0", ["fix: y"], versao="v10", notas="Fixed a crash")
+    assert r["heuristic_corrective"] is False
+
+
+def test_v10_sem_notas_falha_com_release_anterior():
+    from metricas.heuristica import DadosAusentesError
+    with pytest.raises(DadosAusentesError, match="release notes"):
+        avaliar("v1.0.0", "v1.0.1", ["fix: y"], versao="v10")
 
 
 def test_corretiva_v9_com_sinais_completos_e_notas_vazias():
