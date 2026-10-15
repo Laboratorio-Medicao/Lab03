@@ -116,10 +116,10 @@ def test_palavra_corretiva_lista_vazia_e_mensagem_none():
 
 
 def test_exemplo_professor_patch_com_fix_e_corretiva():
-    r = avaliar("v2.3.0", "v2.3.1", ["fix: crash ao abrir arquivo"])
+    r = avaliar("v2.3.0", "v2.3.1", ["fix: crash ao abrir arquivo"], "v1")
     assert r == {
         "heuristic_corrective": True,
-        "heuristic_version": HEURISTIC_VERSION,
+        "heuristic_version": "v1",
         "semver_patch": True,
         "palavra_chave": True,
         "palavra_chave_ampla": True,
@@ -127,27 +127,27 @@ def test_exemplo_professor_patch_com_fix_e_corretiva():
 
 
 def test_patch_sem_fix_nao_e_corretiva():
-    assert avaliar("v2.3.0", "v2.3.1", ["feat: nova opção"])["heuristic_corrective"] is False
+    assert avaliar("v2.3.0", "v2.3.1", ["feat: nova opção"], "v1")["heuristic_corrective"] is False
 
 
 def test_minor_com_fix_nao_e_corretiva():
-    r = avaliar("v2.4.0", "v2.5.0", ["fix: algo"])
+    r = avaliar("v2.4.0", "v2.5.0", ["fix: algo"], "v1")
     assert r["heuristic_corrective"] is False
     assert r["semver_patch"] is False and r["palavra_chave"] is True
 
 
 def test_minor_sem_fix_nao_e_corretiva():
-    assert avaliar("v2.3.0", "v2.4.0", ["feat: x"])["heuristic_corrective"] is False
+    assert avaliar("v2.3.0", "v2.4.0", ["feat: x"], "v1")["heuristic_corrective"] is False
 
 
 def test_nao_semver_usa_so_palavra_chave():
-    com_fix = avaliar("release-2020-01", "release-2020-02", ["hotfix: login"])
+    com_fix = avaliar("release-2020-01", "release-2020-02", ["hotfix: login"], "v1")
     assert com_fix["heuristic_corrective"] is True and com_fix["semver_patch"] is None
-    assert avaliar("release-2020-01", "release-2020-02", ["feat: x"])["heuristic_corrective"] is False
+    assert avaliar("release-2020-01", "release-2020-02", ["feat: x"], "v1")["heuristic_corrective"] is False
 
 
 def test_sem_release_anterior_nao_e_corretiva():
-    r = avaliar(None, "v1.0.1", ["fix: x"])
+    r = avaliar(None, "v1.0.1", ["fix: x"], "v1")
     assert r["heuristic_corrective"] is False
     assert r["semver_patch"] is None and r["palavra_chave"] is False
 
@@ -179,18 +179,18 @@ def test_classificar_releases_status_e_ordem():
         item("v1.0.1", "v1.0.0", mensagens=["fix: a", None]),
         item("v1.0.2", "v1.0.1", status="404"),
         item("v1.0.3", "v1.0.2", mensagens=["fix: b"], truncado=True),
-    ])
+    ], "v1")
     assert [r["tag_name"] for r in saida] == ["v1.0.0", "v1.0.1", "v1.0.2", "v1.0.3"]
     assert [r["heuristic_corrective"] for r in saida] == [False, True, False, True]
     assert [r["mensagens_incompletas"] for r in saida] == [False, False, True, True]
-    assert all(r["heuristic_version"] == HEURISTIC_VERSION for r in saida)
+    assert all(r["heuristic_version"] == "v1" for r in saida)
     assert saida[1]["base"] == "v1.0.0" and saida[1]["status"] == "ok"
     assert "id" not in saida[0]
 
 
 def test_classificar_releases_repassa_id_e_ignora_mensagens_fora_do_ok():
     r = {**item("v1.0.1", "v1.0.0", status="404"), "id": 7, "commits": [{"message": "fix: x"}]}
-    saida = classificar_releases([r])[0]
+    saida = classificar_releases([r], "v1")[0]
     assert saida["id"] == 7
     assert saida["palavra_chave"] is False
 
@@ -243,7 +243,7 @@ def test_regras_das_versoes(entrada, esperado):
 
 
 def test_versoes_registradas_com_descricao_e_v1_padrao():
-    assert list(VERSOES) == [f"v{i}" for i in range(1, 8)]
+    assert list(VERSOES) == [f"v{i}" for i in range(1, 10)]
     assert all(v.descricao for v in VERSOES.values())
     assert HEURISTIC_VERSION == "v1"
 
@@ -251,3 +251,111 @@ def test_versoes_registradas_com_descricao_e_v1_padrao():
 def test_avaliar_com_outra_versao():
     r = avaliar("v2.3.0", "v2.3.1", ["feat: x"], versao="v2")
     assert r["heuristic_corrective"] is True and r["heuristic_version"] == "v2"
+
+
+# ---- v8/v9: sinais de conteúdo ----
+def test_sinais_conteudo_ignora_ruido_e_conta_correcao_e_feature():
+    from metricas.heuristica import sinais_conteudo
+
+    s = sinais_conteudo(["chore: bump deps", "Merge pull request #1", "fix: crash", "feat: tela", "Fix typo"])
+    assert (s["n_correcoes"], s["n_features"]) == (2, 1)
+    assert (s["nota_correcao"], s["nota_novidade"]) == (None, None)
+
+
+def test_sinais_conteudo_notas_e_url_nao_contam():
+    from metricas.heuristica import sinais_conteudo
+
+    s = sinais_conteudo([], "See https://x.io/fix/fixes for details. Added support for Y")
+    assert (s["nota_correcao"], s["nota_novidade"]) == (False, True)
+
+
+def test_v8_e_v9():
+    ruim = ["feat: x", "fix: y"]
+    assert avaliar("v1.0.0", "v1.0.1", ["fix: y"], versao="v8")["heuristic_corrective"] is True
+    assert avaliar("v1.0.0", "v1.1.0", ruim, versao="v8")["heuristic_corrective"] is False
+    # v9: sem commit de correção, mas notas dizem correção e sem novidade
+    assert avaliar("v1.0.0", "v1.0.1", ["Atualiza"], versao="v9", notas="Fixed a crash")["heuristic_corrective"] is True
+    assert avaliar("v1.0.0", "v1.0.1", ["Atualiza"], versao="v9", notas="Fixed a crash. New feature")["heuristic_corrective"] is False
+    # sem release anterior nunca é corretiva
+    assert avaliar(None, "v1.0.0", ["fix: y"], versao="v8")["heuristic_corrective"] is False
+
+
+# ---- v9 sem release notes e versão explícita (Sprint 2, correção de auditoria) ----
+def test_v9_sem_notas_falha_e_nao_vira_v8():
+    from metricas.heuristica import DadosAusentesError
+
+    # a v8 aceitaria isto como corretiva; a v9 não pode devolver esse resultado com rótulo v9
+    with pytest.raises(DadosAusentesError, match="release notes"):
+        avaliar("v1.0.0", "v1.0.1", ["fix: y"], versao="v9")
+
+
+def test_v9_com_notas_vazias_e_dado_presente():
+    r = avaliar("v1.0.0", "v1.0.1", ["Atualiza"], versao="v9", notas="")
+    assert r["heuristic_version"] == "v9" and r["heuristic_corrective"] is False
+
+
+def test_v9_primeira_release_nao_exige_notas():
+    r = avaliar(None, "v1.0.0", ["fix: y"], versao="v9")
+    assert r["heuristic_version"] == "v9" and r["heuristic_corrective"] is False
+
+
+def test_classificar_releases_v9_sem_body_falha_sem_resultado_parcial():
+    from metricas.heuristica import DadosAusentesError
+
+    releases = [item("v1.0.0", None, status="sem_anterior"), item("v1.0.1", "v1.0.0", mensagens=["fix: a"])]
+    with pytest.raises(DadosAusentesError):
+        classificar_releases(releases, "v9")
+
+
+def test_classificar_releases_v9_com_body_aplica_regra_v9():
+    releases = [
+        item("v1.0.0", None, status="sem_anterior"),
+        {**item("v1.0.1", "v1.0.0", mensagens=["Atualiza"]), "body": "Fixed a crash"},
+        {**item("v1.0.2", "v1.0.1", mensagens=["Atualiza"]), "body": "Fixed a crash. New feature"},
+        {**item("v1.0.3", "v1.0.2", mensagens=["fix: y"]), "body": None},  # release sem texto
+    ]
+    saida = classificar_releases(releases, "v9")
+    assert [r["heuristic_version"] for r in saida] == ["v9"] * 4
+    assert [r["heuristic_corrective"] for r in saida] == [False, True, False, True]
+
+
+def test_versao_e_obrigatoria_em_avaliar_corretiva_e_classificar():
+    with pytest.raises(TypeError):
+        avaliar("v1.0.0", "v1.0.1", ["fix: y"])
+    with pytest.raises(TypeError):
+        corretiva({"semver_patch": True, "palavra_chave": True})
+    with pytest.raises(TypeError):
+        classificar_releases([])
+
+
+def test_versao_desconhecida_rejeitada_em_todas_as_entradas():
+    with pytest.raises(ValueError, match="desconhecida"):
+        corretiva({"semver_patch": True, "palavra_chave": True}, "v99")
+    with pytest.raises(ValueError, match="desconhecida"):
+        classificar_releases([], "v99")
+
+
+def test_corretiva_v9_direta_sem_sinais_de_notas_falha():
+    from metricas.heuristica import DadosAusentesError
+
+    base = {"semver_patch": True, "palavra_chave": True, "palavra_chave_ampla": True, "n_correcoes": 1, "n_features": 0}
+    # a v8 aceitaria estes sinais como corretiva; a v9 não pode devolver isso com o rótulo v9
+    assert corretiva(base, "v8") is True
+    for sinais in (base, {**base, "nota_correcao": None, "nota_novidade": None},
+                   {**base, "nota_correcao": True, "nota_novidade": None}):
+        with pytest.raises(DadosAusentesError, match="release notes"):
+            corretiva(sinais, "v9")
+
+
+def test_corretiva_v9_com_sinais_completos_e_notas_vazias():
+    base = {"n_correcoes": 0, "n_features": 0}
+    assert corretiva({**base, "nota_correcao": True, "nota_novidade": False}, "v9") is True
+    assert corretiva({**base, "nota_correcao": True, "nota_novidade": True}, "v9") is False
+    # notas coletadas e vazias: sinais False (presentes), não ausentes
+    assert corretiva({**base, "nota_correcao": False, "nota_novidade": False}, "v9") is False
+
+
+def test_corretiva_versoes_anteriores_nao_exigem_sinais_de_notas():
+    sinais = {"semver_patch": True, "palavra_chave": True, "palavra_chave_ampla": True}
+    assert [corretiva(sinais, f"v{i}") for i in range(1, 8)] == [True] * 7
+    assert corretiva({"n_correcoes": 1, "n_features": 0}, "v8") is True

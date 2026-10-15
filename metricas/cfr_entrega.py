@@ -20,7 +20,7 @@ from datetime import timedelta
 from typing import Iterable, Mapping
 
 from metricas.dora import _dt
-from metricas.heuristica import HEURISTIC_VERSION, classificar_releases
+from metricas.heuristica import classificar_releases
 
 PRAZO_CORRECAO = timedelta(days=7)
 
@@ -57,11 +57,14 @@ def cfr_entrega(releases: Iterable[Mapping], window: tuple) -> dict:
     }
 
 
-def resumo_cfr_entrega(releases_commits: Iterable[Mapping], window: tuple, versao: str = HEURISTIC_VERSION) -> dict:
+def resumo_cfr_entrega(releases_commits: Iterable[Mapping], window: tuple, versao: str) -> dict:
     """Heurística + CFR (b) numa chamada, a partir de `collect_commits(...)["releases"]`.
 
     `n_releases_mensagens_incompletas_cfr_b` é diagnóstico (releases da janela com `compare` 404 ou
     truncado, em que a palavra-chave pode ter faltado) e não entra na invariante de contagem.
+
+    `versao` é obrigatória (quem calcula escolhe; não há padrão). Versão desconhecida levanta
+    `ValueError`; v9 sem `body` nos itens levanta `DadosAusentesError`.
     """
     classificadas = classificar_releases(releases_commits, versao)
     inicio, fim = _dt(window[0]), _dt(window[1])

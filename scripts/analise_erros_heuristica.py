@@ -43,6 +43,7 @@ PALAVRA_DA_VERSAO = {
     "v1": "palavra_chave", "v2": "palavra_chave", "v3": "palavra_chave", "v4": "palavra_chave",
     "v5": "palavra_chave_ampla", "v6": "palavra_chave_ampla", "v7": "palavra_chave_ampla",
 }
+VERSOES_DE_CONTEUDO = ("v8", "v9")  # decidem por commits/notas; causa automática genérica (anotar `causa_manual`)
 COLUNAS_ERROS = (
     "versao", "release_id", "full_name", "tag_name", "base", "tipo_erro", "causa_automatica",
     "semver_patch", "palavra_chave", "palavra_chave_ampla", "mensagens_incompletas",
@@ -67,6 +68,8 @@ def sinais(linha: dict) -> dict:
 
 def causa(linha: dict, versao: str, tipo_erro: str) -> str:
     """Causa automática de um FP ou FN da `versao` (ver precedência no docstring do módulo)."""
+    if versao in VERSOES_DE_CONTEUDO:
+        return "conteudo_corretivo_sem_consenso" if tipo_erro == "FP" else "conteudo_sem_sinal_corretivo"
     if versao not in PALAVRA_DA_VERSAO:
         raise AvaliacaoError(f"versão {versao} sem sinal de palavra em PALAVRA_DA_VERSAO: atualize o mapa")
     s = sinais(linha)

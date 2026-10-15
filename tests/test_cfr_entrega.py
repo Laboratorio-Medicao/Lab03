@@ -8,7 +8,7 @@ from datetime import datetime, timedelta, timezone
 import pytest
 
 from metricas.cfr_entrega import cfr_entrega, resumo_cfr_entrega
-from metricas.heuristica import HEURISTIC_VERSION
+from metricas.heuristica import DadosAusentesError
 
 JANELA = ("2025-01-01T00:00:00Z", "2025-12-31T23:59:59Z")
 FIM = datetime(2025, 12, 31, 23, 59, 59, tzinfo=timezone.utc)
@@ -169,9 +169,41 @@ def test_resumo_ponta_a_ponta():
         item("v2.4.0", "v2.3.1", "2025-06-01T12:00:00Z", status="404"),
         item("v2.5.0", "v2.4.0", "2025-06-20T12:00:00Z", mensagens=["fix: y"], truncado=True),
         item("v2.5.1", "v2.5.0", "2024-01-01T00:00:00Z", status="404"),  # fora da janela: não conta
-    ], JANELA)
+    ], JANELA, "v1")
     assert r["cfr_b"] == pytest.approx(1 / 4)
     assert r["n_releases_falha_cfr_b"] == 1
     assert r["n_releases_janela"] == 4
     assert r["n_releases_mensagens_incompletas_cfr_b"] == 2
-    assert r["heuristic_version"] == HEURISTIC_VERSION
+    assert r["heuristic_version"] == "v1"
+
+
+def _releases_v4_v8():
+    """v1.0.1 é corretiva só para a v4 (patch sem fix); v1.1.0 só para a v8 (minor com fix)."""
+    return [
+        item("v1.0.0", "v0.9.0", "2025-05-01T12:00:00Z", mensagens=["feat: a"]),
+        item("v1.0.1", "v1.0.0", "2025-05-03T12:00:00Z", mensagens=["chore: x"]),
+        item("v1.1.0", "v1.0.1", "2025-05-05T12:00:00Z", mensagens=["fix: y"]),
+        item("v1.2.0", "v1.1.0", "2025-05-25T12:00:00Z", mensagens=["feat: z"]),
+    ]
+
+
+def test_resumo_executa_a_versao_pedida_e_registra_a_mesma():
+    v4 = resumo_cfr_entrega(_releases_v4_v8(), JANELA, "v4")
+    v8 = resumo_cfr_entrega(_releases_v4_v8(), JANELA, "v8")
+    assert v4["heuristic_version"] == "v4" and v8["heuristic_version"] == "v8"
+    assert v4["n_releases_falha_cfr_b"] == 1 and v4["cfr_b"] == pytest.approx(1 / 4)
+    assert v8["n_releases_falha_cfr_b"] == 2 and v8["cfr_b"] == pytest.approx(2 / 4)
+
+
+def test_resumo_versao_e_obrigatoria_e_rejeita_desconhecida():
+    with pytest.raises(TypeError):
+        resumo_cfr_entrega(_releases_v4_v8(), JANELA)
+    with pytest.raises(ValueError, match="desconhecida"):
+        resumo_cfr_entrega(_releases_v4_v8(), JANELA, "v99")
+
+
+def test_resumo_v9_sem_body_falha_e_com_body_registra_v9():
+    with pytest.raises(DadosAusentesError):
+        resumo_cfr_entrega(_releases_v4_v8(), JANELA, "v9")
+    com_body = [{**r, "body": ""} for r in _releases_v4_v8()]
+    assert resumo_cfr_entrega(com_body, JANELA, "v9")["heuristic_version"] == "v9"
