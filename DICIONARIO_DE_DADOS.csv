@@ -144,3 +144,52 @@ erros_heuristica.csv,mensagens_incompletas,str,-,"sim, nao",Idem heuristica_amos
 erros_heuristica.csv,release_url,str,URL,-,Idem amostra_ouro.csv
 erros_heuristica.csv,compare_url,str,URL,-,Idem amostra_ouro.csv
 erros_heuristica.csv,causa_manual,str,-,-,"Anotação do grupo lendo os commits (ex.: fix em docs); preservada por release_id ao regravar"
+metrics.csv,full_name,str,-,-,Idem repos_final.csv — dataset congelado acrescido das variantes (#21)
+metrics.csv,stars,int,estrelas,>=0,Idem repos_final.csv
+metrics.csv,language,str,-,-,Idem repos_final.csv
+metrics.csv,contributors,int,pessoas,>=0,Idem repos_final.csv
+metrics.csv,age_days,float,dias,>=0,Idem repos_final.csv
+metrics.csv,default_branch,str,-,-,Idem repos_final.csv
+metrics.csv,n_releases_total,int,releases,>=0,Idem repos_final.csv
+metrics.csv,n_releases_deploy_total,int,releases,>=0,Idem repos_final.csv
+metrics.csv,deployment_frequency,float,deploys/semana,>=0,Idem repos_final.csv — combinação C1 (releases não-draft não-prerelease)
+metrics.csv,lt_release_median_h,float,horas,>=0,Idem repos_final.csv — lead time (a) por release
+metrics.csv,lt_commit_median_h,float,horas,>=0,Idem repos_final.csv — lead time (b) por commit
+metrics.csv,n_releases_avaliadas,int,releases,>=0,Idem repos_final.csv
+metrics.csv,n_releases_ignored_404,int,releases,>=0,Idem repos_final.csv
+metrics.csv,n_sem_anterior,int,releases,>=0,Idem repos_final.csv
+metrics.csv,n_sem_commits_novos,int,releases,>=0,Idem repos_final.csv
+metrics.csv,n_commits_negativos,int,commits,>=0,Idem repos_final.csv
+metrics.csv,n_runs_coletados,int,runs,>=0,Idem repos_final.csv
+metrics.csv,n_runs_dias_saturados,int,dias,>=0,Idem repos_final.csv
+metrics.csv,n_runs_fora_de_push,int,runs,>=0,Idem repos_final.csv
+metrics.csv,n_runs_sucesso,int,runs,>=0,Idem repos_final.csv
+metrics.csv,n_runs_falha,int,runs,>=0,Idem repos_final.csv
+metrics.csv,cfr_a,float,proporção,"[0, 1]",Idem repos_final.csv — CFR (a): falhas de CI sobre total de runs válidos (push)
+metrics.csv,rec_median_h,float,horas,>=0,Idem repos_final.csv — recovery time: mediana dos episódios failure→success
+metrics.csv,n_episodios,int,episódios,>=0,Idem repos_final.csv
+metrics.csv,n_episodios_censurados,int,episódios,>=0,Idem repos_final.csv
+metrics.csv,prop_episodios_censurados,float,proporção,"[0, 1]",Idem repos_final.csv
+metrics.csv,n_tags,int,tags,>=0,Idem repos_final.csv — total de git tags (sem filtro de janela)
+metrics.csv,df_class,str,-,"Elite, High, Medium, Low, vazio",Idem repos_final.csv — classificação DORA de DF (C1)
+metrics.csv,lt_class,str,-,"Elite, High, Medium, Low, vazio",Idem repos_final.csv — classificação DORA de LT (a)
+metrics.csv,cfr_class,str,-,"Elite, High, Medium, Low, vazio",Idem repos_final.csv — classificação DORA de CFR (a)
+metrics.csv,rec_class,str,-,"Elite, High, Medium, Low, vazio",Idem repos_final.csv — classificação DORA de recovery
+metrics.csv,dora_geral,str,-,"Elite, High, Medium, Low, vazio",Idem repos_final.csv — classificação DORA geral C1
+metrics.csv,cfr_b,float,proporção,"[0, 1]","CFR (b): proporção de releases avaliadas seguidas de release corretiva em ≤7 dias; heurística v8; None se <2 releases na janela ou sem avaliadas (E§5 RQ03b)"
+metrics.csv,cfr_b_class,str,-,"Elite, High, Medium, Low, vazio",Classificação DORA de CFR (b); vazio se cfr_b indefinido
+metrics.csv,n_releases_avaliadas_cfr_b,int,releases,>=0,"Releases avaliadas no CFR (b): publicadas antes de janela.fim − 7 dias (não censuradas); n_avaliadas_cfr_b + n_censuradas_cfr_b = n_releases_janela"
+metrics.csv,n_releases_censuradas_cfr_b,int,releases,>=0,"Releases nos últimos 7 dias da janela: não se sabe se serão corrigidas; excluídas do denominador (censura de intervalo curto, E§5)"
+metrics.csv,n_releases_janela,int,releases,>=0,Total de releases de deploy (não-draft não-prerelease) na janela de observação
+metrics.csv,n_releases_falha_cfr_b,int,releases,>=0,"Releases avaliadas classificadas como falha (seguidas de corretiva em ≤7 dias)"
+metrics.csv,n_releases_mensagens_incompletas_cfr_b,int,releases,>=0,"Releases da janela com compare 404 ou truncado: palavra-chave pode ter faltado (diagnóstico; não entra na invariante de contagem)"
+metrics.csv,heuristic_version,str,-,-,"Versão da heurística usada no CFR (b): v8 na geração inicial; recalcular com versão final após refinamento (docs/refino_heuristica.md)"
+metrics.csv,n_releases_deploy_c2,int,releases,>=0,"Releases + pré-releases na janela (não-draft, com published_at): unidade de deploy da combinação C2 da RQ07"
+metrics.csv,df_c2,float,deploys/semana,>=0,"DF variante C2 (E§7 RQ07): n_releases_deploy_c2 / semanas_janela (conta pré-releases)"
+metrics.csv,df_c2_class,str,-,"Elite, High, Medium, Low",Classificação DORA de DF para a combinação C2
+metrics.csv,n_tags_janela,int,tags,>=0,"Número de git tags com author_date dentro da janela: unidade de deploy da combinação C3 (E§7 RQ07)"
+metrics.csv,df_c3,float,deploys/semana,>=0,"DF variante C3 (E§7 RQ07): n_tags_janela / semanas_janela"
+metrics.csv,df_c3_class,str,-,"Elite, High, Medium, Low",Classificação DORA de DF para a combinação C3
+metrics.csv,dora_c1,str,-,"Elite, High, Medium, Low, vazio","Classificação DORA geral da combinação C1 (release | LT(a) | CFR(a) | recovery): mediana floor das 4 notas; vazio se qualquer métrica indefinida (E§7 RQ07)"
+metrics.csv,dora_c2,str,-,"Elite, High, Medium, Low, vazio","Classificação DORA geral da combinação C2 (release+pré-release | LT(b) | CFR(b) | recovery); vazio se cfr_b indefinido"
+metrics.csv,dora_c3,str,-,"Elite, High, Medium, Low, vazio","Classificação DORA geral da combinação C3 (tag | LT(b) | CFR(a) | recovery)"
