@@ -210,11 +210,14 @@ Todas as colunas de `repos_final.csv` são copiadas sem alteração. Consulte a 
 Os valores de CFR (b) que vierem a entrar no dataset final usam uma heurística **não validada** (nenhuma
 versão atingiu F1 ≥ 0,70; ver `docs/refino_heuristica.md`). Regras de uso:
 
-| Versão (`heuristic_version`) | Papel | Precisão | Recall | F1 | Taxa prevista (referência 25,0%) |
+Números da rodada oficial (rótulos commitados nas Issues #23–#25; 300 releases, 85 corretivas). Os papéis
+foram definidos na rodada anterior e estão **a rever pelo grupo**: agora a v4 tem F1 maior que a v8.
+
+| Versão (`heuristic_version`) | Papel | Precisão | Recall | F1 | Taxa prevista (referência 28,3%) |
 |---|---|---:|---:|---:|---:|
-| v8 | estimativa principal **exploratória** | 0,696 | 0,520 | 0,595 | 18,7% |
-| v4 | análise de **sensibilidade** | 0,373 | 0,880 | 0,524 | 59,0% |
-| v9 | variante experimental, **fora do dataset** (precisa de `body` das releases) | 0,680 | 0,680 | 0,680 | 25,0% |
+| v8 | estimativa principal **exploratória** | 0,625 | 0,412 | 0,497 | 18,7% |
+| v4 | análise de **sensibilidade** | 0,429 | 0,894 | 0,580 | 59,0% |
+| v9 | variante experimental, **fora do dataset** (precisa de `body` das releases; n = 295) | 0,627 | 0,573 | 0,599 | 25,4% |
 
 - Todo CFR (b) deve ser lido junto do `heuristic_version` e destes P/R/F1; o F1 é otimista (v8/v9 foram
   desenhadas após a análise de erros, na mesma amostra).

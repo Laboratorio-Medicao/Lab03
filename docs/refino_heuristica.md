@@ -1,7 +1,8 @@
 # Refino e status de validação da heurística de release corretiva (Issue #28)
 
 **Status: heurística NÃO VALIDADA.** Nenhuma das 9 versões testadas atingiu F1 ≥ 0,70 contra o consenso da
-amostra-ouro. O campo `escolhida` de `avaliacao_heuristica.csv` é só a regra interna do script ("maior F1
+amostra-ouro (rodada oficial de 15/10, com os três rótulos commitados nas Issues #23, #24 e #25; os números
+anteriores deste documento vinham de outra versão dos rótulos e foram substituídos). O campo `escolhida` de `avaliacao_heuristica.csv` é só a regra interna do script ("maior F1
 quando nenhuma chega a 0,70") e **não** significa validação.
 
 ## Verificação do que é exigido (texto exato)
@@ -19,54 +20,72 @@ Nenhum dos dois documentos diz como escolher a versão final se nenhuma chega a 
 **Pendência de validação:** F1 ≥ 0,70 numa amostra independente da usada para desenhar a v8/v9 (ou
 recoleta de `body` para a v9 e nova rodada). Até lá, não declarar a heurística validada.
 
-## Versões testadas (n = 300 releases; 75 corretivas pelo consenso = 25,0%)
+## Versões testadas (n = 300 releases; 85 corretivas pelo consenso = 28,3%)
 
-| Versão | Regra | Precisão | Recall | F1 | Marcadas | Taxa prevista |
-|---|---|---:|---:|---:|---:|---:|
-| v1 | só patch E palavra estrita (definida antes dos dados) | 0,362 | 0,720 | 0,482 | 149 | 49,7% |
-| v2 | patch OU palavra estrita | 0,294 | 1,000 | 0,455 | 255 | 85,0% |
-| v3 | só palavra estrita | 0,278 | 0,840 | 0,417 | 227 | 75,7% |
-| v4 | só patch (não comparável: palavra estrita) | 0,373 | 0,880 | 0,524 | 177 | 59,0% |
-| v5 | patch E palavra ampla | 0,374 | 0,773 | 0,504 | 155 | 51,7% |
-| v6 | patch OU palavra ampla | 0,293 | 1,000 | 0,453 | 256 | 85,3% |
-| v7 | só palavra ampla | 0,286 | 0,893 | 0,434 | 234 | 78,0% |
-| v8 | commit de correção e nenhum de feature | 0,696 | 0,520 | 0,595 | 56 | 18,7% |
-| v9 | v8 OU release notes com correção e sem novidade | 0,680 | 0,680 | 0,680 | 75 | 25,0% |
+Precisão, recall e F1 em todas as releases em que a versão é aplicável (`n`); **F1 comum** no subconjunto de
+295 releases em que todas são aplicáveis (a v9 exige release notes, e as 5 releases do repositório removido
+`1bananachicken/MaaNTE` não as têm). A comparação e a coluna `escolhida` usam o F1 comum.
 
-Fonte: `data/amostra_ouro/avaliacao_heuristica.csv` (gerado por `python -m scripts.evaluate_heuristic`).
+| Versão | Regra | n | Precisão | Recall | F1 | F1 comum | Marcadas | Taxa prevista |
+|---|---|---:|---:|---:|---:|---:|---:|---:|
+| v1 | só patch E palavra estrita (definida antes dos dados) | 300 | 0,423 | 0,741 | 0,539 | 0,546 | 149 | 49,7% |
+| v2 | patch OU palavra estrita | 300 | 0,329 | 0,988 | 0,494 | 0,485 | 255 | 85,0% |
+| v3 | só palavra estrita | 300 | 0,313 | 0,835 | 0,455 | 0,460 | 227 | 75,7% |
+| v4 | só patch (não comparável: palavra estrita) | 300 | 0,429 | 0,894 | 0,580 | 0,570 | 177 | 59,0% |
+| v5 | patch E palavra ampla | 300 | 0,432 | 0,788 | 0,558 | 0,565 | 155 | 51,7% |
+| v6 | patch OU palavra ampla | 300 | 0,328 | 0,988 | 0,493 | 0,484 | 256 | 85,3% |
+| v7 | só palavra ampla | 300 | 0,321 | 0,882 | 0,470 | 0,475 | 234 | 78,0% |
+| v8 | commit de correção e nenhum de feature | 300 | 0,625 | 0,412 | 0,497 | 0,507 | 56 | 18,7% |
+| v9 | v8 OU release notes com correção e sem novidade | 295 | 0,627 | 0,573 | 0,599 | 0,599 | 75 | 25,4% |
 
-## Estratégia adotada (provisória, sem recoleta)
+Fonte: `data/amostra_ouro/avaliacao_heuristica.csv` (gerado por `python -m scripts.evaluate_heuristic
+--permitir-sem-notas 1bananachicken/MaaNTE`). As previsões de cada versão são as mesmas da rodada anterior
+(mesmas marcadas); mudou a referência (consenso).
 
-| Papel | Versão | Motivo | Observação |
+## Estratégia adotada (provisória, sem recoleta) — **a rever pelo grupo**
+
+A estratégia abaixo foi decidida com os números da rodada anterior. **Na rodada oficial, a v8 deixou de ser a
+melhor versão calculável só com commits:** v4 (F1 0,580) e v5 (0,558) ficaram acima da v8 (0,497). O
+`metrics.csv` (#21) continua com a v8 até o grupo decidir.
+
+| Papel | Versão | Motivo (rodada anterior) | Números da rodada oficial |
 |---|---|---|---|
-| Estimativa principal **exploratória** do CFR (b) | **v8** (P 0,696 · R 0,520 · F1 0,595) | Melhor F1 entre as versões calculáveis com os dados já coletados (só commits) | Subestima: prevê 18,7% contra 25,0% de referência |
-| Análise de **sensibilidade** | **v4** (P 0,373 · R 0,880 · F1 0,524) | Mostra o efeito da definição mais simples (só patch) | Superestima: prevê 59,0% contra 25,0% (≈ 2,4×) |
-| Variante **experimental, fora do dataset final** | **v9** (P 0,680 · R 0,680 · F1 0,680) | Melhor F1 e taxa prevista igual à de referência | Usa o corpo das release notes (`body`), que a coleta atual não guarda (`CAMPOS` em `pipeline/collect_releases.py`). Os números acima vêm da avaliação já existente; aplicá-la ao conjunto completo exige recoletar as releases com `body`. |
+| Estimativa principal **exploratória** do CFR (b) | **v8** | Era a melhor F1 entre as versões calculáveis com os dados já coletados (só commits) | P 0,625 · R 0,412 · F1 0,497; subestima: prevê 18,7% contra 28,3% de referência |
+| Análise de **sensibilidade** | **v4** | Mostra o efeito da definição mais simples (só patch) | P 0,429 · R 0,894 · F1 0,580 (agora a melhor calculável); superestima: prevê 59,0% contra 28,3% (≈ 2,1×) |
+| Variante **experimental, fora do dataset final** | **v9** | Melhor F1 | P 0,627 · R 0,573 · F1 0,599 (n = 295). Usa o corpo das release notes (`body`), que a coleta atual não guarda (`CAMPOS` em `pipeline/collect_releases.py`); aplicá-la ao conjunto completo exige recoletar as releases com `body`. |
 
-## Por que as versões v1–v7 falham (análise de erros da v4, `erros_heuristica.md`)
-111 falsos positivos, 77 deles em releases com bump de patch e a palavra `fix` que o consenso não considera
+## Por que as versões v1–v7 falham (falsos positivos da v4, rodada oficial)
+101 falsos positivos, 66 deles em releases com bump de patch e a palavra `fix` que o consenso não considera
 corretivas: quase toda release contém algum `fix` e o bump de patch é rotina. O número da versão e a mera
 presença da palavra não dizem qual era o objetivo principal da release.
 
 ## Riscos e limitações (entram em Ameaças à validade)
 1. **Otimismo do F1 (viés de seleção).** v8 e v9 foram desenhadas **depois** de ver os erros da v1–v7 na
-   mesma amostra em que são avaliadas, e escolhida entre 9 versões. Numa divisão por repositório, o F1 da
-   v9 oscilou de ≈ 0,59 a ≈ 0,74 entre as metades. O 0,68 é, portanto, um limite otimista.
-2. **Consenso não totalmente independente.** Dois dos três avaliadores partiram de sugestões compartilhadas
-   (`data/amostra_ouro/LEIAME.md`); o kappa de `corretiva` foi 0,43 (moderado): o critério em si é ambíguo.
-3. **Taxa prevista × referência.** A v4 infla o CFR (b) (59,0% contra 25,0%); a v8 o deprime (18,7%); a v9
-   iguala a taxa agregada (25,0%), mas com 24 FP e 24 FN que se compensam: o erro por repositório continua.
+   mesma amostra em que são avaliadas, e escolhida entre 9 versões; além disso, entraram no repositório
+   (PR #65, 14/10 21h19) antes de os rótulos de dois avaliadores serem commitados (PRs #67 e #68, 21h46 e
+   21h59), ou seja, foram desenhadas sobre a rodada anterior de rótulos. O F1 da v9 é um limite otimista.
+   (A oscilação de ≈ 0,59 a ≈ 0,74 entre metades, citada antes, foi medida na rodada anterior.)
+2. **Consenso não totalmente independente.** Na rodada anterior, dois avaliadores seguiram sugestões
+   compartilhadas (`docs/auditoria_metodologia.md`). Nos arquivos commitados, a concordância em `corretiva` é
+   82,0% (ALuiz19 × marcosffp), 63,3% (ALuiz19 × GuilhermeVieira05) e 56,0% (GuilhermeVieira05 × marcosffp);
+   a aderência à sugestão não pode ser recalculada (arquivos fora do Git). O kappa de `corretiva` é 0,27
+   (razoável): o critério em si é ambíguo.
+3. **Taxa prevista × referência.** A v4 infla o CFR (b) (59,0% contra 28,3%); a v8 o deprime (18,7%); a v9
+   fica próxima da taxa agregada (25,4%), com 28 FP e 35 FN: o erro por repositório continua.
 4. **CFR (b) × CFR (a) não são comparáveis em nível.** (a) é falha de pipeline (`conclusion` de workflow
    runs); (b) é proxy de entrega e herda os erros da heurística (precisão e recall acima). As diferenças
    entre (a) e (b) misturam construtos distintos **e** erro de classificação; não interpretar a diferença
    como efeito real sem essa ressalva.
 5. **Censura e commits indisponíveis.** Releases com `compare` 404 ou truncado têm palavra-chave
    possivelmente ausente (puxa o CFR (b) para baixo); releases nos últimos 7 dias da janela são censuradas.
+6. **Repositório removido.** `1bananachicken/MaaNTE` (5 releases) foi removido do GitHub depois do sorteio e
+   mantido por decisão do grupo; dois avaliadores o rotularam sem acesso ao conteúdo, e nele a v9 não é
+   avaliável e as demais versões ficam sem commits.
 
 ## Impacto nas RQs afetadas
 | RQ | Impacto |
 |---|---|
-| RQ 03 (b) | Exploratória: reportar v8 como principal e v4 como sensibilidade, com P/R/F1 ao lado; não chamar de validada |
+| RQ 03 (b) | Exploratória: reportar a versão principal e a de sensibilidade (hoje v8 e v4; a rever, ver acima), com P/R/F1 ao lado; não chamar de validada |
 | RQ 05 (variante b) | Correlação DF × CFR (b) exploratória; discutir o viés de cada versão |
 | RQ 07 (combinações com CFR (b), ex.: C2) | A categoria DORA depende de uma heurística não validada; incluir a sensibilidade v4/v8 |
 | RQ 08 (rework rate, bônus) | Herda a mesma limitação |
