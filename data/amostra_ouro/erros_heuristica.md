@@ -7,30 +7,30 @@ Gerado por `python -m scripts.analise_erros_heuristica` (Issue #30) a partir da 
 | | Consenso: corretiva | Consenso: não |
 |---|---:|---:|
 | **Heurística: corretiva** | 47 (TP) | 28 (FP) |
-| **Heurística: não** | 35 (FN) | 185 (TN) |
+| **Heurística: não** | 38 (FN) | 187 (TN) |
 
 ## Causas (triagem automática)
 
 | Tipo | Causa | Releases |
 |---|---|---:|
 | FP | `conteudo_corretivo_sem_consenso` | 28 |
-| FN | `conteudo_sem_sinal_corretivo` | 35 |
+| FN | `conteudo_sem_sinal_corretivo` | 38 |
 
 ## Comparação entre versões (frente à v9)
 
-No subconjunto comum (releases avaliáveis por todas as versões, o mesmo da escolha da #28). "Corrige": releases que a versão acerta e a analisada erra; "piora": o contrário.
+"Corrige": releases que a versão acerta e a analisada erra; "piora": o contrário.
 
-| Versão | Regra | n comum | Precisão | Recall | F1 | Corrige | Piora |
-|---|---|---:|---:|---:|---:|---:|---:|
-| v1 | só patch E palavra estrita | 295 | 0.42 | 0.77 | 0.55 | 40 | 82 |
-| v2 | só patch OU palavra estrita | 295 | 0.32 | 0.99 | 0.48 | 37 | 146 |
-| v3 | só palavra estrita (ignora SemVer) | 295 | 0.31 | 0.87 | 0.46 | 32 | 136 |
-| v4 | só patch (não comparável: palavra estrita) | 295 | 0.42 | 0.89 | 0.57 | 45 | 92 |
-| v5 | só patch E palavra ampla | 295 | 0.43 | 0.82 | 0.57 | 41 | 81 |
-| v6 | só patch OU palavra ampla | 295 | 0.32 | 0.99 | 0.48 | 36 | 146 |
-| v7 | só palavra ampla (ignora SemVer) | 295 | 0.32 | 0.91 | 0.47 | 32 | 135 |
-| v8 | commit de correção e nenhum de feature | 295 | 0.62 | 0.43 | 0.51 | 7 | 12 |
-| v9 | v8 OU release notes com correção e sem novidade | 295 | 0.63 | 0.57 | 0.60 | 0 | 0 |
+| Versão | Regra | Precisão | Recall | F1 | TP | FP | FN | TN | Corrige | Piora |
+|---|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|
+| v1 | só patch E palavra estrita | 0.43 | 0.78 | 0.56 | 66 | 86 | 19 | 129 | 43 | 82 |
+| v2 | só patch OU palavra estrita | 0.33 | 0.99 | 0.49 | 84 | 173 | 1 | 42 | 40 | 148 |
+| v3 | só palavra estrita (ignora SemVer) | 0.32 | 0.87 | 0.47 | 74 | 158 | 11 | 57 | 35 | 138 |
+| v4 | só patch (não comparável: palavra estrita) | 0.43 | 0.89 | 0.58 | 76 | 101 | 9 | 114 | 48 | 92 |
+| v5 | só patch E palavra ampla | 0.44 | 0.82 | 0.58 | 70 | 88 | 15 | 127 | 44 | 81 |
+| v6 | só patch OU palavra ampla | 0.33 | 0.99 | 0.49 | 84 | 174 | 1 | 41 | 39 | 148 |
+| v7 | só palavra ampla (ignora SemVer) | 0.33 | 0.92 | 0.48 | 78 | 161 | 7 | 54 | 35 | 137 |
+| v8 | commit de correção e nenhum de feature | 0.62 | 0.41 | 0.50 | 35 | 21 | 50 | 194 | 7 | 12 |
+| v9 | v8 OU release notes com correção e sem novidade | 0.63 | 0.55 | 0.59 | 47 | 28 | 38 | 187 | 0 | 0 |
 
 ## Falsos positivos e falsos negativos
 
@@ -41,6 +41,9 @@ No subconjunto comum (releases avaliáveis por todas as versões, o mesmo da esc
 | FN | [0xSteph/pentest-ai v0.16.2](https://github.com/0xSteph/pentest-ai/releases/tag/v0.16.2) | v0.16.1 | `conteudo_sem_sinal_corretivo` |  |
 | FN | [10up/ElasticPress 5.3.2](https://github.com/10up/ElasticPress/releases/tag/5.3.2) | 5.3.1 | `conteudo_sem_sinal_corretivo` |  |
 | FN | [10up/ElasticPress 5.3.5](https://github.com/10up/ElasticPress/releases/tag/5.3.5) | 5.3.4 | `conteudo_sem_sinal_corretivo` |  |
+| FN | [1bananachicken/MaaNTE v1.0.1](https://github.com/1bananachicken/MaaNTE/releases/tag/v1.0.1) | v1.0.0 | `conteudo_sem_sinal_corretivo` |  |
+| FN | [1bananachicken/MaaNTE v1.1.1](https://github.com/1bananachicken/MaaNTE/releases/tag/v1.1.1) | v1.1.0 | `conteudo_sem_sinal_corretivo` |  |
+| FN | [1bananachicken/MaaNTE v1.4.1](https://github.com/1bananachicken/MaaNTE/releases/tag/v1.4.1) | v1.4.0 | `conteudo_sem_sinal_corretivo` |  |
 | FN | [4ian/GDevelop v5.5.247](https://github.com/4ian/GDevelop/releases/tag/v5.5.247) | v5.5.246 | `conteudo_sem_sinal_corretivo` |  |
 | FN | [4thfever/cultivation-world-simulator v1.2.2](https://github.com/4thfever/cultivation-world-simulator/releases/tag/v1.2.2) | v1.2.1 | `conteudo_sem_sinal_corretivo` |  |
 | FN | [4thfever/cultivation-world-simulator v1.5.2](https://github.com/4thfever/cultivation-world-simulator/releases/tag/v1.5.2) | v1.5.1 | `conteudo_sem_sinal_corretivo` |  |
@@ -102,4 +105,4 @@ No subconjunto comum (releases avaliáveis por todas as versões, o mesmo da esc
 
 ## Resumo para Ameaças à validade (construto)
 
-Na versão v9, 28 das 75 releases marcadas como corretivas são falsos positivos (37%) e 35 das 82 corretivas do consenso não foram encontradas (43%). Causa mais frequente de FP: `conteudo_corretivo_sem_consenso` (28); de FN: `conteudo_sem_sinal_corretivo` (35). 0 FN se devem a commits indisponíveis (`compare` 404 ou truncado). O CFR (b) herda esses erros: FP inflam e FN reduzem a taxa.
+Na versão v9, 28 das 75 releases marcadas como corretivas são falsos positivos (37%) e 38 das 85 corretivas do consenso não foram encontradas (45%). Causa mais frequente de FP: `conteudo_corretivo_sem_consenso` (28); de FN: `conteudo_sem_sinal_corretivo` (38). 0 FN se devem a commits indisponíveis (`compare` 404 ou truncado). O CFR (b) herda esses erros: FP inflam e FN reduzem a taxa.

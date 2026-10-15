@@ -16,17 +16,9 @@ Uso (a partir da raiz do repositório, depois do consenso da #26):
 5. Calcula precisão, recall e F1 de cada versão com `precision_recall_fscore_support` e grava
    `avaliacao_heuristica.csv` e `avaliacao_heuristica.md` (tabela versão → F1 para o artigo).
 
-**Releases sem release notes** (HTTP 404/410, ex.: repositório removido depois do sorteio): as versões que
-exigem notas (v9) ficam **não avaliáveis** nelas (coluna vazia), sem cair na regra de outra versão. Só repos
-passados em `--permitir-sem-notas` podem ter releases assim; qualquer outro, ou qualquer outro erro HTTP na
-coleta das notas, interrompe a rodada sem gravar nada.
-
-Cada versão tem duas medidas: nas linhas avaliáveis dela (`n`, comportamento de produção) e no **subconjunto
-comum** em que todas as versões são avaliáveis (`*_comum`), que é o usado para comparar e escolher.
-
-Escolha da versão final: fica a v1 (definida antes de ver os dados) se F1 comum ≥ 0,70; senão, a de maior
-F1 comum (empate → menor número). Escolher entre várias versões na mesma amostra deixa o F1 da escolhida
-otimista (sem amostra de validação separada): o relatório traz todas as versões e o número de corretivas do
+Escolha da versão final: fica a v1 (definida antes de ver os dados) se F1 ≥ 0,70; senão, a de maior F1
+(empate → menor número). Escolher entre várias versões na mesma amostra deixa o F1 da escolhida otimista
+(sem amostra de validação separada): o relatório traz todas as versões e o número de corretivas do
 consenso, e isso entra em Ameaças à validade.
 """
 
@@ -54,14 +46,9 @@ ARQ_RELATORIO = "avaliacao_heuristica.md"
 COLUNAS_SINAIS = ("semver_patch", "palavra_chave", "palavra_chave_ampla")
 COLUNAS_CONTEUDO = ("n_correcoes", "n_features", "nota_correcao", "nota_novidade")  # v8/v9
 COLUNAS_HEURISTICA = (
-    "release_id", "full_name", "tag_name", "base", "status", "mensagens_incompletas", "notas_indisponiveis",
-    *COLUNAS_SINAIS, *COLUNAS_CONTEUDO, *VERSOES,
+    "release_id", "full_name", "tag_name", "base", "status", "mensagens_incompletas", *COLUNAS_SINAIS, *COLUNAS_CONTEUDO, *VERSOES,
 )
-COLUNAS_AVALIACAO = (
-    "versao", "descricao", "n", "tp", "fp", "fn", "tn", "precisao", "recall", "f1",
-    "n_comum", "precisao_comum", "recall_comum", "f1_comum", "escolhida",
-)
-STATUS_SEM_NOTAS = (404, 410)  # release removida: não avaliável; outros erros interrompem a rodada
+COLUNAS_AVALIACAO = ("versao", "descricao", "n", "tp", "fp", "fn", "tn", "precisao", "recall", "f1", "escolhida")
 
 
 class AvaliacaoError(Exception):
@@ -162,23 +149,15 @@ def coletar_commits(pares: dict, client, cache_dir: Path | None) -> dict[str, li
 
 
 def coletar_notas(linhas_amostra: list[dict], client) -> dict[str, str | None]:
-    """`release_id -> corpo (release notes)`; `None` só se a release foi removida (HTTP 404/410).
+    """`release_id -> corpo (release notes)`; `None` se a release não está acessível (ex.: 404).
 
     Usa `GET /repos/{owner}/{repo}/releases/{id}` pelo cliente do pipeline (com cache em disco quando
-    há token). Qualquer outro status diferente de 200 (403, 5xx após as tentativas…) levanta
-    `AvaliacaoError`: dado ausente por falha transitória não pode encolher a amostra em silêncio. Sem token
-    e fora do cache, o cliente levanta `AvaliacaoError` como na coleta de commits.
+    há token). Sem token e fora do cache, o cliente levanta `AvaliacaoError` como na coleta de commits.
     """
     notas: dict[str, str | None] = {}
     for linha in linhas_amostra:
-        caminho = f"/repos/{linha['full_name']}/releases/{linha['release_id']}"
-        resp = client.get(caminho)
-        if resp.status_code in STATUS_SEM_NOTAS:
-            notas[str(linha["release_id"])] = None
-            continue
-        if resp.status_code != 200:
-            raise AvaliacaoError(f"HTTP {resp.status_code} ao buscar as release notes ({caminho}); nada foi gravado")
-        corpo = resp.json()
+        resp = client.get(f"/repos/{linha['full_name']}/releases/{linha['release_id']}")
+        corpo = resp.json() if resp.status_code == 200 else None
         notas[str(linha["release_id"])] = (corpo.get("body") or "") if isinstance(corpo, dict) else ""
     return notas
 
@@ -193,54 +172,32 @@ def _sim_nao(valor) -> str:
     return "sim" if valor else "nao"
 
 
-def aplicar_versoes(
-    releases_por_repo: dict[str, list[dict]],
-    notas: dict[str, str | None] | None = None,
-    permitir_sem_notas=(),
-) -> list[dict]:
+def aplicar_versoes(releases_por_repo: dict[str, list[dict]], notas: dict[str, str | None] | None = None) -> list[dict]:
     """Uma linha por release sorteada: sinais da heurística e o resultado de cada versão (`sim`/`nao`).
 
-    Release com anterior e sem notas (`notas` ausente, sem a release ou `None`): as versões que exigem
-    notas ficam **vazias** (não avaliáveis) nela, sem cair na regra de outra versão, e `notas_indisponiveis`
-    = `sim`. Isso só é aceito para repositórios em `permitir_sem_notas`; com qualquer outro, levanta
-    `AvaliacaoError` antes de qualquer linha. Notas `""` são dado presente.
+    Release com anterior e sem notas coletadas (`notas` ausente, sem a release ou `None`) levanta
+    `AvaliacaoError` antes de qualquer linha: a v9 não cai na regra da v8. Notas `""` são dado presente.
     """
-    permitidos = {p.strip().lower() for p in permitir_sem_notas}
-    exige = any(VERSOES[v].exige_notas for v in VERSOES)
-
-    def sem_notas(r: dict) -> bool:
-        return r.get("base") is not None and (notas or {}).get(str(r["id"])) is None
-
-    inesperadas = [
+    sem_notas = [
         f"{fn}@{r['tag_name']} (id {r['id']})"
         for fn, rels in releases_por_repo.items() for r in rels
-        if sem_notas(r) and fn.lower() not in permitidos
+        if r.get("base") is not None and (notas or {}).get(str(r["id"])) is None
     ]
-    if exige and inesperadas:
+    if any(VERSOES[v].exige_notas for v in VERSOES) and sem_notas:
         raise AvaliacaoError(
-            f"release notes indisponíveis para {len(inesperadas)} release(s) com anterior, exigidas pela v9, em "
-            "repositórios não permitidos (use --permitir-sem-notas se o repositório foi removido); nada foi "
-            "gravado. Ex.: " + ", ".join(inesperadas[:5])
+            f"release notes indisponíveis para {len(sem_notas)} release(s) com anterior, exigidas pela v9; "
+            "nada foi gravado. Ex.: " + ", ".join(sem_notas[:5])
         )
     linhas = []
     for full_name, releases in releases_por_repo.items():
         for r in releases:
             mensagens = [c.get("message") for c in r.get("commits") or []] if r.get("status") == STATUS_OK else []
             sinais = sinais_da_release(r.get("base"), r["tag_name"], mensagens)
-            faltam_notas = sem_notas(r)
             conteudo = (
                 sinais_conteudo(mensagens, (notas or {}).get(str(r["id"])))
                 if r.get("base") is not None else {k: None for k in COLUNAS_CONTEUDO}
             )
             todos = {**sinais, **conteudo}
-
-            def resultado(v: str) -> str:
-                if r.get("base") is None:
-                    return "nao"
-                if VERSOES[v].exige_notas and faltam_notas:
-                    return ""  # não avaliável: sem as notas, a versão não se aplica
-                return _sim_nao(corretiva(todos, v))
-
             linhas.append({
                 "release_id": r["id"],
                 "full_name": full_name,
@@ -248,10 +205,12 @@ def aplicar_versoes(
                 "base": r.get("base") or "",
                 "status": r.get("status"),
                 "mensagens_incompletas": _sim_nao(r.get("status") == STATUS_404 or bool(r.get("truncado"))),
-                "notas_indisponiveis": _sim_nao(faltam_notas),
                 **{k: _sim_nao(v) for k, v in sinais.items()},
                 **{k: _conteudo_str(v) for k, v in conteudo.items()},
-                **{v: resultado(v) for v in VERSOES},
+                **{
+                    v: _sim_nao(False if r.get("base") is None else corretiva(todos, v))
+                    for v in VERSOES
+                },
             })
     return linhas
 
@@ -263,26 +222,16 @@ def avaliar_versoes(linhas: list[dict], consenso: dict[str, int]) -> list[dict]:
         faltam = sorted(set(ids) - set(consenso))[:5]
         sobram = sorted(set(consenso) - set(ids))[:5]
         raise AvaliacaoError(f"releases da amostra e do consenso diferem (sem consenso: {faltam}; só no consenso: {sobram})")
-    comuns = [l for l in linhas if all(l[v] != "" for v in VERSOES)]
-    if not comuns:
-        raise AvaliacaoError("nenhuma release é avaliável por todas as versões; não há subconjunto comum")
+    y_true = [consenso[i] for i in ids]
     tabela = []
     for versao, info in VERSOES.items():
-        avaliaveis = [l for l in linhas if l[versao] != ""]
-        y_true = [consenso[str(l["release_id"])] for l in avaliaveis]
-        y_pred = [ROTULO[l[versao]] for l in avaliaveis]
+        y_pred = [ROTULO[l[versao]] for l in linhas]
         p, r, f1, _ = precision_recall_fscore_support(y_true, y_pred, average="binary", pos_label=1, zero_division=0)
         tn, fp, fn, tp = confusion_matrix(y_true, y_pred, labels=[0, 1]).ravel()
-        pc, rc, f1c, _ = precision_recall_fscore_support(
-            [consenso[str(l["release_id"])] for l in comuns], [ROTULO[l[versao]] for l in comuns],
-            average="binary", pos_label=1, zero_division=0,
-        )
         tabela.append({
-            "versao": versao, "descricao": info.descricao, "n": len(avaliaveis),
+            "versao": versao, "descricao": info.descricao, "n": len(ids),
             "tp": int(tp), "fp": int(fp), "fn": int(fn), "tn": int(tn),
             "precisao": round(float(p), 4), "recall": round(float(r), 4), "f1": round(float(f1), 4),
-            "n_comum": len(comuns),
-            "precisao_comum": round(float(pc), 4), "recall_comum": round(float(rc), 4), "f1_comum": round(float(f1c), 4),
         })
     escolhida = escolher_versao(tabela)
     for linha in tabela:
@@ -295,71 +244,39 @@ def _numero(versao: str) -> int:
 
 
 def escolher_versao(tabela: list[dict]) -> str:
-    """v1 se F1 comum ≥ 0,70; senão a de maior F1 comum (empate → menor número de versão).
-
-    Usa o subconjunto comum para que nenhuma versão ganhe só por ser avaliada num n menor.
-    """
+    """v1 se F1 ≥ 0,70; senão a de maior F1 (empate → menor número de versão)."""
     por_versao = {l["versao"]: l for l in tabela}
-    if "v1" in por_versao and por_versao["v1"]["f1_comum"] >= F1_MINIMO:
+    if "v1" in por_versao and por_versao["v1"]["f1"] >= F1_MINIMO:
         return "v1"
-    return min(tabela, key=lambda l: (-l["f1_comum"], _numero(l["versao"])))["versao"]
+    return min(tabela, key=lambda l: (-l["f1"], _numero(l["versao"])))["versao"]
 
 
 def relatorio_md(tabela: list[dict], linhas: list[dict]) -> str:
     escolhida = next(l for l in tabela if l["escolhida"] == "sim")
-    completa = max(tabela, key=lambda l: l["n"])  # versão avaliável em todas as linhas
-    positivas = completa["tp"] + completa["fn"]
+    positivas = tabela[0]["tp"] + tabela[0]["fn"]
     incompletas = sum(1 for l in linhas if l["mensagens_incompletas"] == "sim")
-    sem_notas = [l for l in linhas if l.get("notas_indisponiveis") == "sim"]
     partes = [
         "# Avaliação da heurística de release corretiva",
         "",
         f"Gerado por `python -m scripts.evaluate_heuristic` (Issue #28). Referência: consenso da dimensão "
-        f"`corretiva` em `consenso.csv`; {len(linhas)} releases da amostra-ouro, **{positivas} corretivas** "
+        f"`corretiva` em `consenso.csv`; {escolhida['n']} releases da amostra-ouro, **{positivas} corretivas** "
         f"no consenso. Métricas com `precision_recall_fscore_support` (positivo = corretiva).",
         "",
-        f"## Comparação no subconjunto comum (n = {escolhida['n_comum']}, usada na escolha)",
-        "",
-        "Releases em que todas as versões são avaliáveis.",
-        "",
-        "| Versão | Regra | Precisão | Recall | F1 |",
-        "|---|---|---:|---:|---:|",
+        "| Versão | Regra | TP | FP | FN | TN | Precisão | Recall | F1 |",
+        "|---|---|---:|---:|---:|---:|---:|---:|---:|",
     ]
     for l in tabela:
         marca = " **(escolhida)**" if l["escolhida"] == "sim" else ""
         partes.append(
-            f"| {l['versao']}{marca} | {l['descricao']} | {l['precisao_comum']:.2f} | {l['recall_comum']:.2f} "
-            f"| {l['f1_comum']:.2f} |"
+            f"| {l['versao']}{marca} | {l['descricao']} | {l['tp']} | {l['fp']} | {l['fn']} | {l['tn']} "
+            f"| {l['precisao']:.2f} | {l['recall']:.2f} | {l['f1']:.2f} |"
         )
     partes += [
         "",
-        "## Todas as releases avaliáveis de cada versão (comportamento de produção)",
-        "",
-        "| Versão | n | TP | FP | FN | TN | Precisão | Recall | F1 |",
-        "|---|---:|---:|---:|---:|---:|---:|---:|---:|",
-    ]
-    partes += [
-        f"| {l['versao']} | {l['n']} | {l['tp']} | {l['fp']} | {l['fn']} | {l['tn']} "
-        f"| {l['precisao']:.2f} | {l['recall']:.2f} | {l['f1']:.2f} |"
-        for l in tabela
-    ]
-    partes += [
-        "",
-        f"**Versão escolhida: {escolhida['versao']}** (F1 comum = {escolhida['f1_comum']:.2f}). Regra de escolha: "
-        f"fica a v1, definida antes de ver os dados, se F1 comum ≥ {F1_MINIMO:.2f}; senão, a de maior F1 comum "
-        "(empate → menor número).",
+        f"**Versão escolhida: {escolhida['versao']}** (F1 = {escolhida['f1']:.2f}). Regra de escolha: fica a v1, "
+        f"definida antes de ver os dados, se F1 ≥ {F1_MINIMO:.2f}; senão, a de maior F1 (empate → menor número).",
         "",
         f"- Releases com mensagens incompletas (`compare` 404 ou truncado): {incompletas}.",
-    ]
-    if sem_notas:
-        lista = ", ".join(f"{l['full_name']} {l['tag_name']}" for l in sem_notas)
-        partes.append(
-            f"- Releases sem release notes (HTTP 404/410), **não avaliáveis** pelas versões que exigem notas: "
-            f"{len(sem_notas)} ({lista}). Nelas as demais versões também ficam sem commits quando o `compare` dá "
-            "404 e tendem a marcá-las como não corretivas por falta de dado: por isso a comparação usa o "
-            "subconjunto comum."
-        )
-    partes += [
         "- Viés de seleção: as versões foram comparadas na mesma amostra, sem conjunto de validação separado; "
         "o F1 da versão escolhida tende a ser otimista (registrar em Ameaças à validade).",
     ]
@@ -382,7 +299,7 @@ def criar_cliente(config):
     return criar(token, config.cache_dir)
 
 
-def executar(amostra_dir: Path, client, cache_dir: Path | None, permitir_sem_notas=()) -> list[dict]:
+def executar(amostra_dir: Path, client, cache_dir: Path | None) -> list[dict]:
     """Fluxo completo; devolve a tabela versão → P/R/F1 e grava os 3 arquivos em `amostra_dir`."""
     amostra_dir = Path(amostra_dir)
     problemas = checar_rotulos(amostra_dir)
@@ -394,9 +311,7 @@ def executar(amostra_dir: Path, client, cache_dir: Path | None, permitir_sem_not
     consenso = consenso_corretiva(amostra_dir / "consenso.csv")
     amostra = _ler_csv(amostra_dir / "amostra_ouro.csv")
     pares = pares_da_amostra(amostra)
-    linhas = aplicar_versoes(
-        coletar_commits(pares, client, cache_dir), coletar_notas(amostra, client), permitir_sem_notas
-    )
+    linhas = aplicar_versoes(coletar_commits(pares, client, cache_dir), coletar_notas(amostra, client))
     tabela = avaliar_versoes(linhas, consenso)
     _escrever_csv(amostra_dir / ARQ_HEURISTICA, COLUNAS_HEURISTICA, linhas)
     _escrever_csv(amostra_dir / ARQ_AVALIACAO, COLUNAS_AVALIACAO, tabela)
@@ -408,16 +323,12 @@ def main(argv=None) -> int:
     p = argparse.ArgumentParser(prog="python -m scripts.evaluate_heuristic", description=__doc__.splitlines()[0])
     p.add_argument("--config", default="config.yaml", help="config.yaml (cache e token)")
     p.add_argument("--amostra-dir", default="data/amostra_ouro", help="pasta da amostra-ouro")
-    p.add_argument(
-        "--permitir-sem-notas", action="append", default=[], metavar="OWNER/REPO",
-        help="repositório removido cujas releases ficam não avaliáveis nas versões que exigem notas (repetível)",
-    )
     args = p.parse_args(argv)
     amostra_dir = Path(args.amostra_dir)
     try:
         carregar_dotenv(".env")
         config = load_config(args.config)
-        tabela = executar(amostra_dir, criar_cliente(config), Path(config.cache_dir), args.permitir_sem_notas)
+        tabela = executar(amostra_dir, criar_cliente(config), Path(config.cache_dir))
     except AvaliacaoError as exc:
         print(f"erro: {exc}", file=sys.stderr)
         return exc.codigo
@@ -426,8 +337,7 @@ def main(argv=None) -> int:
         return 1
     for l in tabela:
         marca = "  <- escolhida" if l["escolhida"] == "sim" else ""
-        print(f"{l['versao']}: n={l['n']} P={l['precisao']:.2f} R={l['recall']:.2f} F1={l['f1']:.2f} | "
-              f"comum (n={l['n_comum']}) F1={l['f1_comum']:.2f} ({l['descricao']}){marca}")
+        print(f"{l['versao']}: P={l['precisao']:.2f} R={l['recall']:.2f} F1={l['f1']:.2f} ({l['descricao']}){marca}")
     print(f"gravados em {amostra_dir}: {ARQ_HEURISTICA}, {ARQ_AVALIACAO}, {ARQ_RELATORIO}")
     return 0
 
