@@ -32,7 +32,7 @@ from pathlib import Path
 
 from sklearn.metrics import confusion_matrix, precision_recall_fscore_support
 
-from metricas.heuristica import HEURISTIC_VERSION, VERSOES, corretiva, sinais_da_release
+from metricas.heuristica import HEURISTIC_VERSION, VERSOES, corretiva, sinais_conteudo, sinais_da_release
 from pipeline.collect_commits import STATUS_404, STATUS_OK, collect_commits
 from pipeline.config import ConfigError, carregar_dotenv, get_token, load_config
 from scripts.validar_rotulos import validar
@@ -44,8 +44,9 @@ ARQ_HEURISTICA = "heuristica_amostra.csv"
 ARQ_AVALIACAO = "avaliacao_heuristica.csv"
 ARQ_RELATORIO = "avaliacao_heuristica.md"
 COLUNAS_SINAIS = ("semver_patch", "palavra_chave", "palavra_chave_ampla")
+COLUNAS_CONTEUDO = ("n_correcoes", "n_features", "nota_correcao", "nota_novidade")  # v8/v9
 COLUNAS_HEURISTICA = (
-    "release_id", "full_name", "tag_name", "base", "status", "mensagens_incompletas", *COLUNAS_SINAIS, *VERSOES,
+    "release_id", "full_name", "tag_name", "base", "status", "mensagens_incompletas", *COLUNAS_SINAIS, *COLUNAS_CONTEUDO, *VERSOES,
 )
 COLUNAS_AVALIACAO = ("versao", "descricao", "n", "tp", "fp", "fn", "tn", "precisao", "recall", "f1", "escolhida")
 
@@ -147,19 +148,56 @@ def coletar_commits(pares: dict, client, cache_dir: Path | None) -> dict[str, li
     return saida
 
 
+def coletar_notas(linhas_amostra: list[dict], client) -> dict[str, str | None]:
+    """`release_id -> corpo (release notes)`; `None` se a release não está acessível (ex.: 404).
+
+    Usa `GET /repos/{owner}/{repo}/releases/{id}` pelo cliente do pipeline (com cache em disco quando
+    há token). Sem token e fora do cache, o cliente levanta `AvaliacaoError` como na coleta de commits.
+    """
+    notas: dict[str, str | None] = {}
+    for linha in linhas_amostra:
+        resp = client.get(f"/repos/{linha['full_name']}/releases/{linha['release_id']}")
+        corpo = resp.json() if resp.status_code == 200 else None
+        notas[str(linha["release_id"])] = (corpo.get("body") or "") if isinstance(corpo, dict) else None
+    return notas
+
+
+def _conteudo_str(valor) -> str:
+    return str(valor) if isinstance(valor, int) and not isinstance(valor, bool) else _sim_nao(valor)
+
+
 def _sim_nao(valor) -> str:
     if valor is None:
         return ""
     return "sim" if valor else "nao"
 
 
-def aplicar_versoes(releases_por_repo: dict[str, list[dict]]) -> list[dict]:
-    """Uma linha por release sorteada: sinais da heurística e o resultado de cada versão (`sim`/`nao`)."""
+def aplicar_versoes(releases_por_repo: dict[str, list[dict]], notas: dict[str, str | None] | None = None) -> list[dict]:
+    """Uma linha por release sorteada: sinais da heurística e o resultado de cada versão (`sim`/`nao`).
+
+    Release com anterior e sem notas coletadas (`notas` ausente, sem a release ou `None`) levanta
+    `AvaliacaoError` antes de qualquer linha: a v9 não cai na regra da v8. Notas `""` são dado presente.
+    """
+    sem_notas = [
+        f"{fn}@{r['tag_name']} (id {r['id']})"
+        for fn, rels in releases_por_repo.items() for r in rels
+        if r.get("base") is not None and (notas or {}).get(str(r["id"])) is None
+    ]
+    if any(VERSOES[v].exige_notas for v in VERSOES) and sem_notas:
+        raise AvaliacaoError(
+            f"release notes indisponíveis para {len(sem_notas)} release(s) com anterior, exigidas pela v9; "
+            "nada foi gravado. Ex.: " + ", ".join(sem_notas[:5])
+        )
     linhas = []
     for full_name, releases in releases_por_repo.items():
         for r in releases:
             mensagens = [c.get("message") for c in r.get("commits") or []] if r.get("status") == STATUS_OK else []
             sinais = sinais_da_release(r.get("base"), r["tag_name"], mensagens)
+            conteudo = (
+                sinais_conteudo(mensagens, (notas or {}).get(str(r["id"])))
+                if r.get("base") is not None else {k: None for k in COLUNAS_CONTEUDO}
+            )
+            todos = {**sinais, **conteudo}
             linhas.append({
                 "release_id": r["id"],
                 "full_name": full_name,
@@ -168,7 +206,11 @@ def aplicar_versoes(releases_por_repo: dict[str, list[dict]]) -> list[dict]:
                 "status": r.get("status"),
                 "mensagens_incompletas": _sim_nao(r.get("status") == STATUS_404 or bool(r.get("truncado"))),
                 **{k: _sim_nao(v) for k, v in sinais.items()},
-                **{v: _sim_nao(corretiva(sinais, v)) for v in VERSOES},
+                **{k: _conteudo_str(v) for k, v in conteudo.items()},
+                **{
+                    v: _sim_nao(False if r.get("base") is None else corretiva(todos, v))
+                    for v in VERSOES
+                },
             })
     return linhas
 
@@ -267,8 +309,9 @@ def executar(amostra_dir: Path, client, cache_dir: Path | None) -> list[dict]:
             "completos (E§6):\n  " + "\n  ".join(problemas)
         )
     consenso = consenso_corretiva(amostra_dir / "consenso.csv")
-    pares = pares_da_amostra(_ler_csv(amostra_dir / "amostra_ouro.csv"))
-    linhas = aplicar_versoes(coletar_commits(pares, client, cache_dir))
+    amostra = _ler_csv(amostra_dir / "amostra_ouro.csv")
+    pares = pares_da_amostra(amostra)
+    linhas = aplicar_versoes(coletar_commits(pares, client, cache_dir), coletar_notas(amostra, client))
     tabela = avaliar_versoes(linhas, consenso)
     _escrever_csv(amostra_dir / ARQ_HEURISTICA, COLUNAS_HEURISTICA, linhas)
     _escrever_csv(amostra_dir / ARQ_AVALIACAO, COLUNAS_AVALIACAO, tabela)

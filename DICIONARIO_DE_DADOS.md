@@ -126,7 +126,11 @@ Saída da heurística de release corretiva sobre as 300 releases da amostra-ouro
 | `semver_patch` | str | `sim` · `nao` · vazio | Só o patch subiu; vazio se as tags não são comparáveis ou sem anterior |
 | `palavra_chave` | str | `sim` · `nao` | `revert`/`hotfix`/`fix` como palavra inteira em algum commit |
 | `palavra_chave_ampla` | str | `sim` · `nao` | Também `fixes`, `fixed`, `fixing`, `bugfix`, `reverted`… |
-| `v1` … `v7` | str | `sim` · `nao` | Release corretiva segundo cada versão (regras em `avaliacao_heuristica.csv`) |
+| `n_correcoes` | int | ≥ 0 ou vazio | Commits substantivos de correção (fix/hotfix/bugfix/revert); vazio sem release anterior |
+| `n_features` | int | ≥ 0 ou vazio | Commits substantivos de feature (feat/add/support…); vazio sem release anterior |
+| `nota_correcao` | str | `sim` · `nao` · vazio | Release notes citam correção; vazio se notas indisponíveis |
+| `nota_novidade` | str | `sim` · `nao` · vazio | Release notes citam novidade; vazio se notas indisponíveis |
+| `v1` … `v9` | str | `sim` · `nao` | Release corretiva segundo cada versão (regras em `avaliacao_heuristica.csv`) |
 
 ## `data/amostra_ouro/avaliacao_heuristica.csv`
 
@@ -140,7 +144,7 @@ Precisão, recall e F1 de cada versão da heurística frente ao consenso (E§6, 
 | `precisao` | float | proporção | TP / (TP + FP); 0 sem positivos previstos |
 | `recall` | float | proporção | TP / (TP + FN) |
 | `f1` | float | proporção | 2·P·R / (P + R) |
-| `escolhida` | str | `sim` · `nao` | v1 se F1 ≥ 0,70; senão a de maior F1 (empate → menor número) |
+| `escolhida` | str | `sim` · `nao` | Regra interna do script: v1 se F1 ≥ 0,70; senão a de maior F1 (empate → menor número). **Não indica validação**: nenhuma versão atingiu F1 ≥ 0,70 |
 
 ## `data/amostra_ouro/erros_heuristica.csv`
 
@@ -157,3 +161,19 @@ Falsos positivos e falsos negativos de uma versão da heurística frente ao cons
 | `semver_patch`, `palavra_chave`, `palavra_chave_ampla`, `mensagens_incompletas` | str | `sim` · `nao` (· vazio) | Idem `heuristica_amostra.csv` |
 | `release_url`, `compare_url` | str | URL | Idem `amostra_ouro.csv` |
 | `causa_manual` | str | — | Anotação do grupo lendo os commits; preservada por `release_id` ao regravar |
+
+
+## Status de validação da heurística de release corretiva (CFR (b))
+
+Os valores de CFR (b) que vierem a entrar no dataset final usam uma heurística **não validada** (nenhuma
+versão atingiu F1 ≥ 0,70; ver `docs/refino_heuristica.md`). Regras de uso:
+
+| Versão (`heuristic_version`) | Papel | Precisão | Recall | F1 | Taxa prevista (referência 25,0%) |
+|---|---|---:|---:|---:|---:|
+| v8 | estimativa principal **exploratória** | 0,696 | 0,520 | 0,595 | 18,7% |
+| v4 | análise de **sensibilidade** | 0,373 | 0,880 | 0,524 | 59,0% |
+| v9 | variante experimental, **fora do dataset** (precisa de `body` das releases) | 0,680 | 0,680 | 0,680 | 25,0% |
+
+- Todo CFR (b) deve ser lido junto do `heuristic_version` e destes P/R/F1; o F1 é otimista (v8/v9 foram
+  desenhadas após a análise de erros, na mesma amostra).
+- CFR (b) e CFR (a) medem construtos diferentes e a diferença entre eles inclui o erro de classificação.

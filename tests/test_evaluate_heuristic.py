@@ -47,6 +47,8 @@ class FakeClient:
 
     def get(self, path, params=None):
         self.chamadas.append(path)
+        if "/releases/" in path:  # release notes (v9)
+            return Resp({"body": "### Fixed\n* crash ao abrir" if path.endswith("/21") else "Nova tela"})
         chave = unquote(path.split("/compare/", 1)[1])
         if chave in self.status:
             return Resp({"message": "erro"}, status=self.status[chave])
@@ -181,7 +183,8 @@ def test_pares_da_amostra_preserva_ordem_e_id():
 
 def test_coletar_e_aplicar_versoes(tmp_path):
     client = FakeClient(COMMITS, status={"app/2.1.0...app/2.1.1": 404})
-    linhas = ev.aplicar_versoes(ev.coletar_commits(ev.pares_da_amostra(AMOSTRA), client, tmp_path / "cache"))
+    pares = ev.pares_da_amostra(AMOSTRA)
+    linhas = ev.aplicar_versoes(ev.coletar_commits(pares, client, tmp_path / "cache"), ev.coletar_notas(AMOSTRA, client))
     por_id = {l["release_id"]: l for l in linhas}
     assert list(por_id) == ["11", "12", "21", "22"]
     assert por_id["11"]["status"] == "sem_anterior" and por_id["11"]["v1"] == "nao"
@@ -296,3 +299,48 @@ def test_main_ponta_a_ponta(amostra_dir, tmp_path, monkeypatch, capsys):
     assert ev.main(["--config", str(config), "--amostra-dir", str(amostra_dir)]) == 0
     saida = capsys.readouterr().out
     assert "v1: P=1.00 R=0.50" in saida and "<- escolhida" in saida
+
+
+# ---- v9 sem notas: erro explícito, sem saída parcial (correção de auditoria) ----
+
+
+def _releases_e_notas(tmp_path):
+    client = FakeClient(COMMITS)
+    releases = ev.coletar_commits(ev.pares_da_amostra(AMOSTRA), client, tmp_path / "cache")
+    return releases, ev.coletar_notas(AMOSTRA, client)
+
+
+@pytest.mark.parametrize("quebra", ["ausente", "none"])
+def test_aplicar_versoes_sem_notas_de_release_com_anterior_falha(tmp_path, quebra):
+    releases, notas = _releases_e_notas(tmp_path)
+    if quebra == "ausente":
+        del notas["12"]
+    else:
+        notas["12"] = None  # coleta falhou (ex.: 404)
+    with pytest.raises(ev.AvaliacaoError, match="release notes indisponíveis"):
+        ev.aplicar_versoes(releases, notas)
+    with pytest.raises(ev.AvaliacaoError):
+        ev.aplicar_versoes(releases)  # nenhuma nota coletada
+
+
+def test_notas_da_release_sem_anterior_nao_sao_exigidas_e_vazia_e_dado(tmp_path):
+    releases, notas = _releases_e_notas(tmp_path)
+    notas["11"] = None  # 1ª release da história: não entra na regra
+    notas["12"] = ""    # coletada e vazia: presente
+    linhas = {l["release_id"]: l for l in ev.aplicar_versoes(releases, notas)}
+    assert linhas["11"]["v9"] == "nao" and linhas["12"]["nota_correcao"] == "nao"
+
+
+def test_executar_com_falha_na_coleta_de_notas_nao_grava_saidas(amostra_dir, tmp_path):
+    class SemNotas(FakeClient):
+        def get(self, path, params=None):
+            if "/releases/" in path:
+                return Resp({"message": "Not Found"}, status=404)
+            return super().get(path, params)
+
+    antes = {p.name: p.read_bytes() for p in amostra_dir.iterdir() if p.is_file()}
+    with pytest.raises(ev.AvaliacaoError, match="release notes indisponíveis"):
+        ev.executar(amostra_dir, SemNotas(COMMITS), tmp_path / "cache")
+    for nome in (ev.ARQ_HEURISTICA, ev.ARQ_AVALIACAO, ev.ARQ_RELATORIO):
+        assert not (amostra_dir / nome).exists()
+    assert {p.name: p.read_bytes() for p in amostra_dir.iterdir() if p.is_file()} == antes

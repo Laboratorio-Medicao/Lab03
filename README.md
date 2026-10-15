@@ -124,7 +124,7 @@ Se nenhuma release for avaliável (por exemplo, repo com uma única release), as
 
 ## Heurística de release corretiva e CFR (b) (Issue #27)
 
-`metricas/heuristica.py` marca uma release S como **corretiva** comparando-a com a release de deploy anterior (a mesma `base` do `compare`) e olhando os commits entre as duas. A versão da regra sai em `heuristic_version`. A validação contra a amostra-ouro e o refino ficam na #28 (versões candidatas em `VERSOES`, ver [Avaliação da heurística](#avaliação-da-heurística-issue-28)). O padrão continua sendo a v1 até a avaliação escolher a versão final.
+`metricas/heuristica.py` marca uma release S como **corretiva** comparando-a com a release de deploy anterior (a mesma `base` do `compare`) e olhando os commits entre as duas. A versão da regra sai em `heuristic_version`. A validação contra a amostra-ouro e o refino ficam na #28 (versões candidatas em `VERSOES`, ver [Avaliação da heurística](#avaliação-da-heurística-issue-28)). A versão **não tem padrão**: `avaliar`, `classificar_releases` e `resumo_cfr_entrega` exigem `versao` explícita (desconhecida → `ValueError`), e a v9, que lê as release notes (`body`), levanta `DadosAusentesError` se elas não vierem nos itens, em vez de rodar outra regra com o rótulo v9. `HEURISTIC_VERSION` (v1) é só a regra definida antes dos dados.
 
 **Regra v1** (exemplo do professor, E§5: "só muda o patch **e** contém o commit fix"):
 
@@ -182,16 +182,19 @@ python -m scripts.evaluate_heuristic --config config.yaml
 
   | Versão | Regra |
   |---|---|
-  | v1 | só patch **e** palavra estrita (padrão) |
+  | v1 | só patch **e** palavra estrita (definida antes dos dados) |
   | v2 | só patch **ou** palavra estrita |
   | v3 | só palavra estrita |
   | v4 | só patch |
   | v5 | só patch **e** palavra ampla |
   | v6 | só patch **ou** palavra ampla |
   | v7 | só palavra ampla |
+  | v8 | commit de correção e nenhum de feature (olha o conteúdo dos commits) |
+  | v9 | v8 **ou** release notes com correção e sem novidade (exige `body`; fora do dataset final) |
 
-- **Escolha:** fica a v1, definida antes de ver os dados, se F1 ≥ 0,70; senão, a de maior F1 (empate → menor número). Como as versões são comparadas na mesma amostra, sem conjunto de validação separado, o F1 da escolhida tende a ser otimista. O relatório traz todas as versões e o número de corretivas do consenso; isso entra em Ameaças à validade.
-- **Depois da rodada:** se a escolhida não for a v1, atualizar `HEURISTIC_VERSION` em `metricas/heuristica.py` e recalcular o CFR (b) (#21). Uma versão nova (v8+, desenhada a partir dos erros da #30) entra em `VERSOES` e vira coluna de `heuristica_amostra.csv`, o que exige atualizar o dicionário de dados (o `test_dicionario` cobra).
+- **Escolha (regra do script):** a v1, definida antes de ver os dados, só se F1 ≥ 0,70; senão, a de maior F1 (empate → menor número). Como nenhuma versão chegou a 0,70, `escolhida` em `avaliacao_heuristica.csv` é só essa regra interna, **não** validação. Como as versões são comparadas na mesma amostra, sem conjunto de validação separado, o F1 da escolhida tende a ser otimista. O relatório traz todas as versões e o número de corretivas do consenso; isso entra em Ameaças à validade.
+- **Status:** nenhuma versão atingiu F1 ≥ 0,70; a heurística é **não validada** e o CFR (b) é exploratório (v8 principal, v4 sensibilidade, v9 fora do dataset). Ver `docs/refino_heuristica.md`.
+- **Depois da rodada:** quem calcula o CFR (b) (#21) passa a versão explicitamente; nenhuma versão está validada. Uma versão nova (v8+, desenhada a partir dos erros da #30) entra em `VERSOES` e vira coluna de `heuristica_amostra.csv`, o que exige atualizar o dicionário de dados (o `test_dicionario` cobra).
 
 ## Análise de erros da heurística (Issue #30, bônus)
 
@@ -206,7 +209,7 @@ python -m scripts.analise_erros_heuristica [--versao vN]
   - `erros_heuristica.csv`: um FP ou FN por linha, com `causa_automatica` e a coluna `causa_manual` para o grupo anotar lendo os commits (ex.: "fix em docs");
   - `erros_heuristica.md`: matriz de confusão, contagem por causa, comparação entre versões e lista de FP/FN com links. Na comparação, "corrige" conta as releases que uma versão acerta e a analisada erra, e "piora" o contrário. O relatório termina com um resumo para Ameaças à validade.
 - **Anotações manuais:** ao rodar de novo, a `causa_manual` é mantida por `release_id`, mesmo trocando de versão. As anotações de releases que deixaram de ser erro saem do CSV, com aviso e contagem; o histórico fica no git.
-- **Taxonomia automática** (uma causa por erro, na ordem abaixo). A "palavra" é o sinal que a própria versão usa: estrita em v1–v4, ampla em v5–v7 (`PALAVRA_DA_VERSAO`; uma v8 exige atualizar esse mapa, e o script recusa versões fora dele).
+- **Taxonomia automática** (uma causa por erro, na ordem abaixo). A "palavra" é o sinal que a própria versão usa: estrita em v1–v4, ampla em v5–v7 (`PALAVRA_DA_VERSAO`). v8 e v9 decidem por conteúdo (`VERSOES_DE_CONTEUDO`) e têm causa automática genérica, para anotar em `causa_manual`; o script recusa versões fora desses dois mapas.
 
   | Tipo | Causa | Quando |
   |---|---|---|
@@ -222,7 +225,7 @@ python -m scripts.analise_erros_heuristica [--versao vN]
   | FN | `nao_semver_sem_palavra` | tags não comparáveis e sem palavra |
   | FN | `sem_sinal` | nem patch nem palavra |
 
-  `commits_indisponiveis` e `palavra_ampla_nao_estrita` são **contrafactuais**: a regra da versão é reaplicada com o sinal alterado, e a causa só vale se o resultado mudar. A precedência e os contrafactuais foram conferidos para v1–v7.
+  `commits_indisponiveis` e `palavra_ampla_nao_estrita` são **contrafactuais**: a regra da versão é reaplicada com o sinal alterado, e a causa só vale se o resultado mudar. A precedência e os contrafactuais foram conferidos só para v1–v7; v8 e v9 não passam por essa taxonomia.
 
 ## Testes e cobertura
 

@@ -106,6 +106,10 @@ heuristica_amostra.csv,mensagens_incompletas,str,-,"sim, nao","sim se o compare 
 heuristica_amostra.csv,semver_patch,str,-,"sim, nao, vazio","Só o patch SemVer subiu em relação à base; vazio se as tags não são comparáveis ou sem anterior (metricas.heuristica.apenas_patch)"
 heuristica_amostra.csv,palavra_chave,str,-,"sim, nao","Algum commit cita revert/hotfix/fix como palavra inteira"
 heuristica_amostra.csv,palavra_chave_ampla,str,-,"sim, nao","Algum commit cita revert(s|ed), hotfix(es), fix(es|ed|ing) ou bugfix(es)"
+heuristica_amostra.csv,n_correcoes,int,commits,>=0 ou vazio,"Commits substantivos (fora chore/docs/ci/deps/merge/versão) de assunto fix/hotfix/bugfix/revert (metricas.heuristica.sinais_conteudo); vazio sem release anterior"
+heuristica_amostra.csv,n_features,int,commits,>=0 ou vazio,"Commits substantivos de assunto feat/feature/add/support/implement/introduce; vazio sem release anterior"
+heuristica_amostra.csv,nota_correcao,str,-,"sim, nao, vazio","As release notes (primeiros 1500 caracteres, sem URLs) citam correção (fixed, bug fix, patch release, security…); vazio se notas indisponíveis"
+heuristica_amostra.csv,nota_novidade,str,-,"sim, nao, vazio","As release notes citam novidade (new feature, added, enhancement, improvements…); vazio se notas indisponíveis"
 heuristica_amostra.csv,v1,str,-,"sim, nao","Release corretiva segundo a versão v1 de metricas.heuristica.VERSOES (descrição em avaliacao_heuristica.csv)"
 heuristica_amostra.csv,v2,str,-,"sim, nao","Release corretiva segundo a versão v2 de metricas.heuristica.VERSOES (descrição em avaliacao_heuristica.csv)"
 heuristica_amostra.csv,v3,str,-,"sim, nao","Release corretiva segundo a versão v3 de metricas.heuristica.VERSOES (descrição em avaliacao_heuristica.csv)"
@@ -113,6 +117,8 @@ heuristica_amostra.csv,v4,str,-,"sim, nao","Release corretiva segundo a versão 
 heuristica_amostra.csv,v5,str,-,"sim, nao","Release corretiva segundo a versão v5 de metricas.heuristica.VERSOES (descrição em avaliacao_heuristica.csv)"
 heuristica_amostra.csv,v6,str,-,"sim, nao","Release corretiva segundo a versão v6 de metricas.heuristica.VERSOES (descrição em avaliacao_heuristica.csv)"
 heuristica_amostra.csv,v7,str,-,"sim, nao","Release corretiva segundo a versão v7 de metricas.heuristica.VERSOES (descrição em avaliacao_heuristica.csv)"
+heuristica_amostra.csv,v8,str,-,"sim, nao","Release corretiva segundo a versão v8 de metricas.heuristica.VERSOES (descrição em avaliacao_heuristica.csv)"
+heuristica_amostra.csv,v9,str,-,"sim, nao","Release corretiva segundo a versão v9 de metricas.heuristica.VERSOES (descrição em avaliacao_heuristica.csv)"
 avaliacao_heuristica.csv,versao,str,-,"v1, v2, ...",Versão da heurística (metricas.heuristica.VERSOES)
 avaliacao_heuristica.csv,descricao,str,-,-,Regra da versão
 avaliacao_heuristica.csv,n,int,releases,>=1,Releases da amostra-ouro avaliadas
@@ -123,7 +129,7 @@ avaliacao_heuristica.csv,tn,int,releases,>=0,"Verdadeiros negativos: heurística
 avaliacao_heuristica.csv,precisao,float,proporção,"[0, 1]","TP / (TP + FP); 0 sem positivos previstos (precision_recall_fscore_support, zero_division=0)"
 avaliacao_heuristica.csv,recall,float,proporção,"[0, 1]","TP / (TP + FN)"
 avaliacao_heuristica.csv,f1,float,proporção,"[0, 1]","2·P·R / (P + R)"
-avaliacao_heuristica.csv,escolhida,str,-,"sim, nao","Versão final: v1 se F1 >= 0,70; senão a de maior F1 (empate: menor número)"
+avaliacao_heuristica.csv,escolhida,str,-,"sim, nao","Regra interna do script: v1 se F1 >= 0,70; senão a de maior F1 (empate: menor número). NÃO indica validação: nenhuma versão atingiu F1 >= 0,70 (ver docs/refino_heuristica.md)"
 erros_heuristica.csv,versao,str,-,"v1, v2, ...",Versão da heurística analisada (padrão: a escolhida em avaliacao_heuristica.csv)
 erros_heuristica.csv,release_id,int,-,>=1,Idem amostra_ouro.csv
 erros_heuristica.csv,full_name,str,-,-,Idem amostra_ouro.csv

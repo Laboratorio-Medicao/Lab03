@@ -18,7 +18,12 @@ A heurística **precisa** ser validada contra a amostra-ouro (E§6). Para o refi
 registra variantes candidatas combinando os mesmos sinais, mais uma **palavra-chave ampla** (`fixes`,
 `fixed`, `bugfix`, `reverted`…); `scripts.evaluate_heuristic` avalia todas e escolhe a final. Em todas as
 versões, tags não comparáveis usam só a palavra-chave da versão, e release sem anterior nunca é corretiva.
-A versão usada sai em `heuristic_version`.
+A versão usada sai em `heuristic_version` e é **sempre explícita**: `avaliar`, `corretiva` e
+`classificar_releases` não têm versão padrão (`HEURISTIC_VERSION` é só a referência da regra v1).
+
+v8/v9 (refino da Issue #28, depois de a v1–v7 ficarem abaixo de F1 0,70 na amostra-ouro) olham o
+**conteúdo** da release, não o número da versão: contam commits de correção e de feature (`sinais_conteudo`)
+e, na v9, as *release notes* (as mesmas que os avaliadores leram, E§6). Ver `docs/refino_heuristica.md`.
 """
 
 from __future__ import annotations
@@ -40,6 +45,32 @@ _PALAVRA_CORRETIVA = re.compile(r"\b(?:revert|hotfix|fix)\b", re.IGNORECASE)
 _PALAVRA_CORRETIVA_AMPLA = re.compile(
     r"\b(?:revert(?:s|ed)?|hotfix(?:es)?|fix(?:es|ed|ing)?|bugfix(?:es)?)\b", re.IGNORECASE
 )
+
+# --- sinais de conteúdo (v8/v9) -------------------------------------------------------------------
+# Commits "de ruído" (manutenção, docs, versão) não dizem qual era o objetivo da release e saem da conta.
+_RUIDO = re.compile(
+    r"^\W*\[?(?:chore|docs?|ci|build|deps?|bump|test|tests|style|refactor|release|merge|update|prepare"
+    r"|version|v?\d)|^Merge |dependabot|bump ",
+    re.IGNORECASE,
+)
+_ASSUNTO_CORRECAO = re.compile(
+    r"^\W*\[?(?:hot|bug)?fix(?:es|ed)?\b|^\W*revert\b|\b(?:hotfix|bugfix)\b", re.IGNORECASE
+)
+_ASSUNTO_FEATURE = re.compile(
+    r"^\W*\[?(?:feat|feature|add|support|implement|introduce)\b", re.IGNORECASE
+)
+_NOTA_CORRECAO = re.compile(
+    r"\b(?:bug ?fix(?:es)?|fix(?:es|ed)?|hotfix|patch release|security (?:fix|release)|regression"
+    r"|crash(?:es)?|revert(?:ed)?|vulnerabilit\w+|corrig\w+)\b|🩹|🐛",
+    re.IGNORECASE,
+)
+_NOTA_NOVIDADE = re.compile(
+    r"\b(?:new features?|features?|added|adds?|introduc\w+|enhancements?|improvements?|support for"
+    r"|now (?:supports?|available))\b|✨|🚀|💝",
+    re.IGNORECASE,
+)
+_LIMPA_NOTA = re.compile(r"https?://\S+|\(#\d+\)|#\d+")
+_MAX_NOTA = 1500
 
 STATUS_OK = "ok"
 STATUS_404 = "404"
@@ -96,9 +127,32 @@ def tem_palavra_corretiva(mensagens: Iterable[str | None], ampla: bool = False) 
     return any(padrao.search(m) for m in mensagens if m)
 
 
+def sinais_conteudo(mensagens: Iterable[str | None], notas: str | None = None) -> dict:
+    """Sinais de conteúdo da v8/v9: commits de correção/feature e termos nas release notes.
+
+    `n_correcoes` e `n_features` contam só commits substantivos (assunto fora de `_RUIDO`). Sem `notas`
+    (não coletadas), `nota_correcao` e `nota_novidade` são `None` e a v9 cai na regra da v8.
+    """
+    assuntos = [(m or "").split("\n")[0] for m in mensagens]
+    substantivos = [a for a in assuntos if a and not _RUIDO.search(a)]
+    sinais = {
+        "n_correcoes": sum(1 for a in substantivos if _ASSUNTO_CORRECAO.search(a)),
+        "n_features": sum(1 for a in substantivos if _ASSUNTO_FEATURE.search(a)),
+        "nota_correcao": None,
+        "nota_novidade": None,
+    }
+    if notas is not None:
+        texto = _LIMPA_NOTA.sub(" ", notas)[:_MAX_NOTA]
+        sinais["nota_correcao"] = bool(_NOTA_CORRECAO.search(texto))
+        sinais["nota_novidade"] = bool(_NOTA_NOVIDADE.search(texto))
+    return sinais
+
+
 class Versao(NamedTuple):
     descricao: str
     regra: Callable[[Mapping], bool]
+    usa_conteudo: bool = False  # precisa dos sinais de `sinais_conteudo`
+    exige_notas: bool = False  # a regra olha as release notes (`body`): sem elas a versão não roda
 
 
 def _combina(operador: str, palavra: str) -> Callable[[Mapping], bool]:
@@ -115,6 +169,14 @@ def _combina(operador: str, palavra: str) -> Callable[[Mapping], bool]:
     return regra
 
 
+def _correcao_sem_feature(sinais: Mapping) -> bool:
+    return (sinais.get("n_correcoes") or 0) >= 1 and (sinais.get("n_features") or 0) == 0
+
+
+def _nota_corretiva(sinais: Mapping) -> bool:
+    return bool(sinais.get("nota_correcao")) and not sinais.get("nota_novidade")
+
+
 VERSOES: dict[str, Versao] = {
     "v1": Versao("só patch E palavra estrita", _combina("e", "palavra_chave")),
     "v2": Versao("só patch OU palavra estrita", _combina("ou", "palavra_chave")),
@@ -123,24 +185,54 @@ VERSOES: dict[str, Versao] = {
     "v5": Versao("só patch E palavra ampla", _combina("e", "palavra_chave_ampla")),
     "v6": Versao("só patch OU palavra ampla", _combina("ou", "palavra_chave_ampla")),
     "v7": Versao("só palavra ampla (ignora SemVer)", _combina("palavra", "palavra_chave_ampla")),
+    "v8": Versao("commit de correção e nenhum de feature", _correcao_sem_feature, usa_conteudo=True),
+    "v9": Versao(
+        "v8 OU release notes com correção e sem novidade",
+        lambda s: _correcao_sem_feature(s) or _nota_corretiva(s),
+        usa_conteudo=True,
+        exige_notas=True,
+    ),
 }
+
+
+class DadosAusentesError(ValueError):
+    """A versão pedida depende de um dado que não foi fornecido (ex.: release notes da v9)."""
+
+
+def _exigir_versao(versao: str) -> None:
+    if versao not in VERSOES:
+        raise ValueError(f"versão da heurística desconhecida: {versao!r} (conhecidas: {sorted(VERSOES)})")
 
 
 def avaliar(
     tag_anterior: str | None,
     tag: str | None,
     mensagens: Iterable[str | None],
-    versao: str = HEURISTIC_VERSION,
+    versao: str,
+    notas: str | None = None,
 ) -> dict:
     """Classifica `tag` em relação à release anterior e aos commits entre as duas.
 
     Devolve `heuristic_corrective`, `heuristic_version` e os sinais usados (`semver_patch`,
     `palavra_chave`, `palavra_chave_ampla`), úteis para a análise de erros da heurística.
+
+    `versao` é obrigatória. Versão que exige release notes (v9) com `notas=None` e release anterior
+    existente levanta `DadosAusentesError`: nunca cai em outra regra mantendo o rótulo da pedida. Notas
+    vazias (`""`) são dado presente (release sem texto).
     """
-    if versao not in VERSOES:
-        raise ValueError(f"versão da heurística desconhecida: {versao!r} (conhecidas: {sorted(VERSOES)})")
+    _exigir_versao(versao)
+    if VERSOES[versao].exige_notas and notas is None and tag_anterior is not None:
+        raise DadosAusentesError(
+            f"a versão {versao} exige as release notes (`body`) de {tag!r}, que não foram fornecidas; "
+            "não é possível executá-la sem elas (nenhuma outra regra foi aplicada)"
+        )
+    mensagens = list(mensagens)
     sinais = sinais_da_release(tag_anterior, tag, mensagens)
-    return {"heuristic_corrective": corretiva(sinais, versao), "heuristic_version": versao, **sinais}
+    if VERSOES[versao].usa_conteudo and tag_anterior is not None:
+        sinais = {**sinais, **sinais_conteudo(mensagens, notas)}
+    # sem release anterior nunca é corretiva e não há sinal de conteúdo a exigir
+    resultado = False if tag_anterior is None else corretiva(sinais, versao)
+    return {"heuristic_corrective": resultado, "heuristic_version": versao, **sinais}
 
 
 def sinais_da_release(tag_anterior: str | None, tag: str | None, mensagens: Iterable[str | None]) -> dict:
@@ -155,19 +247,37 @@ def sinais_da_release(tag_anterior: str | None, tag: str | None, mensagens: Iter
     }
 
 
-def corretiva(sinais: Mapping, versao: str = HEURISTIC_VERSION) -> bool:
-    """Aplica a regra de `versao` aos sinais de `sinais_da_release`."""
+def corretiva(sinais: Mapping, versao: str) -> bool:
+    """Aplica a regra de `versao` aos sinais de `sinais_da_release` (+ `sinais_conteudo` para v8/v9).
+
+    Versão que exige release notes (v9) levanta `DadosAusentesError` se `nota_correcao` ou
+    `nota_novidade` faltarem ou forem `None` (notas não coletadas); `False` é sinal presente (notas
+    coletadas, mesmo vazias). Quem chama trata a release sem anterior (nunca corretiva) antes.
+    """
+    _exigir_versao(versao)
+    if VERSOES[versao].exige_notas and (
+        sinais.get("nota_correcao") is None or sinais.get("nota_novidade") is None
+    ):
+        raise DadosAusentesError(
+            f"a versão {versao} exige os sinais das release notes (`nota_correcao`, `nota_novidade`), "
+            "ausentes; não é possível executá-la sem eles (nenhuma outra regra foi aplicada)"
+        )
     return bool(VERSOES[versao].regra(sinais))
 
 
-def classificar_releases(releases_commits: Iterable[Mapping], versao: str = HEURISTIC_VERSION) -> list[dict]:
+def classificar_releases(releases_commits: Iterable[Mapping], versao: str) -> list[dict]:
     """Aplica a heurística a cada item de `pipeline.collect_commits.collect_commits(...)["releases"]`.
 
     Cada item tem `tag_name`, `base` (tag da release anterior ou `None`), `published_at`, `status` e
     `commits[].message`. A saída mantém a ordem e acrescenta o resultado de `avaliar` e
     `mensagens_incompletas` (`compare` com 404 ou truncado: a palavra-chave pode faltar por falta de
     dado). `release_id` não existe nesse formato: a junção com os rótulos é por `(full_name, tag_name)`.
+
+    `versao` é obrigatória e validada antes de qualquer item. As release notes vêm da chave `body` de
+    cada item (ausente = não coletada); para a v9, a falta delas levanta `DadosAusentesError` e nada é
+    devolvido (sem resultado parcial).
     """
+    _exigir_versao(versao)
     saida = []
     for r in releases_commits:
         mensagens = [c.get("message") for c in r.get("commits") or []] if r.get("status") == STATUS_OK else []
@@ -176,7 +286,10 @@ def classificar_releases(releases_commits: Iterable[Mapping], versao: str = HEUR
             "published_at": r.get("published_at"),
             "base": r.get("base"),
             "status": r.get("status"),
-            **avaliar(r.get("base"), r.get("tag_name"), mensagens, versao),
+            **avaliar(
+                r.get("base"), r.get("tag_name"), mensagens, versao,
+                notas=(r.get("body") or "") if "body" in r else None,
+            ),
             "mensagens_incompletas": r.get("status") == STATUS_404 or bool(r.get("truncado")),
         }
         if "id" in r:

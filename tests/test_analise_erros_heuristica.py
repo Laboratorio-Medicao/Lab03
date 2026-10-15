@@ -15,13 +15,16 @@ from scripts import evaluate_heuristic as ev
 SIM_NAO = {True: "sim", False: "nao", None: ""}
 
 
+NOTAS_VAZIAS = {"nota_correcao": False, "nota_novidade": False}  # v9 exige sinais de notas presentes
+
+
 def linha(rid, patch, estrita, ampla, status="ok", incompletas=False, full_name="org/lib"):
     sinais = {"semver_patch": patch, "palavra_chave": estrita, "palavra_chave_ampla": ampla}
     return {
         "release_id": str(rid), "full_name": full_name, "tag_name": f"v1.0.{rid}", "base": "v1.0.0",
         "status": status, "mensagens_incompletas": SIM_NAO[incompletas],
         **{k: SIM_NAO[v] for k, v in sinais.items()},
-        **{v: SIM_NAO[corretiva(sinais, v)] for v in VERSOES},
+        **{v: SIM_NAO[corretiva({**sinais, **NOTAS_VAZIAS}, v)] for v in VERSOES},
     }
 
 
@@ -66,11 +69,11 @@ def test_causa_fn(versao, kwargs, esperada):
 
 def test_causa_versao_fora_do_mapa():
     with pytest.raises(ev.AvaliacaoError, match="PALAVRA_DA_VERSAO"):
-        ae.causa(linha(1, True, True, True), "v8", "FP")
+        ae.causa(linha(1, True, True, True), "v99", "FP")
 
 
 def test_mapa_cobre_todas_as_versoes():
-    assert set(ae.PALAVRA_DA_VERSAO) == set(VERSOES)
+    assert set(ae.PALAVRA_DA_VERSAO) | set(ae.VERSOES_DE_CONTEUDO) == set(VERSOES)
 
 
 # ---- fixture: pasta com os insumos da #28 ----
@@ -146,8 +149,8 @@ def test_versao_padrao_e_a_escolhida(amostra_dir):
 
 
 def test_versao_inexistente(amostra_dir):
-    with pytest.raises(ev.AvaliacaoError, match="v9"):
-        ae.executar(amostra_dir, "v9")
+    with pytest.raises(ev.AvaliacaoError, match="v99"):
+        ae.executar(amostra_dir, "v99")
 
 
 def test_insumo_ausente_sem_ler_rotulos(amostra_dir):
