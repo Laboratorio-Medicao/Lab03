@@ -163,6 +163,46 @@ Falsos positivos e falsos negativos de uma versão da heurística frente ao cons
 | `causa_manual` | str | — | Anotação do grupo lendo os commits; preservada por `release_id` ao regravar |
 
 
+## `data/metrics.csv`
+
+Dataset analítico final gerado por `scripts/compute_metrics.py` (#21) a partir de
+`outputs/repos_final.csv`. Contém todas as colunas de `repos_final.csv` (copiadas como estão)
+mais as variantes calculadas após o refinamento da heurística.
+
+### Colunas herdadas de `repos_final.csv`
+
+Todas as colunas de `repos_final.csv` são copiadas sem alteração. Consulte a tabela
+"outputs/resultados.csv e outputs/repos_final.csv" acima para as definições.
+
+### Colunas novas: CFR (b) com heurística v8
+
+| Coluna | Tipo | Unidade | Fórmula / Origem |
+|---|---|---|---|
+| `cfr_b` | float | proporção | CFR **(b)**: proporção de releases avaliadas seguidas de corretiva em ≤7 dias; `heuristic_version=v8`; `None` se <2 releases na janela ou sem avaliadas (E§5 RQ03b) |
+| `cfr_b_class` | str | — | Classificação DORA de CFR (b); vazio se `cfr_b` indefinido |
+| `n_releases_avaliadas_cfr_b` | int | releases | Releases na janela publicadas antes de `fim − 7 dias` (fora da zona de censura); denominador do CFR (b) |
+| `n_releases_censuradas_cfr_b` | int | releases | Releases nos últimos 7 dias da janela: censuradas, excluídas do denominador (E§5) |
+| `n_releases_janela` | int | releases | Total de releases de deploy na janela; `n_avaliadas + n_censuradas` |
+| `n_releases_falha_cfr_b` | int | releases | Releases avaliadas marcadas como falha (seguidas de corretiva ≤7 dias) |
+| `n_releases_mensagens_incompletas_cfr_b` | int | releases | Releases da janela com `compare` 404 ou truncado (diagnóstico; não entra na invariante) |
+| `heuristic_version` | str | — | Versão da heurística usada; `v8` na geração inicial |
+
+### Colunas novas: variantes da RQ07
+
+| Coluna | Tipo | Unidade | Fórmula / Origem |
+|---|---|---|---|
+| `n_releases_deploy_c2` | int | releases | Releases + pré-releases na janela (não-draft, com `published_at`): unidade de deploy da combinação C2 |
+| `df_c2` | float | deploys/semana | DF **(C2)**: `n_releases_deploy_c2 / semanas_janela` (conta pré-releases) |
+| `df_c2_class` | str | — | Classificação DORA de DF para C2 |
+| `n_tags_janela` | int | tags | Tags com `author_date` dentro da janela: unidade de deploy da combinação C3 |
+| `df_c3` | float | deploys/semana | DF **(C3)**: `n_tags_janela / semanas_janela` |
+| `df_c3_class` | str | — | Classificação DORA de DF para C3 |
+| `dora_c1` | str | — | Classificação DORA geral C1 (release · LT(a) · CFR(a) · recovery): mediana floor das 4 notas |
+| `dora_c2` | str | — | Classificação DORA geral C2 (release+pré-release · LT(b) · CFR(b) · recovery); vazio se `cfr_b` indefinido |
+| `dora_c3` | str | — | Classificação DORA geral C3 (tag · LT(b) · CFR(a) · recovery) |
+
+---
+
 ## Status de validação da heurística de release corretiva (CFR (b))
 
 Os valores de CFR (b) que vierem a entrar no dataset final usam uma heurística **não validada** (nenhuma
