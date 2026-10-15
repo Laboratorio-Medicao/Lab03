@@ -248,7 +248,7 @@ def test_release_ids_desalinhados_e_erro():
 
 
 def _tabela(f1s):
-    return [{"versao": f"v{i}", "f1": f} for i, f in enumerate(f1s, start=1)]
+    return [{"versao": f"v{i}", "f1_comum": f} for i, f in enumerate(f1s, start=1)]
 
 
 @pytest.mark.parametrize("f1s, esperada", [
@@ -261,7 +261,7 @@ def test_escolher_versao(f1s, esperada):
 
 
 def test_escolhe_v10_acima_de_v9_pelo_numero():
-    tabela = [{"versao": "v1", "f1": 0.1}, {"versao": "v10", "f1": 0.9}, {"versao": "v9", "f1": 0.9}]
+    tabela = [{"versao": "v1", "f1_comum": 0.1}, {"versao": "v10", "f1_comum": 0.9}, {"versao": "v9", "f1_comum": 0.9}]
     assert ev.escolher_versao(tabela) == "v9"
 
 
@@ -285,7 +285,8 @@ def test_executar_gera_os_tres_arquivos(amostra_dir, tmp_path):
 
 def test_relatorio_pede_acao_quando_escolhida_difere_da_constante():
     tabela = [{"versao": v, "descricao": "d", "n": 2, "tp": 1, "fp": 0, "fn": 0, "tn": 1, "precisao": 1.0,
-               "recall": 1.0, "f1": 1.0 if v == "v2" else 0.1, "escolhida": "sim" if v == "v2" else "nao"}
+               "recall": 1.0, "f1": 1.0 if v == "v2" else 0.1, "n_comum": 2, "precisao_comum": 1.0,
+               "recall_comum": 1.0, "f1_comum": 1.0 if v == "v2" else 0.1, "escolhida": "sim" if v == "v2" else "nao"}
               for v in VERSOES]
     md = ev.relatorio_md(tabela, [{"mensagens_incompletas": "sim"}, {"mensagens_incompletas": "nao"}])
     assert "**Versão escolhida: v2**" in md and "atualize a constante" in md
@@ -298,7 +299,7 @@ def test_main_ponta_a_ponta(amostra_dir, tmp_path, monkeypatch, capsys):
     config.write_text(f"caminhos:\n  cache: {tmp_path / 'cache'}\n", encoding="utf-8")
     assert ev.main(["--config", str(config), "--amostra-dir", str(amostra_dir)]) == 0
     saida = capsys.readouterr().out
-    assert "v1: P=1.00 R=0.50" in saida and "<- escolhida" in saida
+    assert "v1: n=4 P=1.00 R=0.50" in saida and "comum (n=4)" in saida and "<- escolhida" in saida
 
 
 # ---- v9 sem notas: erro explícito, sem saída parcial (correção de auditoria) ----
@@ -344,3 +345,101 @@ def test_executar_com_falha_na_coleta_de_notas_nao_grava_saidas(amostra_dir, tmp
     for nome in (ev.ARQ_HEURISTICA, ev.ARQ_AVALIACAO, ev.ARQ_RELATORIO):
         assert not (amostra_dir / nome).exists()
     assert {p.name: p.read_bytes() for p in amostra_dir.iterdir() if p.is_file()} == antes
+
+
+# ---- releases removidas (404/410): v9 não avaliável só em repositório permitido ----
+
+
+class NotasPorStatus(FakeClient):
+    """Notas: status por release_id (padrão 200 com corpo vazio); compares do FakeClient."""
+
+    def __init__(self, comparacoes, status_notas):
+        super().__init__(comparacoes)
+        self.status_notas = status_notas
+
+    def get(self, path, params=None):
+        if "/releases/" in path:
+            rid = path.rsplit("/", 1)[1]
+            status = self.status_notas.get(rid, 200)
+            return Resp({"body": "fix: crash"} if status == 200 else {"message": "x"}, status=status)
+        return super().get(path, params)
+
+
+@pytest.mark.parametrize("status", [404, 410])
+def test_coletar_notas_removida_vira_none(status):
+    notas = ev.coletar_notas(AMOSTRA, NotasPorStatus(COMMITS, {"12": status}))
+    assert notas["12"] is None and notas["22"] == "fix: crash"
+
+
+@pytest.mark.parametrize("status", [403, 502])
+def test_coletar_notas_outro_erro_interrompe(status):
+    with pytest.raises(ev.AvaliacaoError, match=f"HTTP {status}"):
+        ev.coletar_notas(AMOSTRA, NotasPorStatus(COMMITS, {"22": status}))
+
+
+def test_aplicar_versoes_repo_permitido_fica_nao_avaliavel_na_v9(tmp_path):
+    releases, notas = _releases_e_notas(tmp_path)
+    notas["12"] = None  # org/lib removido
+    linhas = {l["release_id"]: l for l in ev.aplicar_versoes(releases, notas, ["ORG/lib"])}
+    assert linhas["12"]["v9"] == "" and linhas["12"]["notas_indisponiveis"] == "sim"
+    assert linhas["12"]["v1"] in ("sim", "nao") and linhas["12"]["v8"] in ("sim", "nao")
+    assert linhas["22"]["notas_indisponiveis"] == "nao" and linhas["22"]["v9"] in ("sim", "nao")
+    notas["22"] = None  # org/app não está na lista: continua falhando alto
+    with pytest.raises(ev.AvaliacaoError, match="org/app"):
+        ev.aplicar_versoes(releases, notas, ["org/lib"])
+
+
+def _linha_versoes(rid, padrao, **por_versao):
+    return {"release_id": rid, **{v: por_versao.get(v, padrao) for v in VERSOES}}
+
+
+def test_avaliar_versoes_n_por_versao_e_subconjunto_comum():
+    # 4 releases; r3 sem notas (v9 vazia). v9 acerta tudo onde é avaliável; v1 erra r3 e r4.
+    consenso = {"1": 1, "2": 0, "3": 1, "4": 1}
+    linhas = [
+        _linha_versoes("1", "sim"),
+        _linha_versoes("2", "nao"),
+        _linha_versoes("3", "nao", v9=""),
+        _linha_versoes("4", "nao", v9="sim"),
+    ]
+    tabela = {l["versao"]: l for l in ev.avaliar_versoes(linhas, consenso)}
+    assert (tabela["v1"]["n"], tabela["v9"]["n"]) == (4, 3)
+    assert tabela["v1"]["n_comum"] == tabela["v9"]["n_comum"] == 3
+    assert tabela["v9"]["f1"] == 1.0 and tabela["v9"]["f1_comum"] == 1.0
+    assert tabela["v1"]["f1"] == pytest.approx(0.5) and tabela["v1"]["f1_comum"] == pytest.approx(0.6667, abs=1e-4)
+
+
+def test_escolha_usa_subconjunto_comum_e_nao_o_n_menor():
+    # Na tabela de produção a v9 (n menor) teria o maior F1; no recorte comum a v2 é melhor.
+    tabela = [
+        {"versao": "v1", "f1": 0.40, "f1_comum": 0.40},
+        {"versao": "v2", "f1": 0.60, "f1_comum": 0.65},
+        {"versao": "v9", "f1": 0.80, "f1_comum": 0.60},
+    ]
+    assert ev.escolher_versao(tabela) == "v2"
+
+
+def test_subconjunto_comum_vazio_e_erro():
+    with pytest.raises(ev.AvaliacaoError, match="subconjunto comum"):
+        ev.avaliar_versoes([_linha_versoes("1", "sim", v9="")], {"1": 1})
+
+
+def test_executar_com_repo_removido_permitido_grava_e_lista(amostra_dir, tmp_path):
+    client = NotasPorStatus(COMMITS, {"12": 404})
+    tabela = {l["versao"]: l for l in ev.executar(amostra_dir, client, tmp_path / "cache", ["org/lib"])}
+    assert tabela["v9"]["n"] == 3 and tabela["v1"]["n"] == 4 and tabela["v1"]["n_comum"] == 3
+    md = (amostra_dir / ev.ARQ_RELATORIO).read_text(encoding="utf-8")
+    assert "não avaliáveis" in md and "org/lib v1.0.1" in md and "subconjunto comum (n = 3" in md
+    with (amostra_dir / ev.ARQ_HEURISTICA).open(encoding="utf-8-sig") as f:
+        assert {r["release_id"]: r["v9"] for r in csv.DictReader(f)}["12"] == ""
+
+
+def test_main_permitir_sem_notas(amostra_dir, tmp_path, monkeypatch, capsys):
+    monkeypatch.setattr(ev, "criar_cliente", lambda config: NotasPorStatus(COMMITS, {"12": 404}))
+    config = tmp_path / "config.yaml"
+    config.write_text(f"caminhos:\n  cache: {tmp_path / 'cache'}\n", encoding="utf-8")
+    argv = ["--config", str(config), "--amostra-dir", str(amostra_dir)]
+    assert ev.main(argv) == 1  # sem permissão: falha alto
+    assert "release notes indisponíveis" in capsys.readouterr().err
+    assert ev.main(argv + ["--permitir-sem-notas", "org/lib"]) == 0
+    assert "v9: n=3" in capsys.readouterr().out

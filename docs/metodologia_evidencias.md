@@ -18,7 +18,7 @@ contagem direta neles (kappa recalculado de `labels_*.csv` com statsmodels, sem 
 | Rotulagem independente (E§6.2) | `labels_*.csv`, `LEIAME.md`, `rascunho/revisao_*.csv` | **Parcial**: assistida por sugestões compartilhadas |
 | Kappa de Fleiss, 3 dimensões (E§6.3) | `concordancia.csv`, recalculado | Sustentado: 0,814 / 0,834 / 0,428 |
 | Consenso e desempate (E§6.4) | `PROTOCOLO_CONSENSO.md`, `consenso.csv` | Sustentado; 0 reuniões, 0 pendentes |
-| P/R/F1 por versão (E§6.5) | `avaliacao_heuristica.csv`, `docs/refino_heuristica.md` | Sustentado; F1 máx. 0,680 |
+| P/R/F1 por versão (E§6.5) | `avaliacao_heuristica.csv`, `docs/refino_heuristica.md` | Sustentado; F1 máx. 0,599 (v9, rodada oficial; 0,680 na rodada anterior) |
 | F1 ≥ 0,70 / validação (E§5, E§6) | idem | **Não atendido**: não validada |
 | Dicionário de dados (E§7) | `DICIONARIO_DE_DADOS.md/.csv`, `tests/test_dicionario.py` | Sustentado |
 | Censura e ausentes (E§3, E§11) | `resultados.csv`, `data_quality.md` | Parcial (ver contradição 2) |

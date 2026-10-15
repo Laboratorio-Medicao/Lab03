@@ -219,3 +219,21 @@ def test_relatorio(amostra_dir):
     assert "| v5 |" in md and "Ameaças à validade" in md
     assert "1 das 2 releases marcadas como corretivas são falsos positivos (50%)" in md
     assert "[org/lib v1.0.2](https://x/r/2)" in md
+
+
+# ---- versões não avaliáveis em algumas releases (v9 sem notas) ----
+
+
+def test_linhas_nao_avaliaveis_ficam_fora_da_matriz_e_da_comparacao(amostra_dir):
+    linhas = _ler(amostra_dir / ev.ARQ_HEURISTICA)
+    for l in linhas:
+        if l["release_id"] == "3":
+            l["v9"] = ""  # sem release notes
+    consenso = ev.consenso_corretiva(amostra_dir / "consenso.csv")
+    m = ae.matriz(linhas, consenso, "v9")
+    assert sum(m.values()) == len(linhas) - 1
+    assert all(e["release_id"] != "3" for e in ae.listar_erros(linhas, consenso, "v9", {}))
+    avaliacao = _ler(amostra_dir / ev.ARQ_AVALIACAO)
+    comp = {c["versao"]: c for c in ae.comparar_versoes(linhas, consenso, "v1", avaliacao)}
+    # a release 3 (v1 erra, v5 acerta) sai do recorte comum: v5 não "corrige" mais nada
+    assert comp["v5"]["corrige"] == 0

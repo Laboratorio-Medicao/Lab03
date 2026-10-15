@@ -130,7 +130,8 @@ Saída da heurística de release corretiva sobre as 300 releases da amostra-ouro
 | `n_features` | int | ≥ 0 ou vazio | Commits substantivos de feature (feat/add/support…); vazio sem release anterior |
 | `nota_correcao` | str | `sim` · `nao` · vazio | Release notes citam correção; vazio se notas indisponíveis |
 | `nota_novidade` | str | `sim` · `nao` · vazio | Release notes citam novidade; vazio se notas indisponíveis |
-| `v1` … `v9` | str | `sim` · `nao` | Release corretiva segundo cada versão (regras em `avaliacao_heuristica.csv`) |
+| `notas_indisponiveis` | str | `sim` · `nao` | Release com anterior cujas release notes deram HTTP 404/410 (removida); só aceito para repositórios em `--permitir-sem-notas` |
+| `v1` … `v9` | str | `sim` · `nao` · vazio | Release corretiva segundo cada versão (regras em `avaliacao_heuristica.csv`); vazio = não avaliável (v9 sem release notes) |
 
 ## `data/amostra_ouro/avaliacao_heuristica.csv`
 
@@ -139,12 +140,13 @@ Precisão, recall e F1 de cada versão da heurística frente ao consenso (E§6, 
 | Coluna | Tipo | Unidade | Descrição |
 |---|---|---|---|
 | `versao`, `descricao` | str | — | Versão e regra |
-| `n` | int | releases | Releases avaliadas |
+| `n` | int | releases | Releases avaliáveis por esta versão (base de TP/FP/FN/TN, precisão, recall e F1) |
+| `n_comum`, `precisao_comum`, `recall_comum`, `f1_comum` | int / float | releases / proporção | Mesmas medidas no subconjunto em que todas as versões são avaliáveis (usado para comparar e escolher) |
 | `tp`, `fp`, `fn`, `tn` | int | releases | Matriz de confusão (heurística × consenso) |
 | `precisao` | float | proporção | TP / (TP + FP); 0 sem positivos previstos |
 | `recall` | float | proporção | TP / (TP + FN) |
 | `f1` | float | proporção | 2·P·R / (P + R) |
-| `escolhida` | str | `sim` · `nao` | Regra interna do script: v1 se F1 ≥ 0,70; senão a de maior F1 (empate → menor número). **Não indica validação**: nenhuma versão atingiu F1 ≥ 0,70 |
+| `escolhida` | str | `sim` · `nao` | Regra interna do script: v1 se F1 comum ≥ 0,70; senão a de maior F1 comum (empate → menor número). **Não indica validação**: nenhuma versão atingiu F1 ≥ 0,70 |
 
 ## `data/amostra_ouro/erros_heuristica.csv`
 
@@ -208,12 +210,33 @@ Todas as colunas de `repos_final.csv` são copiadas sem alteração. Consulte a 
 Os valores de CFR (b) que vierem a entrar no dataset final usam uma heurística **não validada** (nenhuma
 versão atingiu F1 ≥ 0,70; ver `docs/refino_heuristica.md`). Regras de uso:
 
-| Versão (`heuristic_version`) | Papel | Precisão | Recall | F1 | Taxa prevista (referência 25,0%) |
+Números da rodada oficial (rótulos commitados nas Issues #23–#25; 300 releases, 85 corretivas). Os papéis
+foram definidos na rodada anterior e estão **a rever pelo grupo**: agora a v4 tem F1 maior que a v8.
+
+| Versão (`heuristic_version`) | Papel | Precisão | Recall | F1 | Taxa prevista (referência 28,3%) |
 |---|---|---:|---:|---:|---:|
-| v8 | estimativa principal **exploratória** | 0,696 | 0,520 | 0,595 | 18,7% |
-| v4 | análise de **sensibilidade** | 0,373 | 0,880 | 0,524 | 59,0% |
-| v9 | variante experimental, **fora do dataset** (precisa de `body` das releases) | 0,680 | 0,680 | 0,680 | 25,0% |
+| v8 | estimativa principal **exploratória** | 0,625 | 0,412 | 0,497 | 18,7% |
+| v4 | análise de **sensibilidade** | 0,429 | 0,894 | 0,580 | 59,0% |
+| v9 | variante experimental, **fora do dataset** (precisa de `body` das releases; n = 295) | 0,627 | 0,573 | 0,599 | 25,4% |
 
 - Todo CFR (b) deve ser lido junto do `heuristic_version` e destes P/R/F1; o F1 é otimista (v8/v9 foram
   desenhadas após a análise de erros, na mesma amostra).
 - CFR (b) e CFR (a) medem construtos diferentes e a diferença entre eles inclui o erro de classificação.
+
+## `data/amostra_ouro/concordancia.csv` e `consenso.csv`
+
+Gerados por `scripts/agreement.py` (#26) a partir dos três `labels_<avaliador>.csv` (protocolo em
+`data/amostra_ouro/PROTOCOLO_CONSENSO.md`).
+
+| Arquivo | Coluna | Tipo | Descrição |
+|---|---|---|---|
+| `concordancia.csv` | `dimensao` | str | `tipo_projeto` · `entrega_real` · `corretiva` |
+| `concordancia.csv` | `n_itens`, `n_avaliadores` | int | Itens (repositórios ou releases) e avaliadores |
+| `concordancia.csv` | `kappa_fleiss` | float | Kappa de Fleiss; vazio se não há variação |
+| `concordancia.csv` | `interpretacao` | str | Landis & Koch (1977) |
+| `concordancia.csv` | `concordancia_simples` | float | Fração de itens com os três rótulos iguais |
+| `consenso.csv` | `dimensao`, `item_id`, `descricao` | str | Item: `full_name` (por repositório) ou `release_id` (corretiva) |
+| `consenso.csv` | `GuilhermeVieira05`, `marcosffp`, `ALuiz19` | str | Rótulo de cada avaliador |
+| `consenso.csv` | `rotulo_consenso` | str | Rótulo de consenso; vazio se pendente |
+| `consenso.csv` | `metodo` | str | `unanimidade` · `maioria` · `reuniao` · `pendente` |
+| `consenso.csv` | `justificativa` | str | Decisão da reunião (só `reuniao`) |

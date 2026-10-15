@@ -22,6 +22,8 @@ CSVS_SAIDA = {
     RAIZ / "data" / "amostra_ouro" / "heuristica_amostra.csv": "heuristica_amostra.csv",
     RAIZ / "data" / "amostra_ouro" / "avaliacao_heuristica.csv": "avaliacao_heuristica.csv",
     RAIZ / "data" / "amostra_ouro" / "erros_heuristica.csv": "erros_heuristica.csv",
+    RAIZ / "data" / "amostra_ouro" / "concordancia.csv": "concordancia.csv",
+    RAIZ / "data" / "amostra_ouro" / "consenso.csv": "consenso.csv",
     RAIZ / "data" / "metrics.csv": "metrics.csv",
 }
 

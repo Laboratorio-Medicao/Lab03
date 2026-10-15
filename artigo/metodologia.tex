@@ -111,27 +111,37 @@ mesmas para os três avaliadores). Cada avaliador preencheu, em arquivo próprio
 \textbf{Uso de sugestões.} A rotulagem usou sugestões: \texttt{scripts/rotular.py} apresenta notas e
 commits de cada item junto de uma \emph{sugestão}, igual para todos os avaliadores, que o avaliador aceita
 ou substitui. Existem 292 sugestões para os 300 itens de \texttt{corretiva} (71 ``sim'', 221 ``não''); os
-8 restantes ficaram sem sugestão. O que os arquivos mostram:
-\begin{itemize}
-  \item nos arquivos de revisão de \textbf{dois} avaliadores (guardados fora do Git), o rótulo final
-  coincide com a sugestão em \textbf{292/292} itens, sem nenhuma alteração; os 8 itens sem sugestão foram
-  decididos por eles;
-  \item esses dois avaliadores coincidem entre si em 293 dos 300 itens (97,7\%);
-  \item o terceiro avaliador não tem arquivo de revisão, portanto o processo que ele seguiu não está
-  registrado; seus rótulos coincidem com a sugestão em 181 dos 292 itens (62,0\%);
-  \item o rótulo de consenso de \texttt{corretiva} coincide com a sugestão nos 292 itens que a têm.
-\end{itemize}
+8 restantes ficaram sem sugestão.
+
+\textbf{Rodada anterior (rótulos que não são os commitados).} Numa primeira rodada, feita com versões dos
+arquivos de rótulos que não foram as commitadas, os arquivos de revisão de \textbf{dois} avaliadores
+(guardados fora do Git) coincidiam com a sugestão em \textbf{292/292} itens, esses dois avaliadores
+coincidiam entre si em 293 dos 300 itens (97,7\%) e o terceiro coincidia com a sugestão em 181 dos 292
+(62,0\%).
+
+\textbf{Arquivos commitados (usados nos resultados abaixo).} Os rótulos oficiais são os três
+\texttt{labels\_<avaliador>.csv} commitados nas Issues \#23, \#24 e \#25. Neles, a concordância em
+\texttt{corretiva} é de 82,0\% (246/300) entre ALuiz19 e marcosffp, 63,3\% (190/300) entre ALuiz19 e
+GuilhermeVieira05 e 56,0\% (168/300) entre GuilhermeVieira05 e marcosffp. A aderência desses arquivos à
+sugestão não pode ser recalculada, porque \texttt{sugestoes.csv} e os arquivos de revisão estão fora do Git.
+
 Não há, nos artefatos, registro de como as sugestões foram geradas (\texttt{sugestoes.csv} traz só rótulo
 e motivo textual). Os fatos acima não permitem concluir que os rótulos estejam errados: uma sugestão
 pode estar correta. Eles apenas \emph{não demonstram} três julgamentos independentes, e o critério de
 independência do enunciado (``sem consultar os demais'') não é verificável nesses casos.
+
+\textbf{Repositório removido.} O repositório \texttt{1bananachicken/MaaNTE} (5 \textit{releases} da
+amostra) foi removido do GitHub depois do sorteio: a API devolve 404 para o repositório, as
+\textit{releases}, os \texttt{compare} e a conta do dono. Ele foi mantido na amostra por decisão do grupo.
+Dois dos três avaliadores rotularam essas \textit{releases} sem acesso ao conteúdo (registrado na coluna
+\texttt{observacoes}).
 \pend{se a rotulagem assistida é metodologicamente aceitável para a validação, ou se a amostra deve ser
 rotulada de novo sem sugestões, é decisão do professor}.
 
 O protocolo de consenso (\texttt{PROTOCOLO\_CONSENSO.md}) é: unanimidade; maioria simples em 2 a 1;
 reunião para 1-1-1. O protocolo prevê o kappa antes do consenso. Resultado em \texttt{consenso.csv}:
-\texttt{corretiva}, 181 por unanimidade e 119 por maioria (75 corretivas, 225 não); tipo do projeto, 48 e
-12; entrega real, 58 e 2; nenhum caso \texttt{reuniao} nem \texttt{pendente}.
+\texttt{corretiva}, 152 por unanimidade e 148 por maioria (85 corretivas, 215 não); tipo do projeto, 44 e
+16; entrega real, 55 e 5; nenhum caso \texttt{reuniao} nem \texttt{pendente}.
 
 \subsection{Concordância entre avaliadores}
 % data/amostra_ouro/concordancia.csv; recalculado a partir de labels_*.csv com statsmodels
@@ -141,21 +151,21 @@ reunião para 1-1-1. O protocolo prevê o kappa antes do consenso. Resultado em 
 \begin{tabular}{lrrl}
 \hline
 Dimensão & Itens & $\kappa$ & Interpretação \\ \hline
-Tipo do projeto & 60 & 0,814 & quase perfeita \\
-Releases são entregas reais & 60 & 0,834 & quase perfeita \\
-Release corretiva & 300 & 0,428 & moderada \\ \hline
+Tipo do projeto & 60 & 0,743 & substancial \\
+Releases são entregas reais & 60 & 0,352 & razoável \\
+Release corretiva & 300 & 0,273 & razoável \\ \hline
 \end{tabular}
 \end{table}
 O kappa baixo da dimensão \texttt{corretiva} indica que o próprio critério é ambíguo, o que é um achado e
-limita qualquer validação contra esse consenso. A concordância simples foi 0,603 em \texttt{corretiva}.
-\textbf{Limitação na leitura do kappa.} O kappa de Fleiss pressupõe avaliações independentes. Aqui, dois
-avaliadores seguiram a mesma sugestão, e a maioria 2 a 1 decide o consenso; assim, quando os dois
-coincidem, o consenso é determinado por eles e o terceiro só altera o resultado onde diverge. O valor
-0,428 reflete, portanto, principalmente a divergência entre o terceiro avaliador e um par que coincide
-quase integralmente (97,7\%), e não necessariamente a ambiguidade do critério entre três julgadores
-independentes. Para a heurística, o consenso usado como referência de precisão, \textit{recall} e F1
-pode herdar o viés da sugestão; o sentido e a magnitude desse efeito não foram medidos.
-Os valores de kappa permanecem inalterados e foram reproduzidos a partir dos arquivos de rótulos.
+limita qualquer validação contra esse consenso. A concordância simples foi 0,507 em \texttt{corretiva}.
+Em \texttt{entrega real}, a concordância simples é alta (0,917), mas quase todos os rótulos são ``sim'',
+o que derruba o kappa (efeito de prevalência).
+\textbf{Limitação na leitura do kappa.} O kappa de Fleiss pressupõe avaliações independentes, o que os
+artefatos não demonstram (ver acima). Com a maioria 2 a 1, o par de avaliadores mais próximo (82,0\% de
+concordância em \texttt{corretiva}) pesa mais no consenso do que o terceiro. Para a heurística, o consenso
+usado como referência de precisão, \textit{recall} e F1 pode herdar o viés das sugestões; o sentido e a
+magnitude desse efeito não foram medidos. Os valores foram calculados por \texttt{scripts.agreement} a
+partir dos três arquivos commitados (\texttt{concordancia.csv}).
 Outras medidas de avaliação usadas: precisão, \textit{recall} e F1 (\texttt{precision\_recall\_fscore\_support},
 positivo = corretiva). Nenhum intervalo de confiança foi calculado. \pend{se o professor exige
 intervalos de confiança ou outro teste para essas medidas, não há procedimento definido nos documentos}.
@@ -166,23 +176,31 @@ A heurística v1 reproduz o exemplo do professor (``só muda o \textit{patch} e 
 definida antes de ver os dados. As versões v2--v7 combinam os mesmos dois sinais (SemVer e palavra-chave,
 estrita ou ampla). As versões v8 e v9 olham o \emph{conteúdo} (commits de correção e de feature; na v9,
 também as \textit{release notes}) e foram desenhadas \textbf{depois} de analisar os erros da v1--v7 na
-\emph{mesma} amostra em que são avaliadas.
+\emph{mesma} amostra em que são avaliadas. Além disso, v8 e v9 entraram no repositório (PR \#65, 14/10,
+21h19) \emph{antes} de os rótulos de dois avaliadores serem commitados (PRs \#67 e \#68, 21h46 e 21h59):
+foram desenhadas sobre a rodada anterior de rótulos.
+
+Cada versão é medida de duas formas: em todas as \textit{releases} em que ela é aplicável (300; a v9,
+que exige as notas, em 295, porque as 5 \textit{releases} do repositório removido não têm notas) e no
+\emph{subconjunto comum} às nove versões (295 \textit{releases}), usado para compará-las.
 
 \begin{table}[ht]
 \centering
-\caption{Versões testadas contra o consenso (300 \textit{releases}; 75 corretivas). Fonte: \texttt{avaliacao\_heuristica.csv}.}
-\begin{tabular}{llrrrl}
+\caption{Versões testadas contra o consenso (300 \textit{releases}; 85 corretivas). Precisão, \textit{recall}
+e F1 em todas as \textit{releases} aplicáveis ($n$); F1 comum no subconjunto de 295. Fonte:
+\texttt{avaliacao\_heuristica.csv}.}
+\begin{tabular}{llrrrrrl}
 \hline
-Versão & Regra & Precisão & Recall & F1 & Desenho \\ \hline
-v1 & patch \textbf{e} palavra estrita & 0,362 & 0,720 & 0,482 & antes dos dados \\
-v2 & patch \textbf{ou} palavra estrita & 0,294 & 1,000 & 0,455 & antes da análise de erros\textsuperscript{*} \\
-v3 & só palavra estrita & 0,278 & 0,840 & 0,417 & idem\textsuperscript{*} \\
-v4 & só patch (não comparável: palavra) & 0,373 & 0,880 & 0,524 & idem\textsuperscript{*} \\
-v5 & patch \textbf{e} palavra ampla & 0,374 & 0,773 & 0,504 & idem\textsuperscript{*} \\
-v6 & patch \textbf{ou} palavra ampla & 0,293 & 1,000 & 0,453 & idem\textsuperscript{*} \\
-v7 & só palavra ampla & 0,286 & 0,893 & 0,434 & idem\textsuperscript{*} \\
-v8 & correção e nenhuma feature & 0,696 & 0,520 & 0,595 & depois da análise de erros \\
-v9 & v8 \textbf{ou} notas com correção e sem novidade & 0,680 & 0,680 & 0,680 & depois da análise de erros \\ \hline
+Versão & Regra & $n$ & Precisão & Recall & F1 & F1 comum & Desenho \\ \hline
+v1 & patch \textbf{e} palavra estrita & 300 & 0,423 & 0,741 & 0,539 & 0,546 & antes dos dados \\
+v2 & patch \textbf{ou} palavra estrita & 300 & 0,329 & 0,988 & 0,494 & 0,485 & antes da análise de erros\textsuperscript{*} \\
+v3 & só palavra estrita & 300 & 0,313 & 0,835 & 0,455 & 0,460 & idem\textsuperscript{*} \\
+v4 & só patch (não comparável: palavra) & 300 & 0,429 & 0,894 & 0,580 & 0,570 & idem\textsuperscript{*} \\
+v5 & patch \textbf{e} palavra ampla & 300 & 0,432 & 0,788 & 0,558 & 0,565 & idem\textsuperscript{*} \\
+v6 & patch \textbf{ou} palavra ampla & 300 & 0,328 & 0,988 & 0,493 & 0,484 & idem\textsuperscript{*} \\
+v7 & só palavra ampla & 300 & 0,321 & 0,882 & 0,470 & 0,475 & idem\textsuperscript{*} \\
+v8 & correção e nenhuma feature & 300 & 0,625 & 0,412 & 0,497 & 0,507 & depois da análise de erros \\
+v9 & v8 \textbf{ou} notas com correção e sem novidade & 295 & 0,627 & 0,573 & 0,599 & 0,599 & depois da análise de erros \\ \hline
 \end{tabular}
 \par{\footnotesize \textsuperscript{*} v2--v7 entraram no mesmo \textit{commit} do script de avaliação
 (\texttt{360adc7}), antes dos arquivos de resultado; a ordem exata entre escrevê-las e a primeira rodada
@@ -190,10 +208,13 @@ não é verificável pelo histórico.}
 \end{table}
 
 \textbf{Status: heurística não validada.} O critério do enunciado é F1 $\geq$ 0,70, e o melhor F1 observado
-foi 0,680 (v9). Conforme o enunciado, as versões e o F1 de cada uma são documentados aqui. A coluna
-\texttt{escolhida} de \texttt{avaliacao\_heuristica.csv} é apenas a regra interna do script (maior F1 quando
-ninguém atinge 0,70) e \emph{não} indica validação. \prov{o grupo adotou v8 como estimativa exploratória do
-CFR (b), v4 como sensibilidade e v9 fora do dataset final (\texttt{docs/refino\_heuristica.md})}. A v9
+foi 0,599 (v9, $n$ = 295); entre as versões aplicáveis a todo o \textit{dataset}, o melhor foi 0,580 (v4).
+Conforme o enunciado, as versões e o F1 de cada uma são documentados aqui. A coluna
+\texttt{escolhida} de \texttt{avaliacao\_heuristica.csv} é apenas a regra interna do script (maior F1 comum
+quando ninguém atinge 0,70) e \emph{não} indica validação. \prov{o grupo adotou v8 como estimativa exploratória do
+CFR (b), v4 como sensibilidade e v9 fora do dataset final (\texttt{docs/refino\_heuristica.md})}; com os
+rótulos commitados, porém, a v8 (F1 0,497) ficou abaixo da v4 (0,580) e da v5 (0,558), e essa estratégia
+precisa ser revista pelo grupo. A v9
 depende das \textit{release notes} (\texttt{body}), que a coleta atual não armazena; por isso ela só foi
 aplicada à amostra-ouro, onde as notas foram buscadas à parte. \pend{o enunciado e a Fonte da Verdade
 não dizem como proceder se nenhuma versão chegar a F1 $\geq$ 0,70, nem se o CFR (b) exploratório é
@@ -214,11 +235,13 @@ truncado), o que pode ocultar a palavra-chave.
   \item \emph{Construto:} \textit{release} $\neq$ deploy; falha de CI $\neq$ falha em produção;
   \textit{commit} com \textit{rebase}/\textit{squash} distorce a data; \textit{releases} não são
   filtradas pelo \textit{default branch}; a heurística corretiva não é validada.
-  \item \emph{Interna:} v8/v9 foram desenhadas sobre a amostra em que são avaliadas e escolhidas entre
-  nove versões, o que torna o F1 otimista; a rotulagem assistida reduz a independência dos avaliadores.
+  \item \emph{Interna:} v8/v9 foram desenhadas sobre a amostra em que são avaliadas, antes de os rótulos
+  oficiais de dois avaliadores serem commitados, e a escolha é feita entre nove versões, o que torna o F1
+  otimista; a rotulagem assistida reduz a independência dos avaliadores; um repositório da amostra foi
+  removido e rotulado sem acesso ao conteúdo por dois avaliadores.
   \item \emph{Externa:} amostra dos primeiros 300 repositórios que passam nos filtros em ordem
   alfabética, com piso de 1000 estrelas; não representa projetos corporativos nem a população de
   candidatos.
-  \item \emph{Conclusão:} kappa moderado em \texttt{corretiva}; a amostra-ouro tem 60 repositórios e
+  \item \emph{Conclusão:} kappa razoável (0,273) em \texttt{corretiva}; a amostra-ouro tem 60 repositórios e
   5 \textit{releases} por repositório; \textbf{nenhuma análise estatística das RQs foi feita até aqui}.
 \end{itemize}

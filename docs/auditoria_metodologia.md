@@ -1,5 +1,10 @@
 # Auditoria da metodologia (Sprint 2)
 
+> **Nota (15/10):** esta auditoria foi feita na rodada anterior, com versões dos arquivos de rótulos que não
+> são as commitadas. Os números de kappa, consenso e F1 citados aqui são dessa rodada. Os números oficiais
+> (rótulos das Issues #23–#25) estão em `data/amostra_ouro/concordancia.csv`, `avaliacao_heuristica.csv` e
+> `docs/refino_heuristica.md`.
+
 Escopo: `artigo/metodologia.tex` e `docs/metodologia_evidencias.md` contra o enunciado, a Fonte da Verdade
 (`enunciado/fonte_vdd.md`), os dados e os scripts. Hierarquia documental do próprio projeto: o enunciado
 prevalece sobre a Fonte da Verdade (cabeçalho de `fonte_vdd.md`); decisões do grupo valem onde o enunciado
@@ -23,7 +28,7 @@ Nenhum artefato do repositório foi alterado; reproduções gravaram só em
 | 5 | Rotulagem assistida sem afirmar independência | **Parcial**: o `.tex` declara a assistência, mas **subestima** o problema (ver §2.1) |
 | 6 | Tabela v1–v9 | **[V]** TP/FP/FN/TN recalculados de `heuristica_amostra.csv` × `consenso.csv`; P/R/F1 batem com `avaliacao_heuristica.csv` nas 9 versões. Cronologia: v1 em `fd2b384`; v2–v7 em `360adc7` (2026-10-14 01:54); análise de erros em `8fc43b4` (02:02) **[V]**. v8/v9 só na árvore de trabalho, sem commit; "depois da análise de erros" é **[D]** (`docs/refino_heuristica.md`) |
 | 7 | Divergência sobre a versão principal | **Confirmada** (§2.3) |
-| 8 | F1 ≥ 0,70 e "não validada" | **[V]** no `.tex` e no `refino_heuristica.md`; melhor F1 0,680 |
+| 8 | F1 ≥ 0,70 e "não validada" | **[V]** no `.tex` e no `refino_heuristica.md`; melhor F1 0,680 na rodada anterior, 0,599 (v9) na oficial |
 | 9 | Censura, 404, sem recuperação | **[V]** `data_quality` (scratch) e contagem direta: 176 de 9062 episódios censurados (105 repositórios); 6 releases 404 (5 repositórios); 23 repositórios sem `rec_median_h` (17 sem episódios + 6 só com episódios censurados **[I]**) |
 | 10 | Relatório de qualidade × 300 | **Confirmado desatualizado**: `outputs/data_quality.md` é de 100 repositórios; a regeneração em scratch usa 300 e traz 1 FALHA (§2.4) |
 | 11 | Confusão com resultados da S03 | Não encontrei resultado estatístico apresentado como obtido; o `.tex` diz que RQ01–RQ07 não foram executadas **[V]** |
@@ -32,7 +37,14 @@ Nenhum artefato do repositório foi alterado; reproduções gravaram só em
 ## 2. Inconsistências confirmadas
 
 ### 2.1 Independência da rotulagem (mais grave) — **[V]**
-Calculado sobre `labels_*.csv` e `rascunho/`:
+
+> **Atualização (15/10, rodada oficial):** a tabela abaixo foi calculada sobre versões dos arquivos de
+> rótulos que **não** são as commitadas. Nos arquivos commitados (Issues #23, #24, #25), a concordância em
+> `corretiva` é 82,0% (ALuiz19 × marcosffp), 63,3% (ALuiz19 × GuilhermeVieira05) e 56,0%
+> (GuilhermeVieira05 × marcosffp), e o kappa de `corretiva` é 0,27. A aderência dos arquivos commitados à
+> sugestão não pode ser recalculada (`rascunho/` fora do Git). A ressalva de rotulagem assistida continua.
+
+Calculado sobre `labels_*.csv` e `rascunho/` (rodada anterior):
 
 | Par / fonte | Concordância em `corretiva` (300 itens) |
 |---|---|
@@ -116,7 +128,7 @@ Search API; se o limite foi atingido, houve truncamento **[I]**. Não verificáv
 | Questão | Evidências | Conflito entre documentos | Decisão necessária | Consequência das alternativas |
 |---|---|---|---|---|
 | Janela oficial | `config.yaml` (L01 provisória); `sorteio.json` usa as mesmas datas | — | Professor | Datas diferentes invalidam seleção, coleta e sorteio; manter exige aceite explícito |
-| Nenhuma versão com F1 ≥ 0,70 | Melhor F1 0,680 (v9), 0,595 (v8) | `avaliacao_heuristica.md` × `refino_heuristica.md` | Professor/grupo | Aceitar "refinamentos documentados" (aceite S02 da Fonte da Verdade) vs. nova amostra rotulada; afeta RQ03(b), RQ05(b), RQ07, RQ08 |
+| Nenhuma versão com F1 ≥ 0,70 | Rodada anterior: melhor F1 0,680 (v9), 0,595 (v8). Oficial: 0,599 (v9), 0,580 (v4), 0,497 (v8) | `avaliacao_heuristica.md` × `refino_heuristica.md` | Professor/grupo | Aceitar "refinamentos documentados" (aceite S02 da Fonte da Verdade) vs. nova amostra rotulada; afeta RQ03(b), RQ05(b), RQ07, RQ08 |
 | CFR(b) só exploratório | `refino_heuristica.md` (decisão provisória do grupo); Fonte da Verdade S02-016 exige heurística validada | Enunciado exige validação "precisa" | Professor | Reportar com ressalva vs. omitir CFR(b); muda RQ03(b), RQ05 variante b e C2 da RQ07 |
 | Escolha v8 × v9 × v4 | Tabela de F1; v9 depende de `body` não coletado | `avaliacao_heuristica.md` diz v9 | Grupo (com ciência do professor) | v9 exige recoleta com `body`; v8 subestima (18,7 %), v4 superestima (59,0 %) |
 | Independência da rotulagem | §2.1 | LEIAME admite ancoragem | Professor/grupo | Aceitar e declarar; ou rerrotular independentemente (muda κ, consenso, F1) |
