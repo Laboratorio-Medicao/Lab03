@@ -43,7 +43,7 @@ PALAVRA_DA_VERSAO = {
     "v1": "palavra_chave", "v2": "palavra_chave", "v3": "palavra_chave", "v4": "palavra_chave",
     "v5": "palavra_chave_ampla", "v6": "palavra_chave_ampla", "v7": "palavra_chave_ampla",
 }
-VERSOES_DE_CONTEUDO = ("v8", "v9")  # decidem por commits/notas; causa automática genérica (anotar `causa_manual`)
+VERSOES_DE_CONTEUDO = ("v8", "v9", "v10")  # decidem por commits/notas; causa automática genérica (anotar `causa_manual`)
 COLUNAS_ERROS = (
     "versao", "release_id", "full_name", "tag_name", "base", "tipo_erro", "causa_automatica",
     "semver_patch", "palavra_chave", "palavra_chave_ampla", "mensagens_incompletas",

@@ -24,6 +24,11 @@ A versão usada sai em `heuristic_version` e é **sempre explícita**: `avaliar`
 v8/v9 (refino da Issue #28, depois de a v1–v7 ficarem abaixo de F1 0,70 na amostra-ouro) olham o
 **conteúdo** da release, não o número da versão: contam commits de correção e de feature (`sinais_conteudo`)
 e, na v9, as *release notes* (as mesmas que os avaliadores leram, E§6). Ver `docs/refino_heuristica.md`.
+
+v10 (refino posterior) acrescenta dois ajustes: (a) rejeita bumps major/minor no SemVer (que raramente
+são corretivos mesmo com commits de fix) e (b) para releases de patch, relaxa a condição das notas
+aceitando releases em que as notas mencionam correção *e* novidade quando há ≥ 4 commits de correção
+que dominam os de feature — padrão dos releases de patch que combinam bugfixes com pequenas melhorias.
 """
 
 from __future__ import annotations
@@ -177,6 +182,24 @@ def _nota_corretiva(sinais: Mapping) -> bool:
     return bool(sinais.get("nota_correcao")) and not sinais.get("nota_novidade")
 
 
+def _v10(sinais: Mapping) -> bool:
+    """v10: rejeita bump major/minor; para patch, aceita notas com correção mesmo com novidade
+    se houver ≥ 4 commits de correção dominando; para não-SemVer mantém a regra estrita da v9."""
+    patch = sinais.get("semver_patch")
+    if patch is False:
+        return False  # major/minor: sinais de conteúdo não bastam
+    n_cor = sinais.get("n_correcoes") or 0
+    n_feat = sinais.get("n_features") or 0
+    v8 = n_cor >= 1 and n_feat == 0
+    if patch is True:
+        nota = bool(sinais.get("nota_correcao")) and (
+            not sinais.get("nota_novidade") or (n_cor >= 4 and n_cor > n_feat)
+        )
+    else:
+        nota = _nota_corretiva(sinais)
+    return v8 or nota
+
+
 VERSOES: dict[str, Versao] = {
     "v1": Versao("só patch E palavra estrita", _combina("e", "palavra_chave")),
     "v2": Versao("só patch OU palavra estrita", _combina("ou", "palavra_chave")),
@@ -189,6 +212,12 @@ VERSOES: dict[str, Versao] = {
     "v9": Versao(
         "v8 OU release notes com correção e sem novidade",
         lambda s: _correcao_sem_feature(s) or _nota_corretiva(s),
+        usa_conteudo=True,
+        exige_notas=True,
+    ),
+    "v10": Versao(
+        "rejeita major/minor; patch: v8 OU nota corretiva ampla (≥4 fixes); não-SemVer: v9",
+        _v10,
         usa_conteudo=True,
         exige_notas=True,
     ),

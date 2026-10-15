@@ -119,6 +119,7 @@ heuristica_amostra.csv,v6,str,-,"sim, nao","Release corretiva segundo a versão 
 heuristica_amostra.csv,v7,str,-,"sim, nao","Release corretiva segundo a versão v7 de metricas.heuristica.VERSOES (descrição em avaliacao_heuristica.csv)"
 heuristica_amostra.csv,v8,str,-,"sim, nao","Release corretiva segundo a versão v8 de metricas.heuristica.VERSOES (descrição em avaliacao_heuristica.csv)"
 heuristica_amostra.csv,v9,str,-,"sim, nao","Release corretiva segundo a versão v9 de metricas.heuristica.VERSOES (descrição em avaliacao_heuristica.csv)"
+heuristica_amostra.csv,v10,str,-,"sim, nao","Release corretiva segundo a versão v10 de metricas.heuristica.VERSOES (descrição em avaliacao_heuristica.csv)"
 avaliacao_heuristica.csv,versao,str,-,"v1, v2, ...",Versão da heurística (metricas.heuristica.VERSOES)
 avaliacao_heuristica.csv,descricao,str,-,-,Regra da versão
 avaliacao_heuristica.csv,n,int,releases,>=1,Releases da amostra-ouro avaliadas

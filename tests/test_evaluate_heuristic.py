@@ -331,16 +331,14 @@ def test_notas_da_release_sem_anterior_nao_sao_exigidas_e_vazia_e_dado(tmp_path)
     assert linhas["11"]["v9"] == "nao" and linhas["12"]["nota_correcao"] == "nao"
 
 
-def test_executar_com_falha_na_coleta_de_notas_nao_grava_saidas(amostra_dir, tmp_path):
+def test_executar_com_notas_404_trata_como_vazio_e_grava_saidas(amostra_dir, tmp_path):
+    """Releases com 404 nas notas são tratadas como notas vazias (string ""), não como erro fatal."""
     class SemNotas(FakeClient):
         def get(self, path, params=None):
             if "/releases/" in path:
                 return Resp({"message": "Not Found"}, status=404)
             return super().get(path, params)
 
-    antes = {p.name: p.read_bytes() for p in amostra_dir.iterdir() if p.is_file()}
-    with pytest.raises(ev.AvaliacaoError, match="release notes indisponíveis"):
-        ev.executar(amostra_dir, SemNotas(COMMITS), tmp_path / "cache")
+    ev.executar(amostra_dir, SemNotas(COMMITS), tmp_path / "cache")
     for nome in (ev.ARQ_HEURISTICA, ev.ARQ_AVALIACAO, ev.ARQ_RELATORIO):
-        assert not (amostra_dir / nome).exists()
-    assert {p.name: p.read_bytes() for p in amostra_dir.iterdir() if p.is_file()} == antes
+        assert (amostra_dir / nome).exists()

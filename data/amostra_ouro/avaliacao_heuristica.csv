@@ -1,0 +1,11 @@
+﻿versao,descricao,n,tp,fp,fn,tn,precisao,recall,f1,escolhida
+v1,só patch E palavra estrita,300,66,86,19,129,0.4342,0.7765,0.557,nao
+v2,só patch OU palavra estrita,300,84,173,1,42,0.3268,0.9882,0.4912,nao
+v3,só palavra estrita (ignora SemVer),300,74,158,11,57,0.319,0.8706,0.4669,nao
+v4,só patch (não comparável: palavra estrita),300,76,101,9,114,0.4294,0.8941,0.5802,nao
+v5,só patch E palavra ampla,300,70,88,15,127,0.443,0.8235,0.5761,nao
+v6,só patch OU palavra ampla,300,84,174,1,41,0.3256,0.9882,0.4898,nao
+v7,só palavra ampla (ignora SemVer),300,78,161,7,54,0.3264,0.9176,0.4815,nao
+v8,commit de correção e nenhum de feature,300,35,21,50,194,0.625,0.4118,0.4965,nao
+v9,v8 OU release notes com correção e sem novidade,300,47,28,38,187,0.6267,0.5529,0.5875,nao
+v10,rejeita major/minor; patch: v8 OU nota corretiva ampla (≥4 fixes); não-SemVer: v9,300,51,22,34,193,0.6986,0.6,0.6456,sim

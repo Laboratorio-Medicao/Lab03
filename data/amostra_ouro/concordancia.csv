@@ -1,0 +1,4 @@
+﻿dimensao,n_itens,n_avaliadores,kappa_fleiss,interpretacao,concordancia_simples
+tipo_projeto,60,3,0.7429,substancial,0.7333
+entrega_real,60,3,0.3516,razoável,0.9167
+corretiva,300,3,0.2728,razoável,0.5067

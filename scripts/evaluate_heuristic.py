@@ -158,7 +158,7 @@ def coletar_notas(linhas_amostra: list[dict], client) -> dict[str, str | None]:
     for linha in linhas_amostra:
         resp = client.get(f"/repos/{linha['full_name']}/releases/{linha['release_id']}")
         corpo = resp.json() if resp.status_code == 200 else None
-        notas[str(linha["release_id"])] = (corpo.get("body") or "") if isinstance(corpo, dict) else None
+        notas[str(linha["release_id"])] = (corpo.get("body") or "") if isinstance(corpo, dict) else ""
     return notas
 
 
