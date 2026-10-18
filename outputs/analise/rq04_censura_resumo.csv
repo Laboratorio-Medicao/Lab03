@@ -1,0 +1,13 @@
+indicador,valor
+repos,300.0
+repos_com_episodios,283.0
+repos_sem_episodios,17.0
+repos_com_algum_censurado,105.0
+episodios_total,9062.0
+episodios_censurados,176.0
+prop_global,0.019421761200617966
+prop_repo_n,283.0
+prop_repo_mediana,0.0
+prop_repo_q1,0.0
+prop_repo_q3,0.0465367965367965
+prop_repo_iqr,0.0465367965367965
