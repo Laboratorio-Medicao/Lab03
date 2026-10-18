@@ -52,7 +52,7 @@ def renderizar_md(res: ResultadoSelecao) -> str:
         "",
         "| Etapa | Entram | Saem | Restam |",
         "|---|---:|---:|---:|",
-        f"| 0. Candidatos avaliados (Search API, sem duplicatas) | {s['candidatos']} | — | {s['candidatos']} |",
+        f"| 0. Candidatos avaliados ({res.origem}, sem duplicatas) | {s['candidatos']} | — | {s['candidatos']} |",
     ]
     linhas += [f"| {e['etapa']} | {e['entram']} | {e['saem']} | {e['restam']} |" for e in s["etapas"]]
     linhas += [f"| Amostra final | {s['selecionados']} | — | {s['selecionados']} |", ""]
@@ -69,7 +69,9 @@ def renderizar_md(res: ResultadoSelecao) -> str:
     else:
         linhas.append("Nenhum descarte.")
     linhas += ["", "## Fatias consultadas na Search API", ""]
-    if res.fatias:
+    if res.origem != "Search API":
+        linhas.append("Sem busca: os candidatos vieram da lista informada.")
+    elif res.fatias:
         linhas += ["| Consulta | total_count | Coletados | Saturada |", "|---|---:|---:|---|"]
         linhas += [f"| `{f.consulta}` | {f.total_count} | {f.retornados} | {'sim' if f.saturada else 'não'} |" for f in res.fatias]
     else:

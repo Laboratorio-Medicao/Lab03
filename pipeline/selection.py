@@ -100,6 +100,7 @@ class ResultadoSelecao:
     fatias: list[RegistroFatia] = field(default_factory=list)
     brutos: int = 0
     candidatos_total: int = 0  # candidatos únicos da busca (>= len(registros) se a avaliação parou cedo)
+    origem: str = "Search API"  # de onde vieram os candidatos (muda com `--repos-file`)
 
 
 # --------------------------------------------------------------------------- HTTP helpers
