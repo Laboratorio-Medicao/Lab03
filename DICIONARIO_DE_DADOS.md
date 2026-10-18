@@ -24,7 +24,7 @@ O teste `tests/test_dicionario.py` falha se qualquer coluna dos CSVs não tiver 
 | `default_branch` | str | — | GitHub API: `default_branch` |
 | `n_releases_total` | int | releases | Total de releases sem filtro de janela |
 | `n_releases_deploy_total` | int | releases | Releases não-draft, não-prerelease e com `published_at` |
-| `deployment_frequency` | float | deploys/dia | DF = `n_releases_deploy_total / duração_janela_dias` |
+| `deployment_frequency` | float | releases/semana | DF = releases de deploy publicadas na janela ÷ semanas da janela (dias ÷ 7) |
 | `lt_release_median_h` | float | horas | Lead time **(a)** por release: `published_at(R) − author_date(commit mais antigo de R)`; mediana das releases avaliáveis (E§3) |
 | `lt_commit_median_h` | float | horas | Lead time **(b)** por commit: `published_at(R) − author_date(c)` para cada commit `c`; mediana global (E§3) |
 | `n_releases_avaliadas` | int | releases | Releases com `status=ok` e ≥1 commit válido |
@@ -244,3 +244,14 @@ Gerados por `scripts/agreement.py` (#26) a partir dos três `labels_<avaliador>.
 | `consenso.csv` | `rotulo_consenso` | str | Rótulo de consenso; vazio se pendente |
 | `consenso.csv` | `metodo` | str | `unanimidade` · `maioria` · `reuniao` · `pendente` |
 | `consenso.csv` | `justificativa` | str | Decisão da reunião (só `reuniao`) |
+
+## Saídas das análises RQ01–RQ04 (`outputs/analise/`, Issue #35)
+
+Geradas por `python -m analysis.rq01_rq04` a partir de `data/metrics.csv`. O detalhe campo a campo está em `DICIONARIO_DE_DADOS.csv` (arquivos `dora_class.csv`, `dora_class_distribuicao.csv`, `dora_class_por_metrica.csv`, `rq01_rq04_descritiva.csv`, `rq04_censura.csv`, `rq04_censura_resumo.csv`).
+
+| Arquivo | Conteúdo |
+|---|---|
+| `dora_class.csv` | Classe por métrica e classe geral C1 de cada repositório (`n_metricas` < 4 = parcial, L10) |
+| `dora_class_distribuicao.csv` / `dora_class_por_metrica.csv` | Contagem Elite/High/Medium/Low |
+| `rq01_rq04_descritiva.csv` | n, mediana, Q1, Q3 e IQR de DF, LT (a)/(b), CFR (a)/(b) e recuperação |
+| `rq04_censura.csv` / `rq04_censura_resumo.csv` | Episódios censurados por repositório e no total |

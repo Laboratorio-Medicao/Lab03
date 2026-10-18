@@ -263,6 +263,7 @@ O workflow `.github/workflows/commits.yml` aplica a mesma regra no GitHub, caso 
 pipeline/              CLI (python -m pipeline), config, seleção, funil e orquestração (execucao.py)
 metricas/              funções de cálculo das métricas DORA (módulo medido pela cobertura)
 tests/                 testes automatizados (pytest)
+analysis/              análises da S03 (RQ01–RQ04, classificação C1), reexecutáveis a partir do CSV
 scripts/               utilitários (validação de mensagem de commit)
 .githooks/             hook commit-msg que exige #N
 .github/workflows/     CI: testes.yml (pytest + cobertura) e commits.yml (#N)
@@ -304,3 +305,17 @@ python -m scripts.data_quality --config config.yaml [--metricas data/metrics.csv
 ```
 
 Gera `outputs/data_quality.md` e `outputs/data_quality.csv` com: vazios por coluna, duplicatas, datas (commits após a release, sem data), censurados, 404, dias de runs saturados e distribuição por linguagem. As **invariantes** (0 ≤ CFR ≤ 1, lead time ≥ 0, avaliadas + ignoradas/censuradas = releases da janela, colunas no dicionário, somas do funil e amostra final = dataset) saem `OK`, `FALHA` ou `N/A` (coluna/arquivo ainda inexistente, como as colunas do CFR (b) da #21 e o dicionário da #20). Qualquer `FALHA` faz o comando sair com código 1. Os nomes das colunas do CFR (b) esperados estão nas constantes `COL_*` de `scripts/data_quality.py`.
+
+## Análises RQ01–RQ04 e classificação DORA C1 (S03, Issue #35)
+
+Reexecutável a partir de `data/metrics.csv`, sem coleta nem token (usa pandas, scipy e matplotlib do `requirements.txt`):
+
+```bash
+python -m analysis.rq01_rq04 [--csv data/metrics.csv] [--saida outputs/analise]
+```
+
+Saídas em `outputs/analise/`: `rq01_rq04_descritiva.csv` (mediana, Q1, Q3, IQR e n de DF, lead time (a)/(b), CFR (a)/(b) e recuperação), `rq04_censura*.csv` (proporção de episódios censurados por repositório e global), `dora_class.csv` (classe por métrica e geral C1 de cada repositório), `dora_class_distribuicao.csv`/`dora_class_por_metrica.csv` e os gráficos `rq0X_*.png`/`dora_class_c1.png`. Só `python -m analysis.dora_class_c1` regera apenas a classificação.
+
+- **Estatística:** só mediana e IQR (Q3 − Q1, interpolação linear); nenhuma média/DP. O `n` de cada métrica exclui repositórios sem valor (ex.: CFR (b) sem releases avaliáveis, recuperação sem episódios concluídos).
+- **C1** = release | LT (a) | CFR (a) | recuperação, recalculada com os cortes de `metricas/dora.py` (corte de 1 release/mês = 12 ÷ semanas da janela). Métrica indefinida não exclui o repositório: a geral usa as notas disponíveis e `n_metricas` < 4 marca a classificação parcial (L10). O script falha se a C1 recalculada divergir de `dora_c1` do CSV.
+- **Censura (RQ04):** episódios sem sucesso posterior não são descartados; ficam fora da mediana de recuperação, mas são contados em `rq04_censura*.csv`.

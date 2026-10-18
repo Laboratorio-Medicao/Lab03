@@ -9,7 +9,7 @@ resultados.csv,age_days,float,dias,>=0,"idade = (janela.fim − created_at) em d
 resultados.csv,default_branch,str,-,-,GitHub API: default_branch
 resultados.csv,n_releases_total,int,releases,>=0,Contagem total de releases do repositório (sem filtro de janela)
 resultados.csv,n_releases_deploy_total,int,releases,>=0,"Releases não-draft, não-prerelease e com published_at (proxy de deploy, sem filtro de janela)"
-resultados.csv,deployment_frequency,float,deploys/dia,>=0,"DORA DF: n_releases_deploy_total / duração_janela_dias; janela = config janela.inicio..fim"
+resultados.csv,deployment_frequency,float,releases/semana,>=0,"DORA DF: releases de deploy publicadas na janela ÷ semanas da janela (dias ÷ 7; 366 dias na janela oficial); janela = config janela.inicio..fim"
 resultados.csv,lt_release_median_h,float,horas,>=0,"Lead time (a) por release: published_at(R) − author_date(commit mais antigo de R); mediana entre releases avaliáveis na janela (E§3)"
 resultados.csv,lt_commit_median_h,float,horas,>=0,"Lead time (b) por commit: published_at(R) − author_date(c) para cada commit c; mediana de todos os commits de todas as releases avaliáveis (E§3)"
 resultados.csv,n_releases_avaliadas,int,releases,>=0,Releases com status=ok e ≥1 commit válido usadas no cálculo do lead time
@@ -42,7 +42,7 @@ repos_final.csv,age_days,float,dias,>=0,Idem resultados.csv
 repos_final.csv,default_branch,str,-,-,Idem resultados.csv
 repos_final.csv,n_releases_total,int,releases,>=0,Idem resultados.csv
 repos_final.csv,n_releases_deploy_total,int,releases,>=0,Idem resultados.csv
-repos_final.csv,deployment_frequency,float,deploys/dia,>=0,Idem resultados.csv
+repos_final.csv,deployment_frequency,float,releases/semana,>=0,Idem resultados.csv
 repos_final.csv,lt_release_median_h,float,horas,>=0,Idem resultados.csv
 repos_final.csv,lt_commit_median_h,float,horas,>=0,Idem resultados.csv
 repos_final.csv,n_releases_avaliadas,int,releases,>=0,Idem resultados.csv
@@ -159,7 +159,7 @@ metrics.csv,age_days,float,dias,>=0,Idem repos_final.csv
 metrics.csv,default_branch,str,-,-,Idem repos_final.csv
 metrics.csv,n_releases_total,int,releases,>=0,Idem repos_final.csv
 metrics.csv,n_releases_deploy_total,int,releases,>=0,Idem repos_final.csv
-metrics.csv,deployment_frequency,float,deploys/semana,>=0,Idem repos_final.csv — combinação C1 (releases não-draft não-prerelease)
+metrics.csv,deployment_frequency,float,releases/semana,>=0,Idem repos_final.csv — combinação C1 (releases não-draft não-prerelease)
 metrics.csv,lt_release_median_h,float,horas,>=0,Idem repos_final.csv — lead time (a) por release
 metrics.csv,lt_commit_median_h,float,horas,>=0,Idem repos_final.csv — lead time (b) por commit
 metrics.csv,n_releases_avaliadas,int,releases,>=0,Idem repos_final.csv
@@ -225,3 +225,35 @@ data/kanban-snapshots/kanban-snapshot-*.csv,title,str,-,-,"Título da Issue — 
 data/kanban-snapshots/kanban-snapshot-*.csv,status,str,-,-,"Coluna do GitHub Projects: Backlog, Ready, In progress, In review ou Done — kanban/exporter.py"
 data/kanban-snapshots/kanban-snapshot-*.csv,assignees,str,-,-,"Responsáveis, separados por "|" — kanban/exporter.py"
 data/kanban-snapshots/kanban-snapshot-*.csv,labels,str,-,-,"Rótulos da Issue, separados por "|" — kanban/exporter.py"
+dora_class.csv,full_name,str,-,-,Idem metrics.csv
+dora_class.csv,deployment_frequency,float,releases/semana,>=0,Idem metrics.csv (RQ01)
+dora_class.csv,lt_release_median_h,float,horas,>=0,Idem metrics.csv (lead time (a))
+dora_class.csv,cfr_a,float,proporção,0–1,Idem metrics.csv (CFR (a))
+dora_class.csv,rec_median_h,float,horas,>=0,Idem metrics.csv (vazio sem episódios concluídos)
+dora_class.csv,df_class,str,-,"Elite, High, Medium, Low","Faixa de DF pela tabela fixa da disciplina; corte de 1 release/mês = 12 ÷ semanas da janela (analysis/common.py)"
+dora_class.csv,lt_class,str,-,"Elite, High, Medium, Low",Faixa de lead time (a) pela tabela fixa
+dora_class.csv,cfr_class,str,-,"Elite, High, Medium, Low",Faixa de CFR (a) pela tabela fixa
+dora_class.csv,rec_class,str,-,"Elite, High, Medium, Low, vazio",Faixa de recuperação pela tabela fixa; vazio se rec_median_h é vazio
+dora_class.csv,n_metricas,int,contagem,0–4,Métricas definidas que entraram em dora_c1; <4 = classificação parcial (L10)
+dora_class.csv,dora_c1,str,-,"Elite, High, Medium, Low","Classificação geral C1: mediana (floor) das notas Elite=4…Low=1 das métricas definidas"
+dora_class_distribuicao.csv,categoria,str,-,"Elite, High, Medium, Low",Categoria DORA geral (C1)
+dora_class_distribuicao.csv,n,int,repositórios,>=0,Repositórios na categoria
+dora_class_distribuicao.csv,pct,float,%,0–100,n ÷ total de repositórios classificados × 100
+dora_class_por_metrica.csv,categoria,str,-,"Elite, High, Medium, Low",Categoria
+dora_class_por_metrica.csv,"df_class, lt_class, cfr_class, rec_class, dora_c1",int,repositórios,>=0,Repositórios em cada categoria para a métrica da coluna
+rq01_rq04_descritiva.csv,rq,str,-,"RQ01, RQ02, RQ03, RQ04",Questão de pesquisa
+rq01_rq04_descritiva.csv,metrica,str,-,-,Nome da métrica/variante
+rq01_rq04_descritiva.csv,coluna,str,-,-,Coluna de metrics.csv de onde vem o valor
+rq01_rq04_descritiva.csv,unidade,str,-,"releases/semana, horas, proporção",Unidade da métrica
+rq01_rq04_descritiva.csv,n,int,repositórios,>=0,Repositórios com valor definido (NaN fora)
+rq01_rq04_descritiva.csv,mediana,float,unidade da métrica,-,Mediana entre repositórios
+rq01_rq04_descritiva.csv,q1,float,unidade da métrica,-,1º quartil (interpolação linear)
+rq01_rq04_descritiva.csv,q3,float,unidade da métrica,-,3º quartil (interpolação linear)
+rq01_rq04_descritiva.csv,iqr,float,unidade da métrica,>=0,Q3 − Q1
+rq04_censura.csv,full_name,str,-,-,Idem metrics.csv
+rq04_censura.csv,n_episodios,int,episódios,>=0,Idem metrics.csv
+rq04_censura.csv,n_episodios_censurados,int,episódios,>=0,Idem metrics.csv
+rq04_censura.csv,prop_episodios_censurados,float,proporção,0–1,Idem metrics.csv (vazio se n_episodios = 0)
+rq04_censura.csv,sem_episodios,bool,-,"True, False",n_episodios = 0
+rq04_censura_resumo.csv,indicador,str,-,-,"Repos com/sem episódios, episódios totais/censurados, proporção global e resumo (n, mediana, Q1, Q3, IQR) da proporção por repositório"
+rq04_censura_resumo.csv,valor,float,-,-,Valor do indicador
