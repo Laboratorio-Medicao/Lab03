@@ -26,6 +26,7 @@ from pipeline.collect_runs import collect_runs
 from pipeline.collect_tags import collect_tags
 from pipeline.execucao import Etapas
 from pipeline.funil import escrever_funil
+from pipeline.repos_file import selecionar_lista
 from pipeline.selection import RepoRecord, selecionar
 
 log = logging.getLogger("pipeline.etapas")
@@ -113,11 +114,16 @@ def calcular_metricas(repo: RepoRecord, dados: dict, inicio: date, fim: date) ->
     }
 
 
-def criar_etapas(config, *, tags: bool = True) -> Etapas:
-    """Etapas de coleta e cálculo + seleção que grava o funil de forma incremental e para na amostra."""
+def criar_etapas(config, *, tags: bool = True, repos: list[str] | None = None) -> Etapas:
+    """Etapas de coleta e cálculo + seleção que grava o funil de forma incremental e para na amostra.
+
+    Com `repos` (lista `owner/repo` do `--repos-file`), a seleção avalia essa lista em vez de buscar.
+    """
     cache_dir, saidas = Path(config.cache_dir), Path(config.saidas_dir)
 
     def selecao(client, sel, inicio, fim):
+        if repos is not None:
+            return selecionar_lista(client, repos, sel, inicio, fim, ao_avaliar=lambda parcial: escrever_funil(parcial, saidas))
         return selecionar(
             client, sel, inicio, fim,
             ao_avaliar=lambda parcial: escrever_funil(parcial, saidas),

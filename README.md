@@ -2,7 +2,7 @@
 
 Pipeline reprodutível que calcula as métricas DORA (deployment frequency, lead time, change failure rate e tempo de recuperação) a partir de dados públicos do GitHub (releases, commits e GitHub Actions).
 
-> **Estado atual (Sprint S01):** o comando único encadeia seleção, funil, coleta (releases, tags, commits entre releases e workflow runs) e métricas DORA, com cache em disco e retomada.
+> **Estado atual (Sprint S03):** o comando único encadeia seleção, funil, coleta (releases, tags, commits entre releases e workflow runs) e métricas DORA, com cache em disco e retomada.
 
 ## Pré-requisitos
 
@@ -47,6 +47,19 @@ O comando faz tudo: busca e filtra candidatos até completar `selecao.amostra_al
 **Interrupção e retomada.** Se parar (`Ctrl+C`, rede, rate limit), rode o mesmo comando: as respostas já feitas estão em `cache/` e não são repetidas. O log da 2ª execução mostra `cache_misses: 0` quando tudo já estava em cache. Só respostas 2xx e 404 vão para o cache; erros transitórios (403 de rate limit, 5xx) são refeitos.
 
 **Rate limit e erros.** `X-RateLimit-Remaining/Reset` e `Retry-After` são lidos; com a cota zerada (resposta 200, 403 ou 429) o log mostra `aguardando até <epoch>` e a requisição é repetida. 5xx e erros de rede usam backoff de 1, 2, 4, 8 s (até 5 tentativas).
+
+## Lista de repositórios como entrada (`--repos-file`, Issue #36)
+
+Para rodar o pipeline sobre repositórios já escolhidos (por exemplo, os 30 da replicação cruzada, E§9) sem a Search API:
+
+```bash
+python -m pipeline --config config.yaml --repos-file repos.txt
+```
+
+- **Formatos:** `.txt` com um `owner/repo` por linha (também `https://github.com/owner/repo`; `#` comenta; duplicatas são removidas) ou `.csv` com a coluna `full_name`, como `data/metrics.csv` e `outputs/repos_final.csv`. Lista inválida ou vazia encerra com código 1 e a linha do erro.
+- **O que muda:** os metadados vêm de `GET /repos/{owner}/{repo}` e os filtros (Actions, ≥ 5 releases, ≥ 50 runs válidos na janela) são os mesmos da seleção normal, então o funil mostra o que mudou desde a coleta original. A lista é a amostra: `selecao.amostra_alvo` não corta. Repositório inexistente ou privado (404) é descartado com motivo `repo_not_found`; outros erros HTTP, com `api_error_<status>`.
+- **Saídas:** vão para `caminhos.saidas` e **sobrescrevem** `funil.*` e `resultados.csv` dessa pasta. Para não perder uma coleta anterior, use um `config.yaml` copiado com `caminhos.saidas: outputs_replicacao` (e, se quiser coleta do zero, `caminhos.cache` próprio).
+- **Comparar com o original:** `resultados.csv` tem as mesmas colunas de `data/metrics.csv` que o pipeline calcula; junte por `full_name`. Registro do teste: [docs/teste-readme-maquina-limpa.md](docs/teste-readme-maquina-limpa.md).
 
 ## Seleção de repositórios e funil (Issue #4)
 
