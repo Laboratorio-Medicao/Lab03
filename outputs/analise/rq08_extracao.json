@@ -1,0 +1,12 @@
+{
+  "extraido_em": "2026-10-20T03:51:14+00:00",
+  "heuristic_version": "v12",
+  "janela_inicio": "2025-10-02T00:00:00+00:00",
+  "janela_fim": "2026-10-02T23:59:59+00:00",
+  "repos_entrada": 300,
+  "repos_ok": 298,
+  "repos_erro": 2,
+  "releases_rotuladas": 13295,
+  "cache_coletado_em_min": "2026-10-20T02:31:03+00:00",
+  "cache_coletado_em_max": "2026-10-20T03:50:15+00:00"
+}
