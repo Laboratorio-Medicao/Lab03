@@ -255,3 +255,14 @@ Geradas por `python -m analysis.rq01_rq04` a partir de `data/metrics.csv`. O det
 | `dora_class_distribuicao.csv` / `dora_class_por_metrica.csv` | Contagem Elite/High/Medium/Low |
 | `rq01_rq04_descritiva.csv` | n, mediana, Q1, Q3 e IQR de DF, LT (a)/(b), CFR (a)/(b) e recuperação |
 | `rq04_censura.csv` / `rq04_censura_resumo.csv` | Episódios censurados por repositório e no total |
+
+## Saídas da análise RQ05 (`outputs/analise/`, Issue #37)
+
+Geradas por `python -m analysis.rq05_spearman` a partir de `data/metrics.csv`. O detalhe campo a campo está em `DICIONARIO_DE_DADOS.csv` (arquivos `rq05_spearman.csv` e `rq05_sensibilidade_cfr_b.csv`).
+
+| Arquivo | Conteúdo |
+|---|---|
+| `rq05_spearman.csv` | ρ de Spearman entre DF e CFR (a)/(b): n, excluídos, ρ, p-valor, IC95% (Fisher z, Bonett e Wright), força e direção |
+| `rq05_sensibilidade_cfr_b.csv` | Mesmo cálculo para CFR (b) só com repositórios com ≥ 5, 10 e 20 releases avaliadas (diagnóstico) |
+| `rq05_spearman.md` | Tabelas acima, CFR (b) = 0 por nº de releases avaliadas e notas de método |
+| `rq05_df_cfr_a.png` / `rq05_df_cfr_b.png` | Dispersão DF (escala log) × CFR, com a mediana de CFR por faixa de DF |

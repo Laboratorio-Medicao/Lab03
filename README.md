@@ -332,3 +332,18 @@ Saídas em `outputs/analise/`: `rq01_rq04_descritiva.csv` (mediana, Q1, Q3, IQR 
 - **Estatística:** só mediana e IQR (Q3 − Q1, interpolação linear); nenhuma média/DP. O `n` de cada métrica exclui repositórios sem valor (ex.: CFR (b) sem releases avaliáveis, recuperação sem episódios concluídos).
 - **C1** = release | LT (a) | CFR (a) | recuperação, recalculada com os cortes de `metricas/dora.py` (corte de 1 release/mês = 12 ÷ semanas da janela). Métrica indefinida não exclui o repositório: a geral usa as notas disponíveis e `n_metricas` < 4 marca a classificação parcial (L10). O script falha se a C1 recalculada divergir de `dora_c1` do CSV.
 - **Censura (RQ04):** episódios sem sucesso posterior não são descartados; ficam fora da mediana de recuperação, mas são contados em `rq04_censura*.csv`.
+
+## Análise RQ05 — Spearman entre DF e CFR (S03, Issue #37)
+
+Reexecutável a partir de `data/metrics.csv`, sem coleta nem token:
+
+```bash
+python -m analysis.rq05_spearman [--csv data/metrics.csv] [--saida outputs/analise]
+```
+
+Saídas em `outputs/analise/`: `rq05_spearman.csv` (ρ, p-valor, n e IC95% para CFR (a) e (b)), `rq05_sensibilidade_cfr_b.csv`, `rq05_spearman.md` (tabelas e notas de método) e `rq05_df_cfr_a.png`/`rq05_df_cfr_b.png`. A discussão (tese DORA, correlação ≠ causalidade) está em `docs/rq05_discussao.md`.
+
+- **Estatística:** `scipy.stats.spearmanr` (ranks médios em empates; p-valor bilateral pela aproximação t, reportado como "p < 0,001" no texto quando menor). IC95% de ρ pela transformação z de Fisher com erro-padrão de Bonett e Wright (2000); a direção só é dita positiva/negativa quando o IC exclui o 0.
+- **Dados ausentes:** pares completos por variante. Um repositório sem CFR (b) sai só da variante (b); zeros de CFR são mantidos. Em (b) saem `akto-api-security/akto` (maior DF da amostra, sem contadores de CFR (b)) e `akveo/react-native-ui-kitten` (24 releases, todas censuradas), ou seja, a exclusão não é aleatória.
+- **Gráficos:** DF em escala log (0,1 a 25 releases/semana, sem zeros); CFR em escala linear [0, 1], por ser proporção com zeros.
+- **CFR (b) é exploratório** (heurística v12, F1 independente 0,689). A sensibilidade por nº mínimo de releases avaliadas (5, 10, 20) é só diagnóstico do efeito de denominador pequeno: o corte também restringe a faixa de DF, e isso sozinho reduz |ρ|.
