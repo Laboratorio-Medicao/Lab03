@@ -1,0 +1,4 @@
+min_releases_avaliadas,variante,rotulo,coluna_x,coluna_y,n,n_excluidos,excluidos,n_cfr_zero,rho,p_valor,alfa,ic95_inf,ic95_sup,ic_metodo,forca,direcao
+5,b,CFR (b) proxy de entrega,deployment_frequency,cfr_b,295,0,,69,0.6128929479467456,8.124620957391224e-32,0.05,0.5288414714936095,0.6850392110710863,"Fisher z, SE de Bonett e Wright (2000)",forte,positiva
+10,b,CFR (b) proxy de entrega,deployment_frequency,cfr_b,228,0,,31,0.5757728663716251,1.5696281320139255e-21,0.05,0.4738609113862071,0.6624654650694896,"Fisher z, SE de Bonett e Wright (2000)",forte,positiva
+20,b,CFR (b) proxy de entrega,deployment_frequency,cfr_b,139,0,,4,0.4079221127294386,6.213516110528013e-07,0.05,0.2526098658103709,0.5427412846065363,"Fisher z, SE de Bonett e Wright (2000)",moderada,positiva

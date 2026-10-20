@@ -257,3 +257,36 @@ rq04_censura.csv,prop_episodios_censurados,float,proporção,0–1,Idem metrics.
 rq04_censura.csv,sem_episodios,bool,-,"True, False",n_episodios = 0
 rq04_censura_resumo.csv,indicador,str,-,-,"Repos com/sem episódios, episódios totais/censurados, proporção global e resumo (n, mediana, Q1, Q3, IQR) da proporção por repositório"
 rq04_censura_resumo.csv,valor,float,-,-,Valor do indicador
+rq05_spearman.csv,variante,str,-,"a, b",Variante do CFR correlacionada com DF (E§5 RQ05)
+rq05_spearman.csv,rotulo,str,-,-,Nome legível da variante
+rq05_spearman.csv,coluna_x,str,-,deployment_frequency,Coluna de metrics.csv usada como X (DF; RQ01)
+rq05_spearman.csv,coluna_y,str,-,"cfr_a, cfr_b",Coluna de metrics.csv usada como Y (CFR; RQ03)
+rq05_spearman.csv,n,int,repositórios,>=0,Pares completos (DF e CFR definidos); exclusão só desta variante
+rq05_spearman.csv,n_excluidos,int,repositórios,>=0,Repositórios sem DF ou sem CFR nesta variante
+rq05_spearman.csv,excluidos,str,-,-,full_name dos excluídos separados por '; ' (vazio se nenhum)
+rq05_spearman.csv,n_cfr_zero,int,repositórios,>=0,Pares com CFR = 0 (mantidos na análise)
+rq05_spearman.csv,rho,float,-,−1–1,"ρ de Spearman (scipy.stats.spearmanr, ranks médios em empates); vazio com n < 3 ou série constante"
+rq05_spearman.csv,p_valor,float,-,0–1,"p-valor bilateral (aproximação t do spearmanr, aproximada na cauda; no texto usar p < 0,001)"
+rq05_spearman.csv,alfa,float,-,0.05,Nível de significância
+rq05_spearman.csv,ic95_inf,float,-,−1–1,"Limite inferior do IC95% de ρ: z de Fisher, SE = sqrt((1 + ρ²/2)/(n − 3)) (Bonett e Wright, 2000); vazio com n < 4; (ρ, ρ) se |ρ| = 1"
+rq05_spearman.csv,ic95_sup,float,-,−1–1,Limite superior do IC95% de ρ (idem ic95_inf)
+rq05_spearman.csv,ic_metodo,str,-,-,Método do IC95%
+rq05_spearman.csv,forca,str,-,"desprezível, fraca, moderada, forte, vazio","Rótulo descritivo de |ρ|: < 0,1; < 0,3; < 0,5; >= 0,5 (Cohen, 1988); vazio se ρ indefinido"
+rq05_spearman.csv,direcao,str,-,"positiva, negativa, inconclusiva (IC contém 0), vazio",Positiva/negativa só quando o IC95% exclui o 0; vazio se IC indefinido
+rq05_sensibilidade_cfr_b.csv,min_releases_avaliadas,int,releases,"5, 10, 20",Corte pré-declarado: só repositórios com n_releases_avaliadas_cfr_b >= corte (diagnóstico do efeito de denominador pequeno; restringe também a faixa de DF)
+rq05_sensibilidade_cfr_b.csv,variante,str,-,"a, b","Idem rq05_spearman.csv, calculado no subconjunto do corte (só variante b)"
+rq05_sensibilidade_cfr_b.csv,rotulo,str,-,-,"Idem rq05_spearman.csv, calculado no subconjunto do corte (só variante b)"
+rq05_sensibilidade_cfr_b.csv,coluna_x,str,-,deployment_frequency,"Idem rq05_spearman.csv, calculado no subconjunto do corte (só variante b)"
+rq05_sensibilidade_cfr_b.csv,coluna_y,str,-,"cfr_a, cfr_b","Idem rq05_spearman.csv, calculado no subconjunto do corte (só variante b)"
+rq05_sensibilidade_cfr_b.csv,n,int,repositórios,>=0,"Idem rq05_spearman.csv, calculado no subconjunto do corte (só variante b)"
+rq05_sensibilidade_cfr_b.csv,n_excluidos,int,repositórios,>=0,"Idem rq05_spearman.csv, calculado no subconjunto do corte (só variante b)"
+rq05_sensibilidade_cfr_b.csv,excluidos,str,-,-,"Idem rq05_spearman.csv, calculado no subconjunto do corte (só variante b)"
+rq05_sensibilidade_cfr_b.csv,n_cfr_zero,int,repositórios,>=0,"Idem rq05_spearman.csv, calculado no subconjunto do corte (só variante b)"
+rq05_sensibilidade_cfr_b.csv,rho,float,-,−1–1,"Idem rq05_spearman.csv, calculado no subconjunto do corte (só variante b)"
+rq05_sensibilidade_cfr_b.csv,p_valor,float,-,0–1,"Idem rq05_spearman.csv, calculado no subconjunto do corte (só variante b)"
+rq05_sensibilidade_cfr_b.csv,alfa,float,-,0.05,"Idem rq05_spearman.csv, calculado no subconjunto do corte (só variante b)"
+rq05_sensibilidade_cfr_b.csv,ic95_inf,float,-,−1–1,"Idem rq05_spearman.csv, calculado no subconjunto do corte (só variante b)"
+rq05_sensibilidade_cfr_b.csv,ic95_sup,float,-,−1–1,"Idem rq05_spearman.csv, calculado no subconjunto do corte (só variante b)"
+rq05_sensibilidade_cfr_b.csv,ic_metodo,str,-,-,"Idem rq05_spearman.csv, calculado no subconjunto do corte (só variante b)"
+rq05_sensibilidade_cfr_b.csv,forca,str,-,"desprezível, fraca, moderada, forte, vazio","Idem rq05_spearman.csv, calculado no subconjunto do corte (só variante b)"
+rq05_sensibilidade_cfr_b.csv,direcao,str,-,"positiva, negativa, inconclusiva (IC contém 0), vazio","Idem rq05_spearman.csv, calculado no subconjunto do corte (só variante b)"
