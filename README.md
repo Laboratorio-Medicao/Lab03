@@ -347,3 +347,20 @@ Saídas em `outputs/analise/`: `rq05_spearman.csv` (ρ, p-valor, n e IC95% para 
 - **Dados ausentes:** pares completos por variante. Um repositório sem CFR (b) sai só da variante (b); zeros de CFR são mantidos. Em (b) saem `akto-api-security/akto` (maior DF da amostra, sem contadores de CFR (b)) e `akveo/react-native-ui-kitten` (24 releases, todas censuradas), ou seja, a exclusão não é aleatória.
 - **Gráficos:** DF em escala log (0,1 a 25 releases/semana, sem zeros); CFR em escala linear [0, 1], por ser proporção com zeros.
 - **CFR (b) é exploratório** (heurística v12, F1 independente 0,689). A sensibilidade por nº mínimo de releases avaliadas (5, 10, 20) é só diagnóstico do efeito de denominador pequeno: o corte também restringe a faixa de DF, e isso sozinho reduz |ρ|.
+
+## Análise RQ06 — fatores × métricas DORA (S03, Issue #38)
+
+Reexecutável a partir de `data/metrics.csv` e `data/amostra_ouro/consenso.csv`, sem coleta nem token:
+
+```bash
+python -m analysis.rq06_fatores [--csv data/metrics.csv] [--consenso data/amostra_ouro/consenso.csv] [--saida outputs/analise]
+```
+
+Saídas em `outputs/analise/`: `rq06_testes.csv` (tabela única com p ajustado e efeito), `rq06_grupos.csv` (mediana/IQR por grupo), `rq06_fatores.csv` (grupo de cada repositório) e `rq06_efeitos.png`.
+
+- **Fatores (5; o enunciado pede ≥ 3):** linguagem, popularidade (quartis de `stars`), contribuidores (quartis de `contributors`), idade (quartis de `age_days`) e tipo do projeto. Os quartis são da amostra de 300 (`pd.qcut`, interpolação linear; Q1 = menores valores). Linguagens com ≥ 15 repositórios (5% da amostra, corte arbitrário) têm grupo próprio; as demais formam "Outras" e os 2 repositórios sem linguagem ficam fora. O tipo é o rótulo de consenso da amostra-ouro (60 repositórios, E§6); "outro" fica fora porque o enunciado define o fator como biblioteca × aplicação × CLI (n = 51). "Outras" fica no teste (excluí-la descartaria 22% da amostra), mas, por ser residual, não entra em `melhor_grupo` nem em contraste.
+- **Métricas:** as seis das RQ01–RQ04 (DF, LT (a)/(b), CFR (a)/(b), recuperação). Repositório sem valor numa métrica sai só dos testes dela (`n_excluidos_nan`). Na recuperação, sem valor significa sem falha (melhor caso) ou só episódios censurados (pior caso); os dois saem do teste e são contados em `rq06_grupos.csv` (`n_sem_episodios`, `n_so_censurados`).
+- **Testes:** grupos com n < 5 saem do teste. Com k ≥ 3 grupos, Kruskal-Wallis e ε² = H/(n−1); com k = 2, Mann-Whitney bilateral e δ de Cliff = 2·U₁/(n₁·n₂) − 1. Magnitude de δ por Romano et al. (2006) (|δ| < 0,147 desprezível; < 0,33 pequeno; < 0,474 médio; senão grande) e de ε² por Mangiafico/`rcompanion` (< 0,01; < 0,08; < 0,26). Teste sem dois grupos, com valores todos iguais ou com p não finito sai como `nao_executado`.
+- **Holm:** `multipletests(method='holm')` sobre **todos** os testes executados (uma família de 30: 5 fatores × 6 métricas). `significativo_holm` é o `reject` com α = 0,05.
+- **Leitura do efeito:** sem diferença real, ε² ≈ (k−1)/(n−1) (`epsilon2_h0`), que é maior para o tipo (n = 51) e a linguagem (k = 7). Para comparar fatores use `eta2_h` = (H − k + 1)/(n − k). Kruskal-Wallis não tem sinal: `contraste`/`delta_contraste` dão a direção (Q4 × Q1 nos quartis, aplicação × biblioteca no tipo; δ > 0 = 1º grupo com valores maiores, o que é melhor em DF e pior em LT, CFR e recuperação), sem p-valor e fora do Holm. `melhor_grupo` é só descritivo.
+- **Limitações:** a análise é marginal, um fator por vez, sem ajuste. Os fatores são correlacionados (Spearman ≈ 0,46 entre stars e contributors e ≈ 0,48 entre contributors e idade). A popularidade está truncada pela seleção (≥ ~1000 estrelas). O tipo tem n = 51 contra ~300 nos outros fatores e por isso menos poder; não compare fatores por p-valor nem por "significativo".

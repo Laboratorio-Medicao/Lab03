@@ -266,3 +266,14 @@ Geradas por `python -m analysis.rq05_spearman` a partir de `data/metrics.csv`. O
 | `rq05_sensibilidade_cfr_b.csv` | Mesmo cálculo para CFR (b) só com repositórios com ≥ 5, 10 e 20 releases avaliadas (diagnóstico) |
 | `rq05_spearman.md` | Tabelas acima, CFR (b) = 0 por nº de releases avaliadas e notas de método |
 | `rq05_df_cfr_a.png` / `rq05_df_cfr_b.png` | Dispersão DF (escala log) × CFR, com a mediana de CFR por faixa de DF |
+
+## Saídas da análise RQ06 (`outputs/analise/`, Issue #38)
+
+Geradas por `python -m analysis.rq06_fatores` a partir de `data/metrics.csv` e de `data/amostra_ouro/consenso.csv` (tipo do projeto). O detalhe campo a campo está em `DICIONARIO_DE_DADOS.csv` (arquivos `rq06_testes.csv`, `rq06_grupos.csv`, `rq06_fatores.csv`).
+
+| Arquivo | Conteúdo |
+|---|---|
+| `rq06_testes.csv` | Tabela única fator × métrica: teste (Kruskal-Wallis/Mann-Whitney), n, p bruto, p Holm, efeito (ε² ou δ de Cliff) e magnitude, `eta2_h`, contraste direcional e melhor grupo |
+| `rq06_grupos.csv` | n, mediana, Q1, Q3 e IQR de cada métrica por fator × grupo, com os excluídos por falta de valor |
+| `rq06_fatores.csv` | Grupo de cada repositório em cada fator |
+| `rq06_efeitos.png` | Mapa de calor da magnitude do efeito (`*` = significativo após Holm) |

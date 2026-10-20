@@ -290,3 +290,46 @@ rq05_sensibilidade_cfr_b.csv,ic95_sup,float,-,−1–1,"Idem rq05_spearman.csv, 
 rq05_sensibilidade_cfr_b.csv,ic_metodo,str,-,-,"Idem rq05_spearman.csv, calculado no subconjunto do corte (só variante b)"
 rq05_sensibilidade_cfr_b.csv,forca,str,-,"desprezível, fraca, moderada, forte, vazio","Idem rq05_spearman.csv, calculado no subconjunto do corte (só variante b)"
 rq05_sensibilidade_cfr_b.csv,direcao,str,-,"positiva, negativa, inconclusiva (IC contém 0), vazio","Idem rq05_spearman.csv, calculado no subconjunto do corte (só variante b)"
+rq06_testes.csv,fator,str,-,"linguagem, popularidade, contribuidores, idade, tipo",Fator de agrupamento dos repositórios (E§5 RQ06; analysis/rq06_fatores.py)
+rq06_testes.csv,metrica,str,-,-,Nome da métrica/variante (idem rq01_rq04_descritiva.csv)
+rq06_testes.csv,coluna,str,-,-,Coluna de metrics.csv de onde vem o valor
+rq06_testes.csv,teste,str,-,"kruskal, mannwhitney, nao_executado","Kruskal-Wallis se k ≥ 3 grupos; Mann-Whitney bilateral se k = 2; nao_executado se < 2 grupos com n ≥ 5, valores todos idênticos ou p não finito (fora do Holm)"
+rq06_testes.csv,n,int,repositórios,>=0,"Repositórios que entraram no teste (com valor da métrica, no fator e em grupo com n ≥ 5)"
+rq06_testes.csv,n_excluidos_nan,int,repositórios,>=0,Repositórios do fator sem valor da métrica (ex.: recuperação sem episódio concluído)
+rq06_testes.csv,k_grupos,int,grupos,>=0,Grupos testados
+rq06_testes.csv,n_por_grupo,str,-,-,"""grupo=n; …"" só dos grupos testados (os de grupos_excluidos não entram); a soma é n"
+rq06_testes.csv,grupos_excluidos,str,-,-,"""grupo=n; …"" dos grupos com 0 < n < 5 retirados do teste; vazio se nenhum"
+rq06_testes.csv,estatistica,float,-,>=0,"H do Kruskal-Wallis ou U₁ do Mann-Whitney (de mannwhitneyu(x, y), x = 1º grupo)"
+rq06_testes.csv,p_bruto,float,-,0–1,"p-valor do teste, sem correção; vazio se nao_executado"
+rq06_testes.csv,p_holm,float,-,0–1,"p-valor corrigido por Holm (multipletests, method='holm') sobre todos os testes executados da tabela"
+rq06_testes.csv,significativo_holm,bool,-,"True, False, vazio","reject de multipletests com alfa = 0,05; vazio se nao_executado"
+rq06_testes.csv,efeito_nome,str,-,"epsilon2, cliff_delta",Medida de efeito: ε² (Kruskal-Wallis) ou δ de Cliff (Mann-Whitney)
+rq06_testes.csv,efeito,float,-,ε²: 0–1; δ: −1 a 1,ε² = H/(n−1); δ = 2·U₁/(n₁·n₂) − 1 (δ > 0: 1º grupo de efeito_grupos tende a valores maiores)
+rq06_testes.csv,magnitude,str,-,"desprezível, pequeno, médio, grande","δ: Romano et al. (2006) |δ| < 0,147/0,33/0,474; ε²: Mangiafico (rcompanion) < 0,01/0,08/0,26"
+rq06_testes.csv,efeito_grupos,str,-,-,"""x × y"" do Mann-Whitney (sinal de δ); vazio no Kruskal-Wallis"
+rq06_testes.csv,epsilon2_h0,float,-,0–1,Valor esperado de ε² sem efeito real: (k−1)/(n−1); só Kruskal-Wallis
+rq06_testes.csv,eta2_h,float,-,<=1 (pode ser < 0),η²_H = (H − k + 1)/(n − k): ε² descontado do esperado sob H0; leitura para comparar fatores com k e n diferentes; só Kruskal-Wallis
+rq06_testes.csv,contraste,str,-,"Q4 × Q1, aplicacao_servico × biblioteca_framework, vazio",Contraste direcional descritivo fixo do fator (linguagem: nenhum); vazio se um dos grupos ficou fora do teste
+rq06_testes.csv,delta_contraste,float,-,−1 a 1,δ de Cliff do contraste (> 0: 1º grupo com valores maiores); sem p-valor e fora do Holm
+rq06_testes.csv,magnitude_contraste,str,-,"desprezível, pequeno, médio, grande","Magnitude de delta_contraste (Romano et al., 2006)"
+rq06_testes.csv,melhor_grupo,str,-,-,"Grupo(s) testado(s) de melhor mediana no sentido DORA (DF maior; LT, CFR e recuperação menores), sem ""Outras""; empates unidos por ""|""; descritivo"
+rq06_testes.csv,observacao,str,-,-,"Motivo de nao_executado ou de contraste vazio; na recuperação, aviso de que os sem valor (sem falha ou só censurados) ficaram fora"
+rq06_grupos.csv,fator,str,-,"linguagem, popularidade, contribuidores, idade, tipo",Idem rq06_testes.csv
+rq06_grupos.csv,grupo,str,-,-,Grupo do fator (linguagem; Q1–Q4; tipo do projeto)
+rq06_grupos.csv,criterio,str,-,-,"Regra do grupo: ""language = X"", ""Outras: linguagem (n), …"", quartis ""col em [mín, Q1]"" e ""(a, b]"", ""tipo_projeto = X"""
+rq06_grupos.csv,metrica,str,-,-,Idem rq06_testes.csv
+rq06_grupos.csv,coluna,str,-,-,Idem rq06_testes.csv
+rq06_grupos.csv,n,int,repositórios,>=0,Repositórios do grupo com valor da métrica
+rq06_grupos.csv,mediana,float,unidade da métrica,-,Mediana no grupo
+rq06_grupos.csv,q1,float,unidade da métrica,-,1º quartil (interpolação linear)
+rq06_grupos.csv,q3,float,unidade da métrica,-,3º quartil (interpolação linear)
+rq06_grupos.csv,iqr,float,unidade da métrica,>=0,Q3 − Q1
+rq06_grupos.csv,n_excluidos_nan,int,repositórios,>=0,Repositórios do grupo sem valor da métrica
+rq06_grupos.csv,n_sem_episodios,int,repositórios,>=0,Só recuperação: sem valor porque n_episodios = 0 (nenhuma falha); vazio nas outras métricas
+rq06_grupos.csv,n_so_censurados,int,repositórios,>=0,"Só recuperação: sem valor com n_episodios > 0 (só episódios censurados, nunca se recuperou); vazio nas outras métricas"
+rq06_fatores.csv,full_name,str,-,-,Idem metrics.csv
+rq06_fatores.csv,linguagem,str,-,-,"language se a linguagem tem ≥ 15 repositórios na amostra; senão ""Outras""; vazio sem linguagem"
+rq06_fatores.csv,popularidade,str,-,"Q1, Q2, Q3, Q4",Quartil de stars na amostra (pd.qcut; Q1 = menos estrelas)
+rq06_fatores.csv,contribuidores,str,-,"Q1, Q2, Q3, Q4",Quartil de contributors na amostra
+rq06_fatores.csv,idade,str,-,"Q1, Q2, Q3, Q4",Quartil de age_days na amostra (Q1 = mais novos)
+rq06_fatores.csv,tipo,str,-,"biblioteca_framework, aplicacao_servico, ferramenta_cli, vazio","rotulo_consenso de tipo_projeto em data/amostra_ouro/consenso.csv; vazio fora da amostra-ouro ou ""outro"""
