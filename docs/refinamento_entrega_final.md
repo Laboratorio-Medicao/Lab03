@@ -4,6 +4,34 @@ Refinamento feito em 2026-10-20 sobre `main` em `0bb6690`. Cada card da mileston
 abaixo: dono, critério de aceite verificável, dependências e o estado conferido no repositório e no board
 nessa data. Dois cards novos (N1 e N2) são propostos; o número deles sai quando forem criados.
 
+## Decisões registradas depois do refinamento (2026-10-20)
+
+Lacunas que o enunciado não resolve e que foram decididas pelo grupo:
+
+| Lacuna | O que o enunciado diz | Decisão |
+|---|---|---|
+| L02 prazo | "conforme cronograma da disciplina" (E§10) | **Prazo final: quinta, 2026-10-22.** Vale para a replicação, as respostas às Issues e o artigo |
+| L15 30 repositórios | "subamostra de 30 repositórios do dataset original" (E§9), sem dizer quem escolhe | **O replicador sorteia** 30 linhas do CSV final do autor com semente fixa (`df.sample(n=30, random_state=42)`, como na amostra-ouro) e salva a lista em `replicacao/repos_30.txt` com o sha256 do CSV de origem |
+| L19 idioma | não diz | **Português (PT-BR)** |
+| L19 referências | "no máximo 10 páginas" (E§8) | **As referências contam nas 10 páginas** (leitura conservadora; se não contarem, sobra espaço) |
+
+Continua pendente: o **sorteio dos grupos** pelo professor (E§9: "o professor sorteia para cada grupo o pipeline
+de outro grupo"). Até 2026-10-20 nada foi divulgado no grupo da disciplina. Sem ele, #46 e #47 não começam.
+Com o prazo em 2026-10-22, a ordem de prioridade passa a ser: confirmar o sorteio com o professor → N2 (nosso
+pipeline pronto para ser replicado) → #42 e #49 (artigo) → #46 e #47 assim que o grupo for conhecido → #48 até o
+prazo → #50 no fim.
+
+Aplicado no GitHub em 2026-10-20:
+
+- **N2 criada como #82** (Guilherme), já incluindo a regeneração do `data/metrics.csv` (divergência 13).
+- **N1 não foi criada:** o `replicacao/compara.py` foi feito dentro da #47 (branch `feat/s47-compara`), e o corpo
+  da #47 passou a depender só da #46.
+- Corpos atualizados: #46 (commit fixo, `replicacao/autor/`, `repos_30.txt` com semente 42, LOG), #47, #49
+  (SBC, PT-BR, 10 páginas com referências; depende de #42, #46 e #47) e #44 (fecha com #45–#50 e #82).
+- Milestone "Entrega Final" com data 2026-10-22. PR #71 fechado.
+- Pendente: pôr a #82 no Project (o token usado não tem o escopo `project`), confirmar o sorteio dos grupos com o
+  professor e os itens 6, 8, 10, 11 e 12 da lista abaixo.
+
 ## Objetivo e entregáveis (E§9, E§10, #44)
 
 Na Entrega Final o grupo tem dois papéis. Como **replicador**, executa o pipeline de outro grupo. Como
@@ -83,7 +111,8 @@ Arthur 1 (#39), Guilherme 0, Marcos 0. Com a #45 movida, Arthur fica com 2.
 
 ## Divergências encontradas e ação
 
-1. **#45 em Ready com o trabalho em andamento.** → Mover para In progress (Arthur).
+1. **#45 em Ready com o trabalho em andamento.** → Mover para In progress (Arthur). Superado: a #45 foi entregue
+   e fechada pelo PR #80.
 2. **#36 fechada sem o teste em Codespace/VM.** O corpo da #36 pede "máquina limpa (Codespace/VM)". O registro
    (`docs/teste-readme-maquina-limpa.md`) foi feito em macOS e deixa o Linux pendente (SF-015). → Comentar na #36
    que a pendência passa para a N2, sem reabrir a #36.
@@ -95,7 +124,9 @@ Arthur 1 (#39), Guilherme 0, Marcos 0. Com a #45 movida, Arthur fica com 2.
 5. **Regra de WIP não escrita.** O README do Project está vazio (L14). → Escrever: máximo de 3 In progress por
    pessoa, pais fora de In progress, compartilhados contam para os três.
 6. **Prazos desconhecidos.** A milestone "Entrega Final" não tem data (L02), e não se sabe quem escolhe os 30
-   repositórios nem o prazo das Issues (L15). → Perguntar ao professor e registrar a data na milestone.
+   repositórios nem o prazo das Issues (L15). → Resolvido em 2026-10-20 (seção "Decisões registradas"): prazo
+   2026-10-22 e sorteio dos 30 pelo replicador. Falta registrar a data na milestone e confirmar o sorteio dos
+   grupos com o professor.
 7. **Artigo sem esqueleto.** `artigo/` não tem `main.tex`, template SBC, Resultados, Discussão nem PDF. O resumo
    de ameaças em `metodologia.tex` (l. 245) duplicaria a seção final e gastaria página. → A #49 cria o
    `main.tex` e troca o resumo por uma remissão. A #42 entrega Resultados e Discussão.
@@ -111,10 +142,18 @@ Arthur 1 (#39), Guilherme 0, Marcos 0. Com a #45 movida, Arthur fica com 2.
 11. **PR #71 aberto e obsoleto.** Foi substituído pelo #72, já mergeado. → Fechar com comentário apontando o #72.
 12. **Sem evolução semanal registrada desde 2026-10-15.** → Snapshot semanal com `python -m kanban.snapshot`
     (critério da #50) e comentário de progresso nos cards em In progress.
+13. **`data/metrics.csv` defasado em relação ao código.** Conferido em 2026-10-20 com
+    `analysis.common.classificar_c1`: (i) `df_class` dá `Low` em 11 repositórios com exatamente 12 releases na
+    janela, e o código atual dá `Medium` (corte de 1 release/mês = 12 ÷ semanas da janela de 366 dias);
+    (ii) `dora_geral` está vazio nos 23 repositórios sem `rec_median_h`, ao contrário da regra parcial descrita
+    no dicionário (L10); (iii) `dora_c1` está vazio em `akto-api-security/akto`, com as 4 classes preenchidas.
+    Quem regenerar o CSV com o nosso README vai encontrar essas diferenças. → N2 regenera o CSV, confere que só
+    as colunas de classe mudam, refaz as saídas que usam classe (RQ01–RQ04 e sensibilidade da RQ07) e só então
+    congela com hash e tag.
 
 ### Mudanças propostas no board (para o usuário aplicar)
 
-1. Mover a #45 para In progress.
+1. ~~Mover a #45 para In progress~~: superado, a #45 foi fechada pelo PR #80.
 2. Criar a **N1**: "[S2a] Entrega Final — `replicacao/compara.py` e testes". Assignee ALuiz19, milestone Entrega
    Final, labels `tarefa`, `entrega-final` e `lab03`. Corpo com o critério da tabela. Depende de #45.
 3. Criar a **N2**: "[S6] Entrega Final — Pré-replicação: README validado em Linux, ensaio de autorreplicação e
@@ -134,15 +173,15 @@ Arthur 1 (#39), Guilherme 0, Marcos 0. Com a #45 movida, Arthur fica com 2.
 11. Escrever a regra de WIP no README do Project.
 12. Comentar na #36 que o teste em Linux passa para a N2.
 13. Fechar o PR #71.
-14. Perguntar ao professor sobre L15 (quem escolhe os 30 repositórios, prazos) e L19 (idioma, referências nas
-    10 páginas), e registrar a data na milestone.
+14. ~~Perguntar ao professor sobre L15 e L19~~: decidido pelo grupo (seção "Decisões registradas"). Resta
+    confirmar com o professor o sorteio dos grupos e registrar a data 2026-10-22 na milestone.
 
 ## Riscos da Entrega Final
 
 - **Dependência de terceiros:** README do outro grupo incompleto, repositório privado ou dados ausentes. Quando
   isso acontece, é resultado a registrar, não motivo para pedir ajuda.
-- **Prazo desconhecido (L02, L15):** se o outro grupo começar antes da N2, os problemas do nosso README viram
-  Issues contra nós.
+- **Prazo curto (2026-10-22) e sorteio dos grupos não divulgado:** se o outro grupo começar antes da N2, os
+  problemas do nosso README viram Issues contra nós; se o sorteio demorar, sobra pouco tempo para #46 e #47.
 - **Issues recebidas tarde:** sobra pouco tempo para corrigir. Responder com justificativa também conta, desde
   que seja dentro do prazo.
 - **Guilherme sem código** se a N2 não for feita e a #48 só tiver justificativas.
