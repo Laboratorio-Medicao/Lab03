@@ -333,3 +333,52 @@ rq06_fatores.csv,popularidade,str,-,"Q1, Q2, Q3, Q4",Quartil de stars na amostra
 rq06_fatores.csv,contribuidores,str,-,"Q1, Q2, Q3, Q4",Quartil de contributors na amostra
 rq06_fatores.csv,idade,str,-,"Q1, Q2, Q3, Q4",Quartil de age_days na amostra (Q1 = mais novos)
 rq06_fatores.csv,tipo,str,-,"biblioteca_framework, aplicacao_servico, ferramenta_cli, vazio","rotulo_consenso de tipo_projeto em data/amostra_ouro/consenso.csv; vazio fora da amostra-ouro ou ""outro"""
+rq08_releases.csv,full_name,str,-,-,GitHub: owner/repo
+rq08_releases.csv,tag_name,str,-,-,Tag da release de deploy da janela (draft=false; prerelease=false)
+rq08_releases.csv,published_at,datetime,UTC ISO-8601,dentro da janela,GitHub: published_at da release
+rq08_releases.csv,published_at_anterior,datetime,UTC ISO-8601,vazio = sem anterior,published_at da release de deploy imediatamente anterior (pode estar fora da janela)
+rq08_releases.csv,status,str,-,"ok, 404, sem_anterior",Status do compare com a anterior (pipeline.collect_commits)
+rq08_releases.csv,status_compare,str,-,"ahead, behind, diverged, identical ou vazio",Campo status do compare
+rq08_releases.csv,truncado,bool,-,"True, False",Compare trouxe menos commits que total_commits
+rq08_releases.csv,mensagens_incompletas,bool,-,"True, False",Compare 404 ou truncado (a palavra-chave pode faltar)
+rq08_releases.csv,corretiva,bool,-,"True, False",Heurística de release corretiva (heuristic_version) sobre commits do compare + release notes; igual à do CFR (b)
+rq08_releases.csv,avaliada_cfr_b,bool,-,"True, False",published_at + 7 d <= fim da janela (entra no denominador do CFR (b))
+rq08_releases.csv,falhou_cfr_b,bool,-,"True, False",Avaliada e seguida por release corretiva S com R < S <= R + 7 d (CFR (b))
+rq08_releases.csv,categoria_corretiva,str,-,"com_antecedente, antecedente_censurado, antecedente_fora_janela, sem_anterior_7d ou vazio",Só para corretivas: há R avaliada em [S−7d; S) / só R censurada / anterior antes da janela a <= 7 d / resíduo (nenhuma release em [S−7d; S); inclui empate de horário)
+rq08_releases.csv,heuristic_version,str,-,v12,Versão da heurística usada
+rq08_rework_rate.csv,full_name,str,-,-,GitHub: owner/repo (todos os repositórios de metrics.csv)
+rq08_rework_rate.csv,n_releases_janela,int,releases,>=0,Releases de deploy na janela (rq08_releases.csv)
+rq08_rework_rate.csv,n_releases_corretivas,int,releases,>=0,Releases de deploy da janela marcadas como corretivas
+rq08_rework_rate.csv,rework_rate,float,proporção,[0; 1],n_releases_corretivas ÷ n_releases_janela (sem censura); NaN se n_releases_janela = 0 ou confere_metrics = False
+rq08_rework_rate.csv,n_releases_avaliadas_cfr_b,int,releases,>=0,Releases com published_at + 7 d <= fim (denominador do CFR (b))
+rq08_rework_rate.csv,n_releases_corretivas_avaliaveis,int,releases,>=0,Corretivas entre as avaliadas do CFR (b)
+rq08_rework_rate.csv,rework_rate_avaliaveis,float,proporção,[0; 1],n_releases_corretivas_avaliaveis ÷ n_releases_avaliadas_cfr_b (isola o efeito da censura)
+rq08_rework_rate.csv,n_releases_falha_cfr_b,int,releases,>=0,Releases que falharam no CFR (b) (recontadas)
+rq08_rework_rate.csv,cfr_b,float,proporção,[0; 1],CFR (b) oficial de metrics.csv
+rq08_rework_rate.csv,diferenca_rework_cfr_b,float,proporção,[-1; 1],rework_rate − cfr_b (arredondada a 12 casas)
+rq08_rework_rate.csv,n_corretivas_com_antecedente,int,releases,>=0,Corretivas S com R avaliada da janela em [S−7d; S) (geram falha no CFR (b))
+rq08_rework_rate.csv,n_corretivas_antecedente_censurado,int,releases,>=0,Corretivas cuja(s) R em [S−7d; S) são todas censuradas
+rq08_rework_rate.csv,n_corretivas_antecedente_fora_janela,int,releases,>=0,Corretivas cuja anterior estrita é de antes da janela e está a <= 7 d
+rq08_rework_rate.csv,n_corretivas_sem_anterior_7d,int,releases,>=0,Corretivas sem release de deploy em [S−7d; S) (contam só no rework)
+rq08_rework_rate.csv,n_releases_censuradas_cfr_b,int,releases,>=0,n_releases_janela − n_releases_avaliadas_cfr_b
+rq08_rework_rate.csv,n_releases_mensagens_incompletas,int,releases,>=0,Releases com compare 404 ou truncado
+rq08_rework_rate.csv,n_compare_divergentes,int,releases,>=0,Releases com status_compare = diverged
+rq08_rework_rate.csv,n_compare_truncados,int,releases,>=0,Releases com compare truncado
+rq08_rework_rate.csv,deployment_frequency,float,releases/semana,>=0,DF (C1) de metrics.csv
+rq08_rework_rate.csv,confere_metrics,bool,-,"True, False",Todos os contadores recontados (janela; avaliadas; censuradas; falhas; CFR (b); incompletas; divergentes; truncados) iguais aos de metrics.csv (NaN = NaN)
+rq08_rework_rate.csv,campos_divergentes,str,-,-,Contadores que diferem de metrics.csv (separados por ;)
+rq08_rework_rate.csv,motivo_exclusao,str,-,"vazio, sem referência no metrics.csv, sem rótulos (erro ou ausência na extração), diverge do metrics.csv",Por que o repositório ficou sem rework rate
+rq08_descritiva.csv,rq,str,-,RQ08,Questão de pesquisa
+rq08_descritiva.csv,metrica,str,-,-,Série resumida (rework; rework avaliáveis; rework e CFR (b) no pareado; diferença)
+rq08_descritiva.csv,coluna,str,-,-,Coluna de rq08_rework_rate.csv de onde vem o valor
+rq08_descritiva.csv,unidade,str,-,proporção,Unidade
+rq08_descritiva.csv,n,int,repositórios,>=0,Repositórios com valor definido (NaN fora)
+rq08_descritiva.csv,mediana,float,proporção,-,Mediana entre repositórios
+rq08_descritiva.csv,q1,float,proporção,-,1º quartil (interpolação linear)
+rq08_descritiva.csv,q3,float,proporção,-,3º quartil (interpolação linear)
+rq08_descritiva.csv,iqr,float,proporção,>=0,Q3 − Q1
+rq08_comparacao.csv,indicador,str,-,-,"Nome do indicador (Spearman, Wilcoxon, rank-biserial, taxas agregadas, categorias, calibração)"
+rq08_comparacao.csv,valor,float,-,-,Valor do indicador
+rq08_comparacao.csv,descricao,str,-,-,O que o indicador mede
+rq08_extracao_erros.csv,full_name,str,-,-,Repositório sem rótulos (dado ausente no cache ou conferência com resumo_cfr_entrega falhou)
+rq08_extracao_erros.csv,erro,str,-,-,Tipo e mensagem do erro

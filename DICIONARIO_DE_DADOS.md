@@ -277,3 +277,16 @@ Geradas por `python -m analysis.rq06_fatores` a partir de `data/metrics.csv` e d
 | `rq06_grupos.csv` | n, mediana, Q1, Q3 e IQR de cada métrica por fator × grupo, com os excluídos por falta de valor |
 | `rq06_fatores.csv` | Grupo de cada repositório em cada fator |
 | `rq06_efeitos.png` | Mapa de calor da magnitude do efeito (`*` = significativo após Holm) |
+
+## Saídas da RQ08 — rework rate (`outputs/analise/`, Issue #39)
+
+`rq08_releases.csv`, `rq08_extracao_erros.csv` e `rq08_extracao.json` vêm de `python -m scripts.rq08_rotular_releases`, que lê o cache. Os demais arquivos vêm de `python -m analysis.rq08_rework_rate`, que só lê CSV. O detalhe campo a campo está em `DICIONARIO_DE_DADOS.csv`.
+
+| Arquivo | Conteúdo |
+|---|---|
+| `rq08_releases.csv` | Uma linha por release de deploy da janela: corretiva (v12), avaliada/falhou no CFR (b), categoria da corretiva |
+| `rq08_extracao_erros.csv` / `rq08_extracao.json` | Repositórios sem rótulos e manifesto da extração (data, versão, janela, contagens, data da coleta do cache) |
+| `rq08_rework_rate.csv` | Rework rate, CFR (b), diferença, categorias de corretivas e conferência com `metrics.csv` por repositório |
+| `rq08_descritiva.csv` | n, mediana, Q1, Q3 e IQR do rework (total e só avaliáveis), do CFR (b) e rework pareados e da diferença |
+| `rq08_comparacao.csv` | Spearman (rework × CFR b, DF × CFR b, DF × rework), Wilcoxon pareado, rank-biserial, taxas agregadas, categorias e calibração da v12 |
+| `rq08_rework_rate.md` | Resultados e discussão: em que o rework rate difere do CFR (b) |

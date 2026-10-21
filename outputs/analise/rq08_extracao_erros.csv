@@ -1,0 +1,3 @@
+full_name,erro
+1bananachicken/MaaNTE,ApiError: HTTP 404 em /repos/1bananachicken/MaaNTE/releases
+akto-api-security/akto,RuntimeError: compute_metrics tentou chamada HTTP inesperada: /repos/akto-api-security/akto/releases — dado ausente no cache?

@@ -276,7 +276,7 @@ O workflow `.github/workflows/commits.yml` aplica a mesma regra no GitHub, caso 
 pipeline/              CLI (python -m pipeline), config, seleção, funil e orquestração (execucao.py)
 metricas/              funções de cálculo das métricas DORA (módulo medido pela cobertura)
 tests/                 testes automatizados (pytest)
-analysis/              análises da S03 (RQ01–RQ04, classificação C1), reexecutáveis a partir do CSV
+analysis/              análises da S03 (RQ01–RQ06, classificação C1, RQ08), reexecutáveis a partir do CSV
 scripts/               utilitários (validação de mensagem de commit)
 .githooks/             hook commit-msg que exige #N
 .github/workflows/     CI: testes.yml (pytest + cobertura) e commits.yml (#N)
@@ -364,3 +364,18 @@ Saídas em `outputs/analise/`: `rq06_testes.csv` (tabela única com p ajustado e
 - **Holm:** `multipletests(method='holm')` sobre **todos** os testes executados (uma família de 30: 5 fatores × 6 métricas). `significativo_holm` é o `reject` com α = 0,05.
 - **Leitura do efeito:** sem diferença real, ε² ≈ (k−1)/(n−1) (`epsilon2_h0`), que é maior para o tipo (n = 51) e a linguagem (k = 7). Para comparar fatores use `eta2_h` = (H − k + 1)/(n − k). Kruskal-Wallis não tem sinal: `contraste`/`delta_contraste` dão a direção (Q4 × Q1 nos quartis, aplicação × biblioteca no tipo; δ > 0 = 1º grupo com valores maiores, o que é melhor em DF e pior em LT, CFR e recuperação), sem p-valor e fora do Holm. `melhor_grupo` é só descritivo.
 - **Limitações:** a análise é marginal, um fator por vez, sem ajuste. Os fatores são correlacionados (Spearman ≈ 0,46 entre stars e contributors e ≈ 0,48 entre contributors e idade). A popularidade está truncada pela seleção (≥ ~1000 estrelas). O tipo tem n = 51 contra ~300 nos outros fatores e por isso menos poder; não compare fatores por p-valor nem por "significativo".
+
+## RQ08 (bônus) — rework rate (S03, Issue #39)
+
+Rework rate = releases de deploy **corretivas** da janela ÷ releases de deploy da janela. A corretiva é a da heurística v12 do CFR (b), sem censura. Como `data/metrics.csv` só traz os agregados do CFR (b), a RQ08 roda em duas etapas:
+
+```bash
+# 1) rótulos por release: lê o cache (releases/ com body + commits/), sem nenhuma chamada HTTP
+python -m scripts.rq08_rotular_releases --cache cache [--repos data/metrics.csv] [--saida outputs/analise]
+# 2) análise reexecutável só a partir dos CSVs (data/metrics.csv + outputs/analise/rq08_releases.csv)
+python -m analysis.rq08_rework_rate [--csv data/metrics.csv] [--releases outputs/analise/rq08_releases.csv] [--saida outputs/analise]
+```
+
+- **Cache:** a etapa 1 precisa do cache de releases (com `body`) e de commits da coleta. Se faltar, `python -m scripts.recoletar_cache` completa o cache. Repositório sem dado vira linha em `rq08_extracao_erros.csv`. Cada repositório também é conferido com `metricas.cfr_entrega.resumo_cfr_entrega`.
+- **Conferência:** a etapa 2 reconta os contadores do CFR (b) a partir dos rótulos e os compara com `data/metrics.csv`. Repositório divergente fica sem rework, e acima de 5% de divergência o comando para com código ≠ 0.
+- **Saídas:** `rq08_rework_rate.csv`, `rq08_descritiva.csv` (mediana/IQR), `rq08_comparacao.csv`, `rq08_*.png` e `rq08_rework_rate.md`, que traz a discussão da diferença para o CFR (b) e alimenta o artigo.

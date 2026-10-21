@@ -1,0 +1,6 @@
+rq,metrica,coluna,unidade,n,mediana,q1,q3,iqr
+RQ08,Rework rate,rework_rate,proporção,298,0.2862394957983193,0.135834109972041,0.4640679442508711,0.3282338342788301
+RQ08,Rework rate (só releases avaliáveis do CFR b),rework_rate_avaliaveis,proporção,297,0.29310344827586204,0.13793103448275862,0.4666666666666667,0.32873563218390806
+RQ08,Rework rate (subconjunto pareado),rework_rate,proporção,297,0.2867647058823529,0.13513513513513514,0.4642857142857143,0.32915057915057916
+RQ08,CFR (b) (subconjunto pareado),cfr_b,proporção,297,0.2,0.0384615384615384,0.4642857142857143,0.4258241758241759
+RQ08,Diferença rework − CFR (b) (pareado),diferenca_rework_cfr_b,proporção,297,0.0,-0.113636363636,0.2,0.313636363636
