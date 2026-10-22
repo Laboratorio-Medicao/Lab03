@@ -123,7 +123,7 @@ def semanas_da_janela(window: tuple) -> float:
 def classify_overall_parcial(scores: Sequence[int]) -> str:
     """Categoria geral com as métricas definidas (1 a 4 notas): mediana com floor.
 
-    Decisão do grupo (L10, validada com o professor): métrica indefinida não exclui o repositório;
+    Decisão do grupo (L10; não há registro de resposta do professor no repositório): métrica indefinida não exclui o repositório;
     o chamador deve sinalizar a classificação parcial (`n_metricas_dora` < 4).
     """
     notas = list(scores)

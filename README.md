@@ -61,7 +61,7 @@ python -m pipeline --config config.yaml --repos-file repos.txt
 - **Formatos:** `.txt` com um `owner/repo` por linha (também `https://github.com/owner/repo`; `#` comenta; duplicatas são removidas) ou `.csv` com a coluna `full_name`, como `data/metrics.csv` e `outputs/repos_final.csv`. Lista inválida ou vazia encerra com código 1 e a linha do erro.
 - **O que muda:** os metadados vêm de `GET /repos/{owner}/{repo}` e os filtros (Actions, ≥ 5 releases, ≥ 50 runs válidos na janela) são os mesmos da seleção normal, então o funil mostra o que mudou desde a coleta original. A lista é a amostra: `selecao.amostra_alvo` não corta. Repositório inexistente ou privado (404) é descartado com motivo `repo_not_found`; outros erros HTTP, com `api_error_<status>`.
 - **Saídas:** vão para `caminhos.saidas` e **sobrescrevem** `funil.*` e `resultados.csv` dessa pasta. Para não perder uma coleta anterior, use um `config.yaml` copiado com `caminhos.saidas: outputs_replicacao` (e, se quiser coleta do zero, `caminhos.cache` próprio).
-- **Comparar com o original:** `resultados.csv` tem as mesmas colunas de `data/metrics.csv` que o pipeline calcula; junte por `full_name`. Registro do teste: [docs/teste-readme-maquina-limpa.md](docs/teste-readme-maquina-limpa.md).
+- **Comparar com o original:** `resultados.csv` tem as mesmas colunas de `data/metrics.csv` que o pipeline calcula; junte por `full_name`.
 
 ## Seleção de repositórios e funil (Issue #4)
 
@@ -212,7 +212,7 @@ python -m scripts.evaluate_heuristic --config config.yaml
 
 - **Escolha (regra do script):** a v1, definida antes de ver os dados, só se F1 ≥ 0,70; senão, a de maior F1 (empate → menor número). Como nenhuma versão chegou a 0,70, `escolhida` em `avaliacao_heuristica.csv` é só essa regra interna, **não** validação. Como as versões são comparadas na mesma amostra, sem conjunto de validação separado, o F1 da escolhida tende a ser otimista. O relatório traz todas as versões e o número de corretivas do consenso; isso entra em Ameaças à validade.
 - **Status:** a v12 (F1 de desenvolvimento 0,722) foi avaliada uma única vez em amostra independente de 40 repositórios / 200 releases: **F1 = 0,689, IC95% 0,563–0,790**, abaixo da meta de 0,70. O professor aceitou o CFR (b) como medida **exploratória**; `data/metrics.csv` usa a v12 (`heuristic_version`). A v13 (`experimental/v13`) não foi promovida. Ver `docs/validacao-independente.md` e `docs/v13-registro.md`.
-- **Classificação geral com métrica indefinida:** usa a mediana (floor) das métricas definidas; `n_metricas_dora` (e `n_metricas_dora_c1..c3`) indica quando é parcial. Decisão do grupo, aceita pelo professor.
+- **Classificação geral com métrica indefinida:** usa a mediana (floor) das métricas definidas; `n_metricas_dora` (e `n_metricas_dora_c1..c3`) indica quando é parcial. Decisão do grupo (L10); não há registro de resposta do professor no repositório.
 - **Depois da rodada:** `scripts.compute_metrics` usa a v12 por padrão (`--versao` troca) e exige o `body` das releases. Para completar o cache a partir do zero: `GITHUB_TOKEN=... python -m scripts.recoletar_cache` (só coleta o que falta; recoleta releases sem `body`). Uma versão nova entra em `VERSOES` e vira coluna de `heuristica_amostra.csv`, o que exige atualizar o dicionário de dados (o `test_dicionario` cobra).
 
 ## Análise de erros da heurística (Issue #30, bônus)
@@ -346,7 +346,7 @@ python -m analysis.rq05_spearman [--csv data/metrics.csv] [--saida outputs/anali
 Saídas em `outputs/analise/`: `rq05_spearman.csv` (ρ, p-valor, n e IC95% para CFR (a) e (b)), `rq05_sensibilidade_cfr_b.csv`, `rq05_spearman.md` (tabelas e notas de método) e `rq05_df_cfr_a.png`/`rq05_df_cfr_b.png`. A discussão (tese DORA, correlação ≠ causalidade) está em `docs/rq05_discussao.md`.
 
 - **Estatística:** `scipy.stats.spearmanr` (ranks médios em empates; p-valor bilateral pela aproximação t, reportado como "p < 0,001" no texto quando menor). IC95% de ρ pela transformação z de Fisher com erro-padrão de Bonett e Wright (2000); a direção só é dita positiva/negativa quando o IC exclui o 0.
-- **Dados ausentes:** pares completos por variante. Um repositório sem CFR (b) sai só da variante (b); zeros de CFR são mantidos. Em (b) saem `akto-api-security/akto` (maior DF da amostra, sem contadores de CFR (b)) e `akveo/react-native-ui-kitten` (24 releases, todas censuradas), ou seja, a exclusão não é aleatória.
+- **Dados ausentes:** pares completos por variante. Um repositório sem CFR (b) sai só da variante (b); zeros de CFR são mantidos. Em (b) sai só `akveo/react-native-ui-kitten` (24 releases, todas censuradas; n = 299). O `akto-api-security/akto` tem CFR (b) desde a regeneração do `metrics.csv` (#82).
 - **Gráficos:** DF em escala log (0,1 a 25 releases/semana, sem zeros); CFR em escala linear [0, 1], por ser proporção com zeros.
 - **CFR (b) é exploratório** (heurística v12, F1 independente 0,689). A sensibilidade por nº mínimo de releases avaliadas (5, 10, 20) é só diagnóstico do efeito de denominador pequeno: o corte também restringe a faixa de DF, e isso sozinho reduz |ρ|.
 
@@ -373,11 +373,12 @@ Rework rate = releases de deploy **corretivas** da janela ÷ releases de deploy 
 
 ```bash
 # 1) rótulos por release: lê o cache (releases/ com body + commits/), sem nenhuma chamada HTTP
-python -m scripts.rq08_rotular_releases --cache cache [--repos data/metrics.csv] [--saida outputs/analise]
-# 2) análise reexecutável só a partir dos CSVs (data/metrics.csv + outputs/analise/rq08_releases.csv)
-python -m analysis.rq08_rework_rate [--csv data/metrics.csv] [--releases outputs/analise/rq08_releases.csv] [--saida outputs/analise]
+python -m scripts.rq08_rotular_releases --cache cache [--repos data/metrics.csv] [--saida data/rq08]
+# 2) análise reexecutável só a partir dos CSVs versionados (data/metrics.csv + data/rq08/rq08_releases.csv)
+python -m analysis.rq08_rework_rate [--csv data/metrics.csv] [--releases data/rq08/rq08_releases.csv] [--saida outputs/analise]
 ```
 
+- **Insumo versionado:** `data/rq08/` (`rq08_releases.csv`, `rq08_extracao_erros.csv`, `rq08_extracao.json`) é **insumo** da etapa 2, não saída: fica fora de `outputs/analise/`, que pode ser apagada e regerada. Só a etapa 1 (que exige o cache) o recria; a etapa 2 roda sem cache nem rede. O repositório `1bananachicken/MaaNTE` não tem rótulos (ver `rq08_extracao_erros.csv`) e fica fora da RQ08; os rótulos não foram reconstruídos.
 - **Cache:** a etapa 1 precisa do cache de releases (com `body`) e de commits da coleta. Se faltar, `python -m scripts.recoletar_cache` completa o cache. Repositório sem dado vira linha em `rq08_extracao_erros.csv`. Cada repositório também é conferido com `metricas.cfr_entrega.resumo_cfr_entrega`.
 - **Conferência:** a etapa 2 reconta os contadores do CFR (b) a partir dos rótulos e os compara com `data/metrics.csv`. Repositório divergente fica sem rework, e acima de 5% de divergência o comando para com código ≠ 0.
 - **Saídas:** `rq08_rework_rate.csv`, `rq08_descritiva.csv` (mediana/IQR), `rq08_comparacao.csv`, `rq08_*.png` e `rq08_rework_rate.md`, que traz a discussão da diferença para o CFR (b) e alimenta o artigo.
@@ -394,7 +395,26 @@ python -m scripts.sensitivity_analysis
 python -m scripts.sensitivity_ampliada
 ```
 
-Saídas em `outputs/`: `sensitivity_dora.csv`/`sensitivity_dora.md` (kappa por par de combinações) e `sensitivity_ampliada.csv`/`sensitivity_ampliada.md` (7 variações controladas, κ > 0,92 em todas). Os scripts só leem `data/metrics.csv` e dependências do `requirements.txt`.
+Saídas em `outputs/`: `sensitivity_dora.csv`/`sensitivity_dora.md` (% de mudança e κ linear por par, matrizes de transição), `sensitivity_transicao.png` (figura das matrizes) e `sensitivity_ampliada.csv`/`.md` (7 variações; só 4 reclassificam de fato, as outras 3 dão 0% por construção e estão marcadas como tautológicas no `.md`). Os scripts só leem `data/metrics.csv` e dependências do `requirements.txt`.
+
+## Reproduzir as análises e o artigo (S03)
+
+Sequência completa, a partir de `data/metrics.csv` e dos insumos versionados (sem cache, sem rede, sem token):
+
+```bash
+rm -rf outputs/analise                                    # opcional: prova que tudo se regenera
+python -m analysis.rq01_rq04          # RQ01–RQ04 + classificação C1
+python -m analysis.rq02_divergencia   # RQ02: LT(a) × LT(b) por repositório
+python -m analysis.rq05_spearman      # RQ05
+python -m analysis.rq06_fatores       # RQ06
+python -m analysis.rq08_rework_rate   # RQ08 (usa data/rq08/rq08_releases.csv)
+python -m scripts.sensitivity_analysis && python -m scripts.sensitivity_ampliada   # RQ07
+python -m analysis.figuras_artigo     # painéis compostos do artigo (outputs/analise/fig_*.png)
+python -m analysis.artigo_numeros     # macros, tabelas e figuras de artigo/gerado e artigo/figs
+python -m analysis.artigo_numeros --check   # confere artigo × saídas (falha se divergir)
+```
+
+`artigo/resultados.tex` não contém números digitados: todos vêm de macros `\N...` de `artigo/gerado/numeros.tex`. Se o CSV mudar, rode a sequência e reconfira o texto interpretativo. Decisões que o enunciado não fixa (episódio de recuperação que abre sem sucesso anterior, L09; classificação geral com métrica indefinida, L10; C2 e C3 só mudam a unidade do DF; CFR (b) exploratório) estão em `artigo/metodologia.tex`.
 
 ## Snapshot do Kanban
 

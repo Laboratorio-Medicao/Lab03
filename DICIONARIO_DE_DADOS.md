@@ -47,7 +47,7 @@ O teste `tests/test_dicionario.py` falha se qualquer coluna dos CSVs não tiver 
 | `lt_class` | str | — | Classificação DORA de Lead Time (E§2); vazio se indefinido |
 | `cfr_class` | str | — | Classificação DORA de CFR (E§2); vazio se indefinido |
 | `rec_class` | str | — | Classificação DORA de Recovery (E§2); vazio se indefinido |
-| `dora_geral` | str | — | Mediana (floor) das notas das métricas definidas; vazio só sem nenhuma (L10, decisão do grupo validada com o professor) |
+| `dora_geral` | str | — | Mediana (floor) das notas das métricas definidas; vazio só sem nenhuma (L10, decisão do grupo; sem registro de resposta do professor) |
 | `n_metricas_dora` | int | contagem | Métricas (de 4) que entraram em `dora_geral`; <4 = classificação parcial |
 
 ---
@@ -280,7 +280,7 @@ Geradas por `python -m analysis.rq06_fatores` a partir de `data/metrics.csv` e d
 
 ## Saídas da RQ08 — rework rate (`outputs/analise/`, Issue #39)
 
-`rq08_releases.csv`, `rq08_extracao_erros.csv` e `rq08_extracao.json` vêm de `python -m scripts.rq08_rotular_releases`, que lê o cache. Os demais arquivos vêm de `python -m analysis.rq08_rework_rate`, que só lê CSV. O detalhe campo a campo está em `DICIONARIO_DE_DADOS.csv`.
+`rq08_releases.csv`, `rq08_extracao_erros.csv` e `rq08_extracao.json` (insumos versionados em `data/rq08/`) vêm de `python -m scripts.rq08_rotular_releases`, que lê o cache. Os demais arquivos vêm de `python -m analysis.rq08_rework_rate`, que só lê CSV. O detalhe campo a campo está em `DICIONARIO_DE_DADOS.csv`.
 
 | Arquivo | Conteúdo |
 |---|---|
@@ -290,3 +290,9 @@ Geradas por `python -m analysis.rq06_fatores` a partir de `data/metrics.csv` e d
 | `rq08_descritiva.csv` | n, mediana, Q1, Q3 e IQR do rework (total e só avaliáveis), do CFR (b) e rework pareados e da diferença |
 | `rq08_comparacao.csv` | Spearman (rework × CFR b, DF × CFR b, DF × rework), Wilcoxon pareado, rank-biserial, taxas agregadas, categorias e calibração da v12 |
 | `rq08_rework_rate.md` | Resultados e discussão: em que o rework rate difere do CFR (b) |
+
+## Saídas da divergência LT(a) × LT(b) (`outputs/analise/`, Issue #42)
+
+`rq02_divergencia.csv` (`indicador`, `valor`) vem de `python -m analysis.rq02_divergencia` e resume a razão LT(a)/LT(b) por repositório; `rq02_divergencia.png` é a figura correspondente. `outputs/sensitivity_transicao.png` traz as matrizes de transição da RQ07.
+
+> `DICIONARIO_DE_DADOS.csv` está congelado na tag `dataset-final` (SHA-256 no README) e por isso **não** foi alterado: `rq02_divergencia.csv` é documentado só aqui, e a linha de `resultados.csv`/`dora_geral` do CSV ainda diz "validada com o professor", afirmação para a qual não há registro no repositório (ver nota de L10 acima).

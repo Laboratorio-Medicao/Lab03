@@ -294,7 +294,8 @@ def test_executar_gera_saidas_documentadas(tmp_path, dados):
 @pytest.mark.parametrize("nome", ["rq08_releases.csv", "rq08_rework_rate.csv", "rq08_descritiva.csv",
                                   "rq08_comparacao.csv", "rq08_extracao_erros.csv"])
 def test_saidas_versionadas_documentadas(nome):
-    caminho = RAIZ / "outputs" / "analise" / nome
+    pasta = "data/rq08" if nome in ("rq08_releases.csv", "rq08_extracao_erros.csv") else "outputs/analise"
+    caminho = RAIZ / pasta / nome
     if not caminho.exists():
         pytest.skip(f"{nome} ainda não gerado")
     with (RAIZ / "DICIONARIO_DE_DADOS.csv").open(encoding="utf-8") as f:

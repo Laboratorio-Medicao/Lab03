@@ -1,3 +1,3 @@
 variante,rotulo,coluna_x,coluna_y,n,n_excluidos,excluidos,n_cfr_zero,rho,p_valor,alfa,ic95_inf,ic95_sup,ic_metodo,forca,direcao
 a,CFR (a) proxy de CI,deployment_frequency,cfr_a,300,0,,17,-0.017085638307469418,0.7682092876491172,0.05,-0.13008296888816084,0.09634982433162648,"Fisher z, SE de Bonett e Wright (2000)",desprezível,inconclusiva (IC contém 0)
-b,CFR (b) proxy de entrega,deployment_frequency,cfr_b,298,2,akto-api-security/akto; akveo/react-native-ui-kitten,71,0.6196843487788924,5.351653126346452e-33,0.05,0.5369816488535305,0.6905887631944617,"Fisher z, SE de Bonett e Wright (2000)",forte,positiva
+b,CFR (b) proxy de entrega,deployment_frequency,cfr_b,299,1,akveo/react-native-ui-kitten,71,0.6237056188536916,1.2421263643255497e-33,0.05,0.5416866246169596,0.6939603520311821,"Fisher z, SE de Bonett e Wright (2000)",forte,positiva

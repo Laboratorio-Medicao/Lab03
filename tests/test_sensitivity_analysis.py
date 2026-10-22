@@ -95,6 +95,7 @@ def test_run_gera_arquivos(tmp_path, monkeypatch):
     monkeypatch.setattr(sa, "OUT_DIR", tmp_path / "outputs")
     monkeypatch.setattr(sa, "OUT_CSV", tmp_path / "outputs" / "sensitivity_dora.csv")
     monkeypatch.setattr(sa, "OUT_MD", tmp_path / "outputs" / "sensitivity_dora.md")
+    monkeypatch.setattr(sa, "OUT_PNG", tmp_path / "outputs" / "sensitivity_transicao.png")
 
     run()
 
@@ -114,6 +115,7 @@ def test_run_csv_tem_tres_pares(tmp_path, monkeypatch):
     monkeypatch.setattr(sa, "OUT_DIR", tmp_path / "outputs")
     monkeypatch.setattr(sa, "OUT_CSV", tmp_path / "outputs" / "sensitivity_dora.csv")
     monkeypatch.setattr(sa, "OUT_MD", tmp_path / "outputs" / "sensitivity_dora.md")
+    monkeypatch.setattr(sa, "OUT_PNG", tmp_path / "outputs" / "sensitivity_transicao.png")
 
     run()
 

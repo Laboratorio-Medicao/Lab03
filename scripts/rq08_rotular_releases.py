@@ -10,7 +10,7 @@ Para cada repositório, os agregados dos rótulos (janela, avaliadas, censuradas
 mensagens incompletas) são conferidos com `metricas.cfr_entrega.resumo_cfr_entrega` sobre os mesmos
 itens; divergência é erro do repositório, nunca silenciosa.
 
-    python -m scripts.rq08_rotular_releases --cache cache [--repos data/metrics.csv] [--saida outputs/analise]
+    python -m scripts.rq08_rotular_releases --cache cache [--repos data/metrics.csv] [--saida data/rq08]
 
 Saídas em `--saida`: `rq08_releases.csv` (uma linha por release de deploy da janela),
 `rq08_extracao_erros.csv` e `rq08_extracao.json` (manifesto). A análise, só com CSV, está em
@@ -224,7 +224,7 @@ def main(argv: list[str] | None = None) -> None:
     ap.add_argument("--config", default="config.yaml", help="janela (usada se --inicio/--fim faltarem)")
     ap.add_argument("--repos", type=Path, default=Path("data/metrics.csv"), help="CSV com coluna full_name")
     ap.add_argument("--cache", type=Path, default=Path("cache"))
-    ap.add_argument("--saida", type=Path, default=Path("outputs/analise"))
+    ap.add_argument("--saida", type=Path, default=Path("data/rq08"))
     ap.add_argument("--inicio", default=None, help="início da janela YYYY-MM-DD")
     ap.add_argument("--fim", default=None, help="fim da janela YYYY-MM-DD")
     a = ap.parse_args(argv)
