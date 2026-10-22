@@ -1,0 +1,155 @@
+% Resultados e Discussão — Lab03, Issue #42.
+% Dados extraídos de data/metrics.csv (tag dataset-final) e outputs/analise/.
+% n = 300 repositórios, janela 2025-10-02 a 2026-10-02 (366 dias).
+
+\section{Resultados e Discussão}
+
+A Tabela~\ref{tab:hipoteses} resume as sete hipóteses informais e o que os dados revelaram.
+As subseções seguintes detalham cada RQ.
+
+\begin{table}[ht]
+\centering
+\caption{Hipóteses × resultados (n = 300 repositórios).}
+\label{tab:hipoteses}
+\begin{tabular}{lp{4.2cm}p{4.2cm}l}
+\hline
+\textbf{H} & \textbf{Esperado} & \textbf{Observado} & \textbf{Confirmada?} \\
+\hline
+H1 & Mediana em \textit{Medium}, cauda de alta frequência &
+  Mediana 0,36 rel/sem (Medium); 9,3\% Elite &
+  \textbf{Sim} \\
+H2 & LT(b) $\ll$ LT(a) &
+  LT(a) $\approx$ LT(b) $\approx$ 146~h &
+  \textbf{Não} \\
+H3 & CFR(a) $>$ CFR(b); CFR(a) entre 10--30\% &
+  CFR(a) 5,7\%; CFR(b) 20,0\% &
+  \textbf{Não} \\
+H4 & Mediana de horas a 1 dia; censura relevante &
+  Mediana 2,8~h; 23 repos sem episódio &
+  \textbf{Sim} \\
+H5 & Correlação fraca ou levemente negativa DF $\times$ CFR &
+  CFR(a) $\rho{=}{-}0{,}02$ (inconclusivo); CFR(b) $\rho{=}0{,}62$ (positivo forte) &
+  \textbf{Parcial} \\
+H6 & Linguagem e tipo mais fortes que popularidade &
+  Idade e nº de contribuidores dominam; linguagem afeta LT e recuperação &
+  \textbf{Parcial} \\
+H7 & $>$30\% mudam; kappa no máximo moderado &
+  C1$\times$C2: 40,3\%, $\kappa{=}0{,}46$; C1$\times$C3: 22,3\%, $\kappa{=}0{,}72$ &
+  \textbf{Parcial} \\
+\hline
+\end{tabular}
+\end{table}
+
+\subsection{RQ01 — Frequência de deploy}
+
+A frequência mediana de deploy foi de \textbf{0,36 releases/semana} (Q1 = 0,19; Q3 = 0,77;
+n = 300), equivalente a pouco mais de uma release a cada três semanas. A distribuição é
+fortemente assimétrica à direita: 9,3\% dos repositórios atingiram o nível \textit{Elite}
+($\geq$ 7 releases/semana), enquanto 45,0\% ficaram em \textit{High} e 35,7\% em
+\textit{Medium}. Apenas 10,0\% caíram no nível \textit{Low} ($< 12$ releases por ano).
+
+A H1 foi confirmada: a mediana caiu na faixa \textit{Medium}--baixa como previsto. A cauda
+de projetos de alta frequência existe, mas é menor que o esperado; a maioria dos projetos
+populares no GitHub adota ciclos de release mensais ou bimestrais, não contínuos.
+
+\subsection{RQ02 — Lead time for changes}
+
+A mediana do \textit{lead time} por release — variante (a), do commit mais antigo até a
+publicação — foi de \textbf{146,4~h} ($\approx$ 6,1 dias; Q1 = 26,8~h; Q3 = 544,4~h).
+Surpreendentemente, a variante por commit — (b), mediana de todos os commits de todas as
+releases — resultou em valor quase idêntico: \textbf{146,3~h}
+(Q1 = 32,5~h; Q3 = 437,0~h).
+
+A H2 foi refutada: esperávamos LT(b) $\ll$ LT(a), pois um único commit antigo inflaria (a),
+mas os IRQs se sobrepõem quase completamente. Uma explicação plausível é que, nestes projetos,
+a maioria dos commits de uma release foi feita pouco antes da publicação, tornando as duas
+medianas equivalentes em nível de repositório.
+
+\subsection{RQ03 — Change failure rate}
+
+O CFR pela heurística de CI — variante (a) — teve mediana de \textbf{5,7\%}
+(Q1 = 2,4\%; Q3 = 14,1\%; n = 300). O CFR pela heurística de releases corretivas — variante
+(b) — foi substancialmente maior: mediana de \textbf{20,0\%}
+(Q1 = 4,0\%; Q3 = 46,3\%; n = 299), com IQR de 42,3 p.p., indicando alta variabilidade.
+
+A H3 foi refutada em dois pontos. Primeiro, o CFR(a) ficou bem abaixo da faixa prevista de
+10--30\%; a maioria dos repositórios mantém pipelines de CI estáveis. Segundo, o CFR(b)
+superou o CFR(a), o oposto do esperado: a heurística de releases corretivas classifica como
+falha um quinto das releases, o que reflete tanto a real proporção de correções como a
+imprecisão do proxy (F1 = 0,689 na amostra independente). A diferença entre as duas variantes
+é uma ameaça de construto relevante, discutida na Seção de Ameaças.
+
+\subsection{RQ04 — Tempo de recuperação}
+
+O tempo mediano de recuperação foi de \textbf{2,8~h} (Q1 = 0,66~h; Q3 = 21,2~h; n = 277).
+Os 23 repositórios sem episódio concluído foram excluídos da mediana (sem falha detectada ou
+somente episódios censurados). O IQR de 20,6~h confirma a cauda longa prevista na H4.
+
+A H4 foi confirmada: a mediana ficou bem dentro da faixa de 1~h a 1 dia. O valor baixo
+(2,8~h) sugere que projetos populares no GitHub corrigem falhas de CI rapidamente; porém, a
+censura (episódios sem sucesso posterior) pode subestimar o tempo real.
+
+\subsection{RQ05 — Correlação entre frequência de deploy e CFR}
+
+O coeficiente de Spearman entre DF e CFR(a) foi $\rho = -0{,}017$ (p = 0,77;
+IC 95\% $[-0{,}13;\, 0{,}10]$), estatisticamente inconclusivo e de magnitude desprezível.
+Para o CFR(b), o resultado foi surpreendente: $\rho = 0{,}62$
+(p $< 0{,}001$; IC 95\% $[0{,}54;\, 0{,}69]$; n = 298) --- correlação positiva forte.
+
+A H5 foi parcialmente confirmada apenas para o CFR(a). O resultado do CFR(b) contradiz
+diretamente a tese DORA de que alta frequência de deploy não eleva a taxa de falha. Uma
+explicação alternativa é que projetos com muitas releases têm mais oportunidades de lançar
+correções, inflando artificialmente o numerador do CFR(b). Esse confundimento de denominador
+é outra ameaça de construto (Seção de Ameaças).
+
+\subsection{RQ06 — Características dos repositórios e métricas DORA}
+
+Após correção de Holm sobre 30 testes (5 fatores $\times$ 6 métricas), cinco associações
+permaneceram significativas:
+
+\begin{itemize}
+  \item \textbf{Idade × DF} ($\eta^2_H = 0{,}112$; p $< 0{,}001$): repositórios mais antigos
+    (Q4) publicam com maior frequência — efeito médio.
+  \item \textbf{Idade × LT(a)} ($\eta^2_H = 0{,}209$; p $< 10^{-11}$): repositórios mais
+    jovens (Q1) têm lead time menor — efeito médio-alto.
+  \item \textbf{Idade × LT(b)} ($\eta^2_H = 0{,}163$; p $< 10^{-8}$): mesma direção, efeito médio.
+  \item \textbf{Contribuidores × LT(a)} ($\eta^2_H = 0{,}104$; p $< 10^{-5}$): repositórios
+    com mais contribuidores (Q4) têm lead time maior --- projetos grandes acumulam mais commits
+    por release.
+  \item \textbf{Linguagem × LT(a) e recuperação}: efeitos médios (p $< 0{,}01$ e $< 0{,}03$);
+    Rust apresenta os menores lead times, JavaScript a recuperação mais rápida.
+\end{itemize}
+
+A H6 foi parcialmente confirmada. A linguagem importa para LT e recuperação, mas a idade e o
+número de contribuidores tiveram efeitos mais consistentes que a popularidade (estrelas), que
+não atingiu significância após Holm. O tipo do projeto (biblioteca × aplicação × CLI) também
+não foi significativo, possivelmente por ter apenas 51 repositórios com rótulo.
+
+\subsection{RQ07 — Sensibilidade das classificações DORA}
+
+As três combinações de definição operacional produziram:
+
+\begin{itemize}
+  \item \textbf{C1 × C2} (release vs. release+pré-release; LT(a) vs. LT(b); CFR(a) vs.
+    CFR(b)): 40,3\% dos repositórios mudaram de categoria; $\kappa = 0{,}46$ (concordância
+    moderada).
+  \item \textbf{C1 × C3} (release vs. tag; mesmo LT(b) e CFR(a)): 22,3\% mudaram;
+    $\kappa = 0{,}72$ (substancial).
+  \item \textbf{C2 × C3}: 29,3\% mudaram; $\kappa = 0{,}61$ (substancial).
+\end{itemize}
+
+A H7 foi parcialmente confirmada. O par C1$\times$C2 confirmou a hipótese (mais de 30\%,
+kappa moderado), mas o par C1$\times$C3 ficou abaixo dos 30\% com kappa substancial. A análise
+de sensibilidade ampliada (janela CFR(b), mínimo de releases, censura, cortes $\pm$10\%)
+produziu $\kappa > 0{,}92$ em todas as sete variações, indicando que as classificações são
+robustas a pequenas perturbações nos parâmetros — mas sensíveis à escolha da unidade de deploy
+e da variante de CFR.
+
+\subsection{RQ08 — Rework rate (bônus)}
+
+A \textit{rework rate} — proporção de releases de deploy corretivas na janela — teve mediana
+de \textbf{28,6\%} (Q1 = 13,6\%; Q3 = 46,4\%; n = 298), muito próxima do CFR(b) mediano
+(20,0\%). A diferença mediana pareada entre rework e CFR(b) foi de 0,0 p.p.
+(IQR = 31,4 p.p.), confirmando a equivalência conceitual das duas medidas para este conjunto:
+a heurística de correção classifica a mesma proporção de releases como falha, seja na janela
+de 7 dias do CFR(b) ou sem restrição temporal do rework.
