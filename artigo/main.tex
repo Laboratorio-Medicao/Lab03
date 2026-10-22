@@ -1,0 +1,94 @@
+% Artigo Lab03 — Métricas DORA em Repositórios Open-Source do GitHub
+% Template SBC (sbc-template.sty / sbc-template.bst), PT-BR, ≤ 10 páginas com referências.
+% Compile: pdflatex main && bibtex main && pdflatex main && pdflatex main
+
+\documentclass[12pt]{article}
+
+\usepackage{sbc-template}
+\usepackage[brazil]{babel}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{graphicx}
+\usepackage{booktabs}
+\usepackage{hyperref}
+\usepackage{amsmath}
+\usepackage{url}
+
+% Macros auxiliares
+\newcommand{\pend}[1]{\textbf{[PENDENTE: #1]}}
+
+\sloppy
+
+\title{Métricas DORA em Repositórios Open-Source do GitHub:\\
+uma análise exploratória de 300 projetos}
+
+\author{Arthur Soares\inst{1} \and Guilherme Vieira\inst{1} \and Marcos Pinto\inst{1}}
+
+\address{Departamento de Ciência da Computação\\
+  Universidade Federal de Minas Gerais (UFMG) -- Belo Horizonte, MG, Brasil
+  \email{\{arthur, guilherme, marcos\}@dcc.ufmg.br}
+}
+
+\begin{document}
+
+\maketitle
+
+\begin{abstract}
+We present an exploratory analysis of DORA metrics (deployment frequency, lead time for
+changes, change failure rate and mean time to recovery) mined from 300 popular open-source
+GitHub repositories. Using releases as a deploy proxy and CI workflow failures as a
+production failure proxy, we find a median deployment frequency of 0.36 releases/week
+(Medium tier), median lead time of 146~h ($\approx$ 6 days), median CI failure rate of
+5.7\%, and median recovery time of 2.8~h. A corrective-release heuristic (v12, F1 = 0.689)
+provides an alternative CFR proxy, with a surprisingly strong positive Spearman correlation
+with deployment frequency ($\rho = 0.62$, $p < 0.001$), contradicting the DORA ``no
+trade-off'' thesis for this proxy. Classification sensitivity to the operational definition
+of deploy changes 22--40\% of repositories across combinations, with linear kappa between
+0.46 and 0.72.
+\end{abstract}
+
+\begin{resumo}
+Apresentamos uma análise exploratória das métricas DORA (\textit{deployment frequency},
+\textit{lead time for changes}, \textit{change failure rate} e tempo de recuperação) obtidas
+de 300 repositórios open-source populares no GitHub. Usando \textit{releases} como proxy de
+deploy e falhas de CI como proxy de falha em produção, encontramos frequência mediana de
+0,36 releases/semana (nível \textit{Medium}), \textit{lead time} mediano de 146~h
+($\approx$ 6 dias), CFR(a) mediano de 5,7\% e tempo de recuperação mediano de 2,8~h.
+Uma heurística de releases corretivas (v12, F1 = 0,689) oferece um proxy alternativo de
+CFR com correlação de Spearman positiva forte com a frequência de deploy ($\rho = 0{,}62$,
+$p < 0{,}001$), contrariando a tese DORA de ausência de \textit{trade-off} para esse proxy.
+A sensibilidade da classificação DORA à definição operacional de deploy altera a categoria
+de 22--40\% dos repositórios entre as combinações testadas, com kappa linear entre 0,46 e
+0,72.
+\end{resumo}
+
+\input{introducao}
+
+\input{metodologia}
+
+\input{resultados}
+
+\input{ameacas}
+
+\input{replicacao}
+
+\section{Conclusão}
+
+Este trabalho calculou as quatro métricas DORA para 300 repositórios open-source do GitHub
+e respondeu sete questões de pesquisa. Os principais achados são: (i)~a maioria dos projetos
+populares opera no nível \textit{Medium} ou \textit{High} de frequência de deploy, longe do
+nível \textit{Elite}; (ii)~o \textit{lead time} por release e por commit são praticamente
+idênticos (H2 refutada), sugerindo que commits chegam perto da data de publicação;
+(iii)~o CFR por CI é baixo (5,7\%), mas o CFR por heurística corretiva é alto (20,0\%) e
+positivamente correlacionado com a frequência de deploy, o que pode ser um artefato do
+proxy; (iv)~as classificações DORA são sensíveis à escolha da unidade de deploy, o que
+limita comparações entre estudos com definições operacionais distintas.
+
+Como trabalhos futuros, sugerimos validar a heurística corretiva com uma amostra maior e
+avaliadores independentes, explorar proxies que usem \textit{issues} e \textit{pull requests}
+além de \textit{releases}, e replicar o estudo em repositórios privados ou corporativos.
+
+\bibliographystyle{sbc}
+\bibliography{referencias}
+
+\end{document}
