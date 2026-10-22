@@ -9,7 +9,7 @@ Insumo para Resultados e Discussão do artigo (Issue #42). Este texto traz só a
 | Variante | n | ρ de Spearman | IC95% | p |
 |---|---|---|---|---|
 | (a) proxy de CI | 300 | −0,017 | [−0,130; 0,096] | 0,768 |
-| (b) proxy de entrega (exploratório) | 298 | 0,620 | [0,537; 0,691] | < 0,001 |
+| (b) proxy de entrega (exploratório) | 299 | 0,624 | [0,542; 0,694] | < 0,001 |
 
 Gráficos: `outputs/analise/rq05_df_cfr_a.png` e `rq05_df_cfr_b.png`. Nos dois, DF está em escala log e a linha
 vermelha mostra a mediana do CFR por faixa de DF.
@@ -20,7 +20,7 @@ A H5 (`artigo/introducao.tex`) dizia: "Esperamos uma correlação de Spearman **
 frequência de deploy e CFR".
 
 - **(a) é compatível com a H5.** ρ ≈ 0, e a mediana do CFR (a) fica plana, entre 0,04 e 0,07, em todas as faixas de DF.
-- **(b) contradiz a H5.** A correlação é positiva e forte, e o IC95% exclui valores fracos (limite inferior 0,537).
+- **(b) contradiz a H5.** A correlação é positiva e forte, e o IC95% exclui valores fracos (limite inferior 0,542).
   Pela leitura ingênua, projetos que publicam mais teriam proporcionalmente mais releases "seguidas de correção". As
   seções abaixo mostram por que essa leitura não se sustenta.
 
@@ -47,22 +47,19 @@ Frente à tese DORA, de que velocidade e estabilidade não são um *trade-off*:
    em 7 dias, então o CFR (b) tende a 0 por construção. Com DF alta, há várias releases em cada janela de 7 dias, e
    basta uma delas parecer corretiva. Ou seja, o CFR (b) mede em parte o próprio ritmo de publicação.
 2. **Efeito de denominador pequeno.** Entre os repositórios com menos de 10 releases avaliadas, 57% (40/70) têm
-   CFR (b) = 0, contra 14% (31/228) entre os que têm 10 ou mais. A sensibilidade com cortes pré-declarados de
-   releases avaliadas dá ρ = 0,613 (≥ 5; n = 295), 0,576 (≥ 10; n = 228) e 0,408 (≥ 20; n = 139). A associação
+   CFR (b) = 0, contra 14% (31/229) entre os que têm 10 ou mais. A sensibilidade com cortes pré-declarados de
+   releases avaliadas dá ρ = 0,617 (≥ 5; n = 296), 0,580 (≥ 10; n = 229) e 0,420 (≥ 20; n = 140). A associação
    continua positiva, mas cai.
-   - **Ressalva:** DF e nº de releases avaliadas têm ρ = 0,981. O corte também restringe a faixa de DF, e restrição
+   - **Ressalva:** DF e nº de releases avaliadas têm ρ = 0,982. O corte também restringe a faixa de DF, e restrição
      de faixa por si só reduz |ρ|. A queda não separa os dois efeitos; ela serve só para dimensionar o problema.
 3. **Cultura de *patch release*.** Projetos de DF alta costumam publicar correções pequenas e rápidas (`x.y.z+1`)
    como prática normal de entrega. Para o DORA, uma correção rápida é sinal de boa capacidade de recuperação, mas no
    CFR (b) ela conta como falha da release anterior. É uma divergência de construto com "falha em produção".
 4. **Heurística não validada.** A marcação de corretiva (v12) teve F1 independente de 0,689 (IC95% 0,563–0,790),
    abaixo da meta de 0,70. O CFR (b) é exploratório, e toda conclusão da RQ05b deve citar isso.
-5. **Exclusões não aleatórias.** Dois repositórios ficam fora de (b):
-   - `akto-api-security/akto`, o de **maior DF da amostra** (25,4 releases/semana), sem contadores de CFR (b);
-   - `akveo/react-native-ui-kitten`, com 24 releases na janela, todas censuradas (últimos 7 dias).
-
-   Com n = 298, o efeito sobre ρ tende a ser pequeno, mas a exclusão não é aleatória: ela tira justamente o extremo
-   superior de DF.
+5. **Exclusão.** Um repositório fica fora de (b): `akveo/react-native-ui-kitten`, com 24 releases na janela, todas
+   censuradas (últimos 7 dias). O `akto-api-security/akto` (maior DF da amostra, 25,4 releases/semana) entra desde a
+   regeneração do `metrics.csv` (n = 299; a versão anterior do CSV o deixava sem CFR (b) e dava n = 298, ρ = 0,620).
 
 **Conclusão para (b):** o resultado não sustenta um *trade-off* entre velocidade e estabilidade. Ele mostra que essa
 operacionalização de CFR é sensível ao ritmo de publicação. A comparação com o *rework rate* (RQ08, Issue #39) ajuda

@@ -66,7 +66,7 @@ presença da palavra não dizem qual era o objetivo principal da release.
    repositório antes de os rótulos de dois avaliadores serem commitados (PRs #67 e #68). O F1 da v10 é um
    limite otimista.
 2. **Consenso não totalmente independente.** Na rodada anterior, dois avaliadores seguiram sugestões
-   compartilhadas (`docs/auditoria_metodologia.md`). Nos arquivos commitados, a concordância em `corretiva` é
+   compartilhadas. Nos arquivos commitados, a concordância em `corretiva` é
    82,0% (ALuiz19 × marcosffp), 63,3% (ALuiz19 × GuilhermeVieira05) e 56,0% (GuilhermeVieira05 × marcosffp);
    a aderência à sugestão não pode ser recalculada (arquivos fora do Git). O kappa de `corretiva` é 0,27
    (razoável): o critério em si é ambíguo.
