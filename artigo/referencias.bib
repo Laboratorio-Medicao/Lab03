@@ -1,3 +1,7 @@
+% Entradas conferidas em Crossref e em páginas oficiais.
+% cohen1960kappa não é citada no texto (o kappa da RQ07 é o ponderado: cohen1968weighted).
+% landis1977kappa: o Crossref confirma só a página inicial (159); a página final 174 NÃO foi confirmada nesta sessão (verificar antes de entregar).
+
 @book{forsgren2018accelerate,
   author    = {Forsgren, Nicole and Humble, Jez and Kim, Gene},
   title     = {Accelerate: The Science of Lean Software and DevOps},
@@ -5,18 +9,13 @@
   year      = {2018}
 }
 
-@article{wohlin2000experimentation,
+@book{wohlin2012experimentation,
   author    = {Wohlin, Claes and Runeson, Per and H{\"o}st, Martin and Ohlsson, Magnus C. and Regnell, Bj{\"o}rn and Wessl{\'e}n, Anders},
-  title     = {Experimentation in Software Engineering: An Introduction},
-  publisher = {Kluwer Academic Publishers},
-  year      = {2000}
-}
-
-@inproceedings{dora2023report,
-  author    = {{Google Cloud}},
-  title     = {Accelerate State of {DevOps} Report 2023},
-  year      = {2023},
-  url       = {https://cloud.google.com/devops/state-of-devops}
+  title     = {Experimentation in Software Engineering},
+  publisher = {Springer},
+  address   = {Berlin, Heidelberg},
+  year      = {2012},
+  doi       = {10.1007/978-3-642-29044-2}
 }
 
 @article{cohen1960kappa,
@@ -26,7 +25,8 @@
   volume  = {20},
   number  = {1},
   pages   = {37--46},
-  year    = {1960}
+  year    = {1960},
+  doi     = {10.1177/001316446002000104}
 }
 
 @article{landis1977kappa,
@@ -36,7 +36,8 @@
   volume  = {33},
   number  = {1},
   pages   = {159--174},
-  year    = {1977}
+  year    = {1977},
+  doi     = {10.2307/2529310}
 }
 
 @article{bonett2000spearman,
@@ -46,5 +47,55 @@
   volume  = {65},
   number  = {1},
   pages   = {23--28},
-  year    = {2000}
+  year    = {2000},
+  doi     = {10.1007/BF02294183}
+}
+
+@article{cohen1968weighted,
+  author  = {Cohen, Jacob},
+  title   = {Weighted kappa: Nominal scale agreement provision for scaled disagreement or partial credit},
+  journal = {Psychological Bulletin},
+  volume  = {70},
+  number  = {4},
+  pages   = {213--220},
+  year    = {1968},
+  doi     = {10.1037/h0026256}
+}
+
+@article{holm1979sequentially,
+  author  = {Holm, Sture},
+  title   = {A simple sequentially rejective multiple test procedure},
+  journal = {Scandinavian Journal of Statistics},
+  volume  = {6},
+  number  = {2},
+  pages   = {65--70},
+  year    = {1979},
+  note    = {JSTOR 4615733}
+}
+
+@article{cliff1993dominance,
+  author  = {Cliff, Norman},
+  title   = {Dominance statistics: Ordinal analyses to answer ordinal questions},
+  journal = {Psychological Bulletin},
+  volume  = {114},
+  number  = {3},
+  pages   = {494--509},
+  year    = {1993},
+  doi     = {10.1037/0033-2909.114.3.494}
+}
+
+@inproceedings{romano2006appropriate,
+  author    = {Romano, Jeanine and Kromrey, Jeffrey D. and Coraggio, Jesse and Skowronek, Jeff},
+  title     = {Appropriate statistics for ordinal level data: Should we really be using t-test and {Cohen's} d for evaluating group differences on the {NSSE} and other surveys?},
+  booktitle = {Annual Meeting of the Florida Association of Institutional Research},
+  address   = {Cocoa Beach, FL},
+  year      = {2006}
+}
+
+@misc{mangiafico2016handbook,
+  author = {Mangiafico, Salvatore S.},
+  title  = {Summary and Analysis of Extension Program Evaluation in {R}},
+  year   = {2016},
+  url    = {https://rcompanion.org/handbook/},
+  note   = {Versão 1.25.0, revisada em 2026; pacote \texttt{rcompanion}}
 }

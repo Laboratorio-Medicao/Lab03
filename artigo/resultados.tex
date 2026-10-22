@@ -1,155 +1,158 @@
-% Resultados e Discussão — Lab03, Issue #42.
-% Dados extraídos de data/metrics.csv (tag dataset-final) e outputs/analise/.
-% n = 300 repositórios, janela 2025-10-02 a 2026-10-02 (366 dias).
+% Resultados e Discussão (versão compacta para o limite de 10 páginas). Versão completa: artigo/completo/resultados.tex.
+% TODOS os números vêm de macros \N... (artigo/gerado/numeros.tex) e das tabelas de artigo/gerado/, geradas por
+% `python -m analysis.artigo_numeros` a partir de outputs/analise/ e outputs/sensitivity_dora.csv, regenerados de
+% data/metrics.csv (tag dataset-final). Não digitar números aqui. Conferência: `python -m analysis.artigo_numeros --check`.
 
-\section{Resultados e Discussão}
+\section{Resultados e Discussão}\label{sec:resultados}
 
-A Tabela~\ref{tab:hipoteses} resume as sete hipóteses informais e o que os dados revelaram.
-As subseções seguintes detalham cada RQ.
+Todas as análises partem de \texttt{data/metrics.csv} ($n = \NTotal$ repositórios) e reportam mediana e IQR,
+com os cortes fixos da disciplina (Tabela~\ref{tab:resumo}). Release $\neq$ deploy e falha de CI $\neq$ falha em
+produção; o CFR~(b) é \textbf{exploratório}, pois a heurística obteve F1 independente de 0,689, abaixo da meta de 0,70
+(Seção~\ref{sec:heuristica}). A Tabela~\ref{tab:hipoteses} confronta as hipóteses da Introdução com os resultados.
 
 \begin{table}[ht]
-\centering
-\caption{Hipóteses × resultados (n = 300 repositórios).}
+\centering\footnotesize
+\caption{Mediana, quartis, IQR e classe DORA por métrica. ``Classe'' classifica a mediana; E/H/M/L são os
+repositórios em Elite/High/Medium/Low. Recuperação: só repositórios com episódio concluído.}
+\label{tab:resumo}
+\resizebox{\linewidth}{!}{\input{gerado/tabela_resumo}}
+\end{table}
+
+\begin{table}[ht]
+\centering\footnotesize
+\caption{Hipóteses $\times$ resultados (expectativas na Introdução).}
 \label{tab:hipoteses}
-\begin{tabular}{lp{4.2cm}p{4.2cm}l}
+\begin{tabular}{@{}lp{11.2cm}l@{}}
 \hline
-\textbf{H} & \textbf{Esperado} & \textbf{Observado} & \textbf{Confirmada?} \\
+\textbf{H} & \textbf{Observado (a expectativa está na Introdução)} & \textbf{Confirmada?} \\
 \hline
-H1 & Mediana em \textit{Medium}, cauda de alta frequência &
-  Mediana 0,36 rel/sem (Medium); 9,3\% Elite &
-  \textbf{Sim} \\
-H2 & LT(b) $\ll$ LT(a) &
-  LT(a) $\approx$ LT(b) $\approx$ 146~h &
-  \textbf{Não} \\
-H3 & CFR(a) $>$ CFR(b); CFR(a) entre 10--30\% &
-  CFR(a) 5,7\%; CFR(b) 20,0\% &
-  \textbf{Não} \\
-H4 & Mediana de horas a 1 dia; censura relevante &
-  Mediana 2,8~h; 23 repos sem episódio &
-  \textbf{Sim} \\
-H5 & Correlação fraca ou levemente negativa DF $\times$ CFR &
-  CFR(a) $\rho{=}{-}0{,}02$ (inconclusivo); CFR(b) $\rho{=}0{,}62$ (positivo forte) &
-  \textbf{Parcial} \\
-H6 & Linguagem e tipo mais fortes que popularidade &
-  Idade e nº de contribuidores dominam; linguagem afeta LT e recuperação &
-  \textbf{Parcial} \\
-H7 & $>$30\% mudam; kappa no máximo moderado &
-  C1$\times$C2: 40,3\%, $\kappa{=}0{,}46$; C1$\times$C3: 22,3\%, $\kappa{=}0{,}72$ &
-  \textbf{Parcial} \\
+H1 & Mediana \NDfMed{} rel./sem.; \NDfClasseHigh\% \textit{High} e \NDfClasseElite\% \textit{Elite} & Sim \\
+H2 & Medianas iguais (\NLtaMed{} h e \NLtbMed{} h); por repositório, razão LT(a)/LT(b) com mediana \NRazMed{} (IQR \NRazQum--\NRazQtres) & Não \\
+H3 & CFR(a) \NCfraMed\%; CFR(b) \NCfrbMed\% & Não \\
+H4 & Mediana \NRecMed{} h; censurados: \NCensPct\% dos episódios & Parcial \\
+H5 & CFR(a): $\rho = \NRhoA$; CFR(b): $\rho = \NRhoB$ & Parcial \\
+H6 & \NSeisSig{} de \NSeisTestes{} testes significativos: idade (4), contribuidores (2), linguagem (2), efeito médio; tipo e popularidade, nenhum & Parcial \\
+H7 & C1$\times$C2: \NSensUmDoisPct\%, $\kappa = \NSensUmDoisKappa$; C1$\times$C3: \NSensUmTresPct\%, $\kappa = \NSensUmTresKappa$ & Parcial \\
 \hline
 \end{tabular}
 \end{table}
 
-\subsection{RQ01 — Frequência de deploy}
+\begin{figure}[ht]
+\centering
+\includegraphics[width=\linewidth]{figs/fig_rq01_rq02_rq04.png}
+\caption{RQ01, RQ02 e RQ04 por repositório (escala log). Linha e faixa vermelhas: mediana e IQR.}
+\label{fig:rq124}
+\end{figure}
 
-A frequência mediana de deploy foi de \textbf{0,36 releases/semana} (Q1 = 0,19; Q3 = 0,77;
-n = 300), equivalente a pouco mais de uma release a cada três semanas. A distribuição é
-fortemente assimétrica à direita: 9,3\% dos repositórios atingiram o nível \textit{Elite}
-($\geq$ 7 releases/semana), enquanto 45,0\% ficaram em \textit{High} e 35,7\% em
-\textit{Medium}. Apenas 10,0\% caíram no nível \textit{Low} ($< 12$ releases por ano).
+\subsection{RQ01 --- Frequência de deploy}
+A mediana foi de \textbf{\NDfMed{} releases/semana} (Q1 = \NDfQum; Q3 = \NDfQtres), pouco mais de uma \textit{release}
+a cada três semanas, com cauda à direita (Figura~\ref{fig:rq124}). Pelos cortes da disciplina, \NDfClasseElite\%
+são \textit{Elite}, \NDfClasseHigh\% \textit{High}, \NDfClasseMedium\% \textit{Medium} e \NDfClasseLow\% \textit{Low};
+a classe geral C1 é \NUmClasseElite/\NUmClasseHigh/\NUmClasseMedium/\NUmClasseLow\% (E/H/M/L). A H1 se confirma.
 
-A H1 foi confirmada: a mediana caiu na faixa \textit{Medium}--baixa como previsto. A cauda
-de projetos de alta frequência existe, mas é menor que o esperado; a maioria dos projetos
-populares no GitHub adota ciclos de release mensais ou bimestrais, não contínuos.
+\subsection{RQ02 --- Lead time for changes}
+As medianas entre repositórios são \textbf{\NLtaMed{} h} para LT(a) ($\approx$ \NLtaDias{} dias; Q1 = \NLtaQum;
+Q3 = \NLtaQtres) e \textbf{\NLtbMed{} h} para LT(b) (Q1 = \NLtbQum; Q3 = \NLtbQtres), ambas \textit{High}. Elas
+coincidem, o que contraria a H2, mas só no agregado: por repositório a razão LT(a)/LT(b) tem mediana \NRazMed{} e
+IQR \NRazQum--\NRazQtres; LT(a) supera o dobro de LT(b) em \NRazAdobroB\% dos repositórios, LT(b) supera o dobro de
+LT(a) em \NRazBdobroA\% e só \NRazMeio\% ficam entre metade e o dobro (Wilcoxon pareado, $p$ \NRazWilcoxonP;
+Figura~\ref{fig:rq124}). As variantes medem coisas diferentes: LT(a) usa o commit \emph{mais antigo} de cada
+\textit{release}, e LT(b) pesa mais as \textit{releases} com muitos commits. Um commit antigo ``esquecido'' eleva
+LT(a) sem mover muito LT(b), mas \NRazAmenorB\% dos repositórios têm LT(a) $<$ LT(b), o que ele não explica. Não
+testamos causas: o lead time de cada commit está só no cache, não versionado.
 
-\subsection{RQ02 — Lead time for changes}
+\subsection{RQ03 --- Change failure rate}
+O CFR~(a), proxy de CI, teve mediana de \textbf{\NCfraMed\%} (Q1 = \NCfraQum\%; Q3 = \NCfraQtres\%); o CFR~(b), proxy
+de entrega, de \textbf{\NCfrbMed\%} (Q1 = \NCfrbQum\%; Q3 = \NCfrbQtres\%; $n = \NCfrbN$, pois um repositório tem menos
+de duas \textit{releases} na janela). A H3 é refutada nos dois pontos. O CFR(a) conta \emph{execuções de CI} que
+falharam, e falha de pipeline (teste instável, lint, ambiente) não é falha em produção; o CFR(b) conta
+\textit{releases} seguidas de uma corretiva em 7 dias, segundo uma heurística imperfeita (F1 de 0,689), e mistura
+correções reais com erros do proxy.
 
-A mediana do \textit{lead time} por release — variante (a), do commit mais antigo até a
-publicação — foi de \textbf{146,4~h} ($\approx$ 6,1 dias; Q1 = 26,8~h; Q3 = 544,4~h).
-Surpreendentemente, a variante por commit — (b), mediana de todos os commits de todas as
-releases — resultou em valor quase idêntico: \textbf{146,3~h}
-(Q1 = 32,5~h; Q3 = 437,0~h).
+\subsection{RQ04 --- Tempo de recuperação}\label{sec:resultados-rq04}
+A mediana foi de \textbf{\NRecMed{} h} (Q1 = \NRecQum; Q3 = \NRecQtres; $n = \NRecN$), classe \textit{High}.
+\textbf{Censura:} \NCensEp{} de \NCensTot{} episódios (\NCensPct\%) não terminaram na janela; entre os \NCensReposCom{}
+repositórios com episódio, a mediana da proporção de censurados é \NCensRepoMed\% (Q3 = \NCensRepoQtres\%) e
+\NCensReposAlgum{} têm ao menos um censurado. Os censurados não entram na mediana, mas são contados. Dos
+\NRecSemValor{} repositórios sem valor, \NCensReposSem{} não tiveram episódio e \NCensSoCens{} só tiveram censurados,
+o que tende a subestimar a recuperação, pouco dado o volume de censura. A H4 se confirma só em parte: a mediana está
+entre 1 h e 1 dia, mas a censura é bem menor que a esperada.
 
-A H2 foi refutada: esperávamos LT(b) $\ll$ LT(a), pois um único commit antigo inflaria (a),
-mas os IRQs se sobrepõem quase completamente. Uma explicação plausível é que, nestes projetos,
-a maioria dos commits de uma release foi feita pouco antes da publicação, tornando as duas
-medianas equivalentes em nível de repositório.
+\begin{figure}[ht]
+\centering
+\includegraphics[width=\linewidth]{figs/fig_rq05.png}
+\caption{RQ05: DF (escala log) $\times$ CFR(a) e CFR(b); linha vermelha: mediana do CFR por faixa de DF.}
+\label{fig:rq05}
+\end{figure}
 
-\subsection{RQ03 — Change failure rate}
+\subsection{RQ05 --- Frequência de deploy $\times$ CFR}
+Com o CFR(a), $\rho = \NRhoA$ ($p = $ \NRhoPA; IC 95\% \NRhoIcA; $n = \NRhoNA$): sem relação monotônica detectável.
+Com o CFR(b), $\rho = \NRhoB$ ($p$ \NRhoPB; IC 95\% \NRhoIcB; $n = \NRhoNB$): correlação positiva forte
+(Figura~\ref{fig:rq05}); os intervalos usam a transformação $z$ de Fisher com erro-padrão de Bonett e
+Wright~\cite{bonett2000spearman}. A H5 se confirma só para (a). Isso não refuta a tese DORA, e correlação não implica
+causalidade: o CFR(b) é acoplado mecanicamente à frequência (mais \textit{releases}, mais chances de uma corretiva em
+7 dias), e com poucas \textit{releases} há muitos zeros. Com ao menos 20 \textit{releases} avaliadas, $\rho$ cai para
+\NRhoBVinte{} ($n = \NRhoBVinteN$), mas isso também restringe a faixa de DF. A idade confunde (RQ06). O resultado (b) é um possível artefato, e o (a) é compatível com a tese.
 
-O CFR pela heurística de CI — variante (a) — teve mediana de \textbf{5,7\%}
-(Q1 = 2,4\%; Q3 = 14,1\%; n = 300). O CFR pela heurística de releases corretivas — variante
-(b) — foi substancialmente maior: mediana de \textbf{20,0\%}
-(Q1 = 4,0\%; Q3 = 46,3\%; n = 299), com IQR de 42,3 p.p., indicando alta variabilidade.
+\subsection{RQ06 --- Características dos repositórios}
+Testamos cinco fatores (linguagem, popularidade, contribuidores, idade, tipo; $n = \NTipoN$ no tipo) contra as seis
+métricas, \NSeisTestes{} testes. Todos os fatores têm três ou mais grupos, então todos usaram Kruskal-Wallis; Mann-Whitney
+e o $\delta$ de Cliff~\cite{cliff1993dominance} (magnitude de Romano et al.~\cite{romano2006appropriate}) não foram
+exercitados com dados reais, e o $\delta$ aparece só como contraste descritivo em \texttt{rq06\_testes.csv}. Os
+p-valores foram corrigidos por Holm~\cite{holm1979sequentially} sobre os \NSeisTestes{} testes, e o efeito é
+$\varepsilon^2 = H/(n-1)$, com a escala de Mangiafico~\cite{mangiafico2016handbook} (pequeno de $0{,}01$ a $<0{,}08$, médio até
+$<0{,}26$; orientação do autor, não padrão; ``desprezível'' ($<0{,}01$) é rótulo nosso).
+\textbf{\NSeisSig{} associações} permaneceram significativas, todas de efeito médio (Tabela~\ref{tab:rq06},
+Figura~\ref{fig:rq06}). Os mais jovens (Q1 de idade) publicam mais (DF \NIdadeDfQum{} contra \NIdadeDfQquatro{}
+rel./sem. no Q4), têm LT(a) menor (\NIdadeLtaQum{} h contra \NIdadeLtaQquatro{} h) e CFR(b) maior (\NIdadeCfrbQum\%
+contra \NIdadeCfrbQquatro\%), em linha com o acoplamento da RQ05; mais contribuidores, LT(a) maior (\NContribLtaQum{} h
+no Q1 contra \NContribLtaQquatro{} h no Q4); Rust tem os menores LT(a) e JavaScript a recuperação mais rápida. Popularidade (menor $p_{\mathrm{Holm}}$ = \NPopMinPHolm) e tipo não foram
+significativos, e no tipo o $n$ limita o poder. A H6 é parcial: linguagem pesa mais que popularidade, mas o tipo não se
+destaca, e idade e contribuidores têm efeito médio, não pequeno. São associações, não causas.
 
-A H3 foi refutada em dois pontos. Primeiro, o CFR(a) ficou bem abaixo da faixa prevista de
-10--30\%; a maioria dos repositórios mantém pipelines de CI estáveis. Segundo, o CFR(b)
-superou o CFR(a), o oposto do esperado: a heurística de releases corretivas classifica como
-falha um quinto das releases, o que reflete tanto a real proporção de correções como a
-imprecisão do proxy (F1 = 0,689 na amostra independente). A diferença entre as duas variantes
-é uma ameaça de construto relevante, discutida na Seção de Ameaças.
+\begin{table}[ht]
+\centering\footnotesize
+\caption{RQ06: associações significativas após Holm (Kruskal-Wallis, $\varepsilon^2 = H/(n-1)$); os \NSeisTestes{} testes
+estão em \texttt{outputs/analise/rq06\_testes.csv}.}
+\label{tab:rq06}
+\resizebox{\linewidth}{!}{\input{gerado/tabela_rq06}}
+\end{table}
 
-\subsection{RQ04 — Tempo de recuperação}
+\begin{figure}[ht]
+\centering
+\includegraphics[width=.66\linewidth]{figs/rq06_efeitos.png}
+\caption{RQ06: $\varepsilon^2$ por fator e métrica (* = significativo após Holm).}
+\label{fig:rq06}
+\end{figure}
 
-O tempo mediano de recuperação foi de \textbf{2,8~h} (Q1 = 0,66~h; Q3 = 21,2~h; n = 277).
-Os 23 repositórios sem episódio concluído foram excluídos da mediana (sem falha detectada ou
-somente episódios censurados). O IQR de 20,6~h confirma a cauda longa prevista na H4.
+\subsection{RQ07 --- Sensibilidade das classificações}
+Comparamos C1 (release, LT(a), CFR(a)), C2 (release e pré-release, LT(b), CFR(b)) e C3 (tag, LT(b), CFR(a)), com
+categorias codificadas de 1 a 4 e $\kappa$ linear ponderado~\cite{cohen1968weighted} (Figura~\ref{fig:rq07}).
+C1$\times$C2 muda em \NSensUmDoisPct\% dos repositórios ($\kappa = \NSensUmDoisKappa$, moderado), o que confirma
+a H7; C1$\times$C3 em \NSensUmTresPct\% ($\kappa = \NSensUmTresKappa$) e C2$\times$C3 em \NSensDoisTresPct\%
+($\kappa = \NSensDoisTresKappa$), ambos substanciais, abaixo de 30\%. \textbf{Limitações:} em C2 e C3 só a unidade do DF
+muda (LT(b) e CFR(b) seguem sobre releases), e \NParcialCUm, \NParcialCDois{} e \NParcialCTres{} repositórios em C1, C2 e C3
+são classificados com três métricas.
 
-A H4 foi confirmada: a mediana ficou bem dentro da faixa de 1~h a 1 dia. O valor baixo
-(2,8~h) sugere que projetos populares no GitHub corrigem falhas de CI rapidamente; porém, a
-censura (episódios sem sucesso posterior) pode subestimar o tempo real.
+\begin{figure}[ht]
+\centering
+\includegraphics[width=.92\linewidth]{figs/sensitivity_transicao.png}
+\caption{RQ07: matrizes de transição entre combinações (linha = primeira; coluna = segunda).}
+\label{fig:rq07}
+\end{figure}
 
-\subsection{RQ05 — Correlação entre frequência de deploy e CFR}
+\textbf{Robustez de RQ01--RQ06.} A maior discordância é C1$\times$C2, que troca CFR(a) por CFR(b) além da unidade de
+deploy, coerente com as RQ03 e RQ05: as conclusões sobre CFR dependem da definição, e a de DF$\times$CFR(b) é a menos
+robusta. As associações de LT da RQ06 aparecem em LT(a) e LT(b). A RQ01 depende da unidade de deploy (em C1$\times$C3,
+\NSensUmTresPct\% mudam de classe), e a RQ04 não tem variante. Na análise ampliada, só quatro das sete variações
+reclassificam de fato (janela do CFR(b) e cortes $\pm 10\%$): mudam \NAmpInfMinPct\% a \NAmpInfMaxPct\% dos repositórios,
+com $\kappa \geq \NAmpInfKappaMin$; as outras três dão 0\% por construção e não são evidência de robustez. A classificação
+é estável a pequenas perturbações dos cortes, mas depende da unidade de deploy e da variante de CFR.
 
-O coeficiente de Spearman entre DF e CFR(a) foi $\rho = -0{,}017$ (p = 0,77;
-IC 95\% $[-0{,}13;\, 0{,}10]$), estatisticamente inconclusivo e de magnitude desprezível.
-Para o CFR(b), o resultado foi surpreendente: $\rho = 0{,}62$
-(p $< 0{,}001$; IC 95\% $[0{,}54;\, 0{,}69]$; n = 298) --- correlação positiva forte.
-
-A H5 foi parcialmente confirmada apenas para o CFR(a). O resultado do CFR(b) contradiz
-diretamente a tese DORA de que alta frequência de deploy não eleva a taxa de falha. Uma
-explicação alternativa é que projetos com muitas releases têm mais oportunidades de lançar
-correções, inflando artificialmente o numerador do CFR(b). Esse confundimento de denominador
-é outra ameaça de construto (Seção de Ameaças).
-
-\subsection{RQ06 — Características dos repositórios e métricas DORA}
-
-Após correção de Holm sobre 30 testes (5 fatores $\times$ 6 métricas), cinco associações
-permaneceram significativas:
-
-\begin{itemize}
-  \item \textbf{Idade × DF} ($\eta^2_H = 0{,}112$; p $< 0{,}001$): repositórios mais antigos
-    (Q4) publicam com maior frequência — efeito médio.
-  \item \textbf{Idade × LT(a)} ($\eta^2_H = 0{,}209$; p $< 10^{-11}$): repositórios mais
-    jovens (Q1) têm lead time menor — efeito médio-alto.
-  \item \textbf{Idade × LT(b)} ($\eta^2_H = 0{,}163$; p $< 10^{-8}$): mesma direção, efeito médio.
-  \item \textbf{Contribuidores × LT(a)} ($\eta^2_H = 0{,}104$; p $< 10^{-5}$): repositórios
-    com mais contribuidores (Q4) têm lead time maior --- projetos grandes acumulam mais commits
-    por release.
-  \item \textbf{Linguagem × LT(a) e recuperação}: efeitos médios (p $< 0{,}01$ e $< 0{,}03$);
-    Rust apresenta os menores lead times, JavaScript a recuperação mais rápida.
-\end{itemize}
-
-A H6 foi parcialmente confirmada. A linguagem importa para LT e recuperação, mas a idade e o
-número de contribuidores tiveram efeitos mais consistentes que a popularidade (estrelas), que
-não atingiu significância após Holm. O tipo do projeto (biblioteca × aplicação × CLI) também
-não foi significativo, possivelmente por ter apenas 51 repositórios com rótulo.
-
-\subsection{RQ07 — Sensibilidade das classificações DORA}
-
-As três combinações de definição operacional produziram:
-
-\begin{itemize}
-  \item \textbf{C1 × C2} (release vs. release+pré-release; LT(a) vs. LT(b); CFR(a) vs.
-    CFR(b)): 40,3\% dos repositórios mudaram de categoria; $\kappa = 0{,}46$ (concordância
-    moderada).
-  \item \textbf{C1 × C3} (release vs. tag; mesmo LT(b) e CFR(a)): 22,3\% mudaram;
-    $\kappa = 0{,}72$ (substancial).
-  \item \textbf{C2 × C3}: 29,3\% mudaram; $\kappa = 0{,}61$ (substancial).
-\end{itemize}
-
-A H7 foi parcialmente confirmada. O par C1$\times$C2 confirmou a hipótese (mais de 30\%,
-kappa moderado), mas o par C1$\times$C3 ficou abaixo dos 30\% com kappa substancial. A análise
-de sensibilidade ampliada (janela CFR(b), mínimo de releases, censura, cortes $\pm$10\%)
-produziu $\kappa > 0{,}92$ em todas as sete variações, indicando que as classificações são
-robustas a pequenas perturbações nos parâmetros — mas sensíveis à escolha da unidade de deploy
-e da variante de CFR.
-
-\subsection{RQ08 — Rework rate (bônus)}
-
-A \textit{rework rate} — proporção de releases de deploy corretivas na janela — teve mediana
-de \textbf{28,6\%} (Q1 = 13,6\%; Q3 = 46,4\%; n = 298), muito próxima do CFR(b) mediano
-(20,0\%). A diferença mediana pareada entre rework e CFR(b) foi de 0,0 p.p.
-(IQR = 31,4 p.p.), confirmando a equivalência conceitual das duas medidas para este conjunto:
-a heurística de correção classifica a mesma proporção de releases como falha, seja na janela
-de 7 dias do CFR(b) ou sem restrição temporal do rework.
+\subsection{RQ08 --- Rework rate (bônus)}
+A \textit{rework rate} (proporção de \textit{releases} corretivas) teve mediana de \textbf{\NRwMed\%} (Q1 = \NRwQum\%;
+Q3 = \NRwQtres\%; $n = \NRwN$), contra \NRwCfrbMed\% do CFR(b) no subconjunto pareado. Três repositórios ficam fora (dois sem
+rótulos no cache, um com contadores divergentes do \texttt{metrics.csv}). A diferença pareada
+tem mediana 0, mas IQR de \NRwDifIqr{} p.p. e Wilcoxon $p = $ \NRwWilcoxonP; $\rho = \NRwSpearman$ entre as duas. As medidas
+não são equivalentes: o CFR(b) conta a \textit{release} que \emph{precisou} de correção, e o rework a que \emph{é}
+correção. Ambas herdam a imprecisão da heurística v12.

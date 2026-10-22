@@ -1,0 +1,90 @@
+% Artigo Lab03 — Métricas DORA em Repositórios Open-Source do GitHub
+% Template SBC (sbc-template.sty / sbc-template.bst), PT-BR, ≤ 10 páginas com referências.
+% Compile: pdflatex main && bibtex main && pdflatex main && pdflatex main
+
+\documentclass[12pt]{article}
+
+\usepackage{sbc-template}
+\usepackage[brazilian]{babel}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{graphicx}
+\usepackage{booktabs}
+\usepackage{amsmath}
+\usepackage{url}
+
+% Macros auxiliares
+% Números de Resultados: gerados por `python -m analysis.artigo_numeros` a partir de outputs/analise/.
+\input{gerado/numeros}
+\newcommand{\pend}[1]{\textbf{[PENDENTE: #1]}}
+
+\sloppy
+
+\title{Métricas DORA em Repositórios Open-Source do GitHub:\\
+uma análise exploratória de 300 projetos}
+
+\author{Arthur Soares\inst{1} \and Guilherme Vieira\inst{1} \and Marcos Pinto\inst{1}}
+
+% Afiliação: o fonte_vdd.md indica Engenharia de Software da PUC Minas; nenhum arquivo do repositório
+% sustenta UFMG. E-mails omitidos: o repositório não traz e-mails institucionais dos autores.
+\address{Curso de Engenharia de Software\\
+  Pontifícia Universidade Católica de Minas Gerais (PUC Minas) -- Belo Horizonte, MG, Brasil
+}
+
+\begin{document}
+
+\maketitle
+
+\begin{abstract}
+We mined the four DORA metrics from \NEnTotal{} popular GitHub repositories, using releases as a deploy
+proxy and CI failures as a failure proxy. Medians: \NEnDfMed{} releases/week (Medium), lead time
+\NEnLtaMed{}~h, CI failure rate \NEnCfraMed\%, recovery time \NEnRecMed{}~h. An exploratory
+corrective-release proxy for CFR (heuristic F1 = 0.689, below the 0.70 target) correlates strongly
+with deployment frequency ($\rho = \NEnRhoB$), unlike the CI proxy ($\rho = \NEnRhoA$), but it is
+mechanically coupled to release frequency, so we do not read it against the DORA no-trade-off thesis.
+Changing the operational definitions alters the overall class of \NEnSensUmTresPct--\NEnSensUmDoisPct\% of
+the repositories (weighted $\kappa$ \NEnSensUmDoisKappa--\NEnSensUmTresKappa).
+\end{abstract}
+
+\begin{resumo}
+Minerarmos as quatro métricas DORA em \NTotal{} repositórios populares do GitHub, com \textit{releases}
+como proxy de deploy e falhas de CI como proxy de falha. Medianas: \NDfMed{} releases/semana (\textit{Medium}),
+\textit{lead time} de \NLtaMed{}~h, CFR(a) de \NCfraMed\% e recuperação de \NRecMed{}~h. Um proxy exploratório
+de CFR por releases corretivas (heurística com F1 de 0,689, abaixo da meta de 0,70) tem correlação forte com a
+frequência de deploy ($\rho = \NRhoB$), ao contrário do proxy de CI ($\rho = \NRhoA$), mas é acoplado
+mecanicamente à frequência de releases, e por isso não o lemos contra a tese DORA de ausência de
+\textit{trade-off}. Mudar as definições operacionais altera a categoria geral de \NSensUmTresPct\% a
+\NSensUmDoisPct\% dos repositórios ($\kappa$ linear de \NSensUmDoisKappa{} a \NSensUmTresKappa).
+\end{resumo}
+
+\input{introducao}
+
+\input{metodologia}
+
+\input{resultados}
+
+\input{ameacas}
+
+\input{replicacao}
+
+\section{Conclusão}
+
+Este trabalho calculou as quatro métricas DORA para \NTotal{} repositórios open-source do GitHub
+e respondeu sete questões de pesquisa. Os principais achados são: (i)~a maioria dos projetos
+populares publica menos de uma \textit{release} por semana (mediana \NDfMed{}; apenas \NDfClasseElite\% no
+nível \textit{Elite}); (ii)~as medianas de \textit{lead time} por release e por commit coincidem
+entre repositórios, mas divergem repositório a repositório (razão mediana \NRazMed{}); (iii)~o CFR por CI é
+baixo (\NCfraMed\%) e não se associa à frequência de deploy, enquanto o CFR por heurística corretiva
+(\NCfrbMed\%, exploratório) se associa positivamente a ela, o que é compatível com um acoplamento mecânico
+do proxy e não permite conclusão causal; (iv)~idade e contribuidores se associam a LT e DF mais que
+popularidade e tipo do projeto; (v)~as classificações DORA são sensíveis à unidade de deploy e à variante de
+CFR, o que limita comparações entre estudos com definições operacionais distintas.
+
+Como trabalhos futuros, sugerimos validar a heurística corretiva com uma amostra maior e
+avaliadores independentes, explorar proxies que usem \textit{issues} e \textit{pull requests}
+além de \textit{releases}, e replicar o estudo em repositórios privados ou corporativos.
+
+\bibliographystyle{sbc}
+\bibliography{referencias}
+
+\end{document}

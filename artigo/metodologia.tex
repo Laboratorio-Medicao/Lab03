@@ -1,259 +1,122 @@
-% Metodologia do artigo (template SBC) — Lab03S02, Issue #31. RASCUNHO baseado só em artefatos do repositório.
-% Cada afirmação factual aponta a fonte em comentário (%). Itens que dependem do professor aparecem como
-% \pend{...}; decisões provisórias do grupo como \prov{...}. Evidências e lacunas: docs/metodologia_evidencias.md.
-\newcommand{\pend}[1]{\textbf{[PENDENTE DO PROFESSOR: #1]}}
+% Metodologia (versão compacta para o limite de 10 páginas). Versão completa: artigo/completo/metodologia.tex.
+% \prov{...} está definido mas sem uso; \pend{...} só existe em replicacao.tex (seção fora do artigo).
+% Detalhes cortados daqui continuam em docs/ e data/ (caminhos citados no texto).
 \newcommand{\prov}[1]{\textbf{[PROVISÓRIO: #1]}}
 
 \section{Metodologia}
 
-\subsection{Questões de pesquisa e desenho do estudo}
-% E§5; fonte_vdd.md
-O estudo é observacional e mineratório: calcula as métricas DORA a partir de dados públicos do GitHub
-(\textit{releases}, \textit{commits} e execuções de GitHub Actions) de repositórios open-source. As
-questões de pesquisa seguem o enunciado: RQ01 frequência de deploy; RQ02 \textit{lead time} (variantes
-por \textit{release} e por \textit{commit}); RQ03 \textit{change failure rate} (variante (a), proxy de CI,
-e (b), proxy de entrega); RQ04 tempo de recuperação; RQ05 correlação entre frequência e CFR; RQ06
-características associadas ao desempenho; RQ07 sensibilidade da classificação DORA à definição operacional.
-Como o GitHub não registra deploys nem falhas em produção, todas as medidas são \emph{proxies}.
-Esta seção descreve a coleta e a validação manual; as análises estatísticas das RQ01--RQ07 pertencem à
-Sprint~3 e \textbf{ainda não foram executadas}.
+\subsection{Desenho, janela e amostra}
+\textbf{Desenho.} Estudo observacional e mineratório: as métricas DORA são calculadas a partir de dados
+públicos do GitHub (\textit{releases}, \textit{commits} e execuções de GitHub Actions). As RQ01 a RQ07 (e a RQ08, bônus) seguem o
+enunciado e correspondem às hipóteses H1 a H7 da Introdução; em RQ02 e RQ03 há duas variantes obrigatórias cada.
+O GitHub não registra deploys nem falhas em
+produção, então todas as medidas são \emph{proxies}.
 
-\subsection{Seleção dos repositórios e funil}
-% outputs/funil.md, config.yaml (selecao:)
-Os candidatos vieram da Search API, fatiada por faixas de estrelas a partir de 1000 (\texttt{stars:>=1000},
-sem forks e sem repositórios arquivados). \prov{o enunciado não define ``popular''; o piso de 1000 estrelas,
-a exclusão de forks/arquivados e as faixas de fatiamento são decisão do grupo (lacuna L03)}.
-Critérios de inclusão (E§3): uso de GitHub Actions, ao menos 5 \textit{releases} e ao menos 50
-\textit{workflow runs} válidos no \textit{default branch} dentro da janela. \prov{a leitura de ``run válido''
-(\texttt{event=push}, criado na janela, \texttt{conclusion} em \{success, failure, timed\_out,
-startup\_failure\}) e a de ``release contada'' (não rascunho, não pré-release, publicada na janela) são
-interpretações do grupo (L04, L05)}.
+\textbf{Janela e amostra.} A janela de 12 meses, fixada pelo professor, vai de 2025-10-02 a 2026-10-02 (UTC,
+dia final inclusivo: 366 dias, 52,29 semanas). Os candidatos vêm da Search API, fatiada por estrelas a partir de
+1000, sem forks nem arquivados; passam os que usam GitHub Actions e têm ao menos 5 \textit{releases} e 50
+\textit{workflow runs} válidos na janela (Tabela~\ref{tab:funil}). O enunciado não define ``popular'';
+o piso de 1000 estrelas e a exclusão de forks e arquivados são decisão do grupo (L03), assim como a leitura de
+``run válido'' (\texttt{event=push}, criado na janela, \texttt{conclusion} em success, failure, timed\_out ou
+startup\_failure) e de ``release contada'' (não rascunho, não pré-release, publicada na janela) (L04, L05).
+Dos 60\,142 candidatos, 2677 foram avaliados em ordem alfabética de \texttt{full\_name} e a avaliação parou ao
+atingir 300; a amostra é, portanto, o primeiro conjunto de 300 que passa nos filtros, e não é aleatória
+(lacuna L17).
 
 \begin{table}[ht]
-\centering
+\centering\small
 \caption{Funil de seleção (\texttt{outputs/funil.csv}).}
+\label{tab:funil}
 \begin{tabular}{lrrr}
 \hline
 Etapa & Entram & Saem & Restam \\ \hline
-Candidatos avaliados (sem duplicatas) & 2677 & --- & 2677 \\
+Candidatos avaliados & 2677 & --- & 2677 \\
 Possui Actions & 2677 & 1219 & 1458 \\
-Releases mínimas (5) & 1458 & 1038 & 420 \\
-Runs válidos mínimos (50) & 420 & 120 & 300 \\
-Amostra final & 300 & --- & 300 \\ \hline
+$\geq$ 5 \textit{releases} & 1458 & 1038 & 420 \\
+$\geq$ 50 runs válidos & 420 & 120 & 300 \\ \hline
 \end{tabular}
 \end{table}
 
-A Search API devolveu 60\,143 resultados brutos (60\,142 após deduplicação), dos quais 2677 foram
-avaliados em ordem determinística por \texttt{full\_name}; a avaliação parou ao atingir 300 repositórios,
-e 57\,465 candidatos \emph{não foram avaliados}. Assim, a amostra não é aleatória sobre a população de
-candidatos: é o primeiro conjunto de 300 que passa nos filtros nessa ordem (lacuna L17, corte não definido
-pelo enunciado). O relatório marca todas as fatias como não saturadas; a fatia \texttt{stars:1282..1312} tem
-exatamente 1000 resultados, que é o teto da API, mas o critério de saturação é \emph{mais} de 1000,
-então o total de 1000 não indica truncamento.
+\subsection{Definições operacionais, dados ausentes e coleta}
+\textbf{Definições operacionais.} Valem as do enunciado: deploy é uma \textit{release} publicada
+(\texttt{draft=false}, sem pré-release); a data do commit é \texttt{commit.author.date}; só o \textit{default
+branch} e \texttt{event=push}; falha é \texttt{failure}, \texttt{timed\_out} ou \texttt{startup\_failure},
+sucesso é \texttt{success}, e as demais conclusões são ignoradas. Deployment frequency é o número de
+\textit{releases} da janela dividido por 52,29 semanas.
+\emph{Lead time:} (a) publicação menos o commit mais antigo da \textit{release}, mediana por repositório;
+(b) publicação menos cada commit, mediana de todos os commits do repositório, em horas, com os commits de
+\texttt{compare/\{anterior\}...\{R\}}. A primeira \textit{release} da história e as com \texttt{compare} 404
+são ignoradas. \textit{Releases} sem commits novos e commits posteriores à \textit{release} são excluídos
+e contados (decisão do grupo, L07).
+\emph{CFR (a):} falhas divididas por falhas mais sucessos. \emph{CFR (b):} a \textit{release} R falha se
+qualquer \textit{release} de deploy em $(R, R{+}7\text{ d}]$ for corretiva; as dos últimos 7 dias da janela
+ficam fora do denominador (censura). ``Qualquer release no intervalo'', e não só a próxima, é decisão
+do grupo (L08).
+\emph{Recuperação:} por workflow, do início da primeira falha até o fim (\texttt{updated\_at}) do próximo
+sucesso; mediana por repositório; episódios sem fim na janela são censurados e contados à parte.
+O enunciado inicia o episódio na ``primeira falha após um sucesso''; o código também o inicia quando a
+primeira execução válida do workflow na janela é uma falha, sem sucesso anterior, e a mediana usa só os
+episódios concluídos (decisão do grupo, L09).
+\emph{Classificação DORA:} cortes fixos da disciplina e mediana, arredondada para baixo, das quatro notas;
+quando uma métrica é indefinida (23 repositórios sem episódio de recuperação concluído), a geral usa as
+definidas e \texttt{n\_metricas\_dora} sinaliza o caso, e os 300 repositórios permanecem na análise (decisão do grupo, L10).
+\emph{Combinações da RQ07:} C1 = release, LT(a), CFR(a); C2 = release mais pré-release, LT(b), CFR(b);
+C3 = tag, LT(b), CFR(a); a recuperação é a mesma. Em C2 e C3 só a unidade do DF muda de fato; LT(b) e CFR(b)
+seguem calculados sobre as \textit{releases} de deploy.
 
-\subsection{Janela temporal}
-% config.yaml (L01); data/amostra_ouro/sorteio.json
-A janela de 12 meses, fixada pelo professor, é 2025-10-02 a 2026-10-02 (UTC), com o dia final inclusivo
-(até 23:59:59); ela tem, portanto, 366 dias (52,29 semanas). A deployment frequency divide pelas semanas
-da janela e o corte ``1 \textit{release} por mês'' da classificação é 12 \textit{releases} nessa mesma
-janela, de modo que um repositório com exatamente 12 \textit{releases} é \emph{Medium}.
+\textbf{Dados ausentes e censura} (contados, nunca descartados em silêncio; \texttt{data/metrics.csv}): 6 \textit{releases}
+ignoradas por \texttt{compare} 404 e 93 primeiras \textit{releases} sem anterior; 381 commits (32 repositórios)
+posteriores à \textit{release} e 1686 \textit{releases} (51 repositórios) sem commits novos, fora do \textit{lead time};
+418 \textit{releases} dos últimos 7 dias da janela, fora do denominador do CFR (b); episódios censurados e
+repositórios sem recuperação na Seção~\ref{sec:resultados-rq04}.
 
-\subsection{Definições operacionais das métricas}
-% E§3, E§5; metricas/*.py; README
-Valem as definições comuns do enunciado: deploy é uma \textit{release} publicada (\texttt{draft=false},
-sem pré-release na definição principal); a data de um \textit{commit} é \texttt{commit.author.date};
-considera-se apenas o \textit{default branch} para execuções de CI, com \texttt{event=push}; a
-classificação de falha/sucesso segue a tabela de \texttt{conclusion} do enunciado, ignorando
-\texttt{cancelled}, \texttt{skipped}, \texttt{neutral}, \texttt{action\_required}, \texttt{stale} e execuções
-em andamento.
-\begin{itemize}
-  \item \textbf{Deployment frequency:} \textit{releases} publicadas na janela dividido pelo número de
-  semanas da janela (RQ01).
-  \item \textbf{Lead time (a)/(b):} por \textit{release}, \texttt{publicação $-$ commit mais antigo}; por
-  \textit{commit}, \texttt{publicação $-$ data do commit}; mediana por repositório, em horas. Commits
-  vêm de \texttt{compare/\{anterior\}...\{R\}}; a primeira \textit{release} da história é ignorada, e
-  \textit{releases} com \texttt{compare} 404 também. \prov{releases sem commits novos e commits com data
-  posterior à release são excluídos (L07)}.
-  \item \textbf{CFR (a):} falhas $\div$ (falhas $+$ sucessos) das execuções de CI.
-  \item \textbf{CFR (b):} uma \textit{release} R falha se qualquer \textit{release} de deploy em
-  $(R, R{+}7\text{d}]$ for corretiva; \textit{releases} nos últimos 7 dias da janela ficam fora do
-  denominador (censura); com menos de 2 \textit{releases} na janela o valor é indefinido.
-  \prov{``qualquer release no intervalo'', e não só a próxima, é decisão do grupo (L08)}.
-  \item \textbf{Tempo de recuperação:} por workflow, do início da primeira falha após um sucesso até o fim
-  (\texttt{updated\_at}) do próximo sucesso; mediana por repositório; episódios sem fim na janela são
-  censurados e reportados em proporção.
-  \item \textbf{Classificação DORA:} cortes fixos adaptados pelo enunciado (Elite/High/Medium/Low) e
-  mediana arredondada para baixo das quatro notas.
-\end{itemize}
-O CFR (b) \textbf{não} está em \texttt{outputs/resultados.csv}; ele está em \texttt{data/metrics.csv}
-(coluna \texttt{cfr\_b}), calculado com a heurística v12 e tratado como medida exploratória
-(Seção~\ref{sec:heuristica}). Quando uma das quatro métricas é indefinida (23 repositórios sem episódio
-de recuperação concluído), a classificação geral usa a mediana das métricas definidas e a coluna
-\texttt{n\_metricas\_dora} sinaliza que ela é parcial (decisão do grupo, aceita pelo professor).
+\textbf{Coleta.} Script próprio, via API REST, sem bibliotecas de acesso ao GitHub; cache em disco e retomada;
+espera pelo \textit{rate limit} e \textit{backoff} exponencial para erros 5xx. Nenhum dia de execuções atingiu
+o teto de 1000 resultados, e o \texttt{compare} é paginado. \textit{Releases} com \texttt{compare}
+divergente (backports) podem inflar o \textit{lead time}. O cache não é versionado, e os repositórios continuam recebendo commits, então uma nova coleta pode divergir
+(detalhes no \texttt{README.md}).
 
-\subsection{Procedimento de coleta, cache e limitações da API}
-% README; pipeline/http_client.py; outputs/execucao.log, funil.md
-A coleta é feita por script próprio, via API REST, sem bibliotecas de acesso ao GitHub. Cada resposta é
-armazenada em disco e a execução é retomável: o último \textit{run} registrado em
-\texttt{outputs/execucao.log} processou 300 repositórios sem erros, com 12\,191 acertos e 72\,975 falhas de
-cache (execução iniciada em 2026-10-11). O cliente espera o \textit{rate limit} renovar (até 10 esperas por
-requisição) e repete erros 5xx com \textit{backoff} exponencial (1, 2, 4, 8~s, até 5 tentativas).
-Limitações conhecidas: (i) a Search API devolve no máximo 1000 resultados por consulta, por isso a busca é
-fatiada; (ii) execuções de CI são coletadas por mês, e nenhum dia atingiu o teto de 1000 resultados
-(\texttt{n\_runs\_dias\_saturados} $=0$ em todos os repositórios de \texttt{resultados.csv}); (iii) o
-\texttt{compare} é paginado; (iv) \textit{releases} com \texttt{compare} divergente (backports) mantêm
-os commits desde o \textit{merge-base} e podem inflar o \textit{lead time}; (v) o cache não é versionado,
-portanto a coleta só é reproduzível por quem o possui ou refaz as chamadas, e \emph{repositórios continuam
-recebendo commits}, de modo que uma nova coleta pode divergir.
+\subsection{Validação manual}
+Sorteamos 60 repositórios (semente 42) e 5 \textit{releases} de cada, as mesmas
+para os três avaliadores. Cada um rotulou o tipo do projeto, se as \textit{releases} são entregas reais e se
+cada uma é corretiva. O consenso é por unanimidade ou maioria (\texttt{PROTOCOLO\_CONSENSO.md}): 85 das 300
+\textit{releases} são corretivas. O $\kappa$ de Fleiss é 0,743 para o tipo do projeto (substancial), 0,352 para
+entrega real e 0,273 para \texttt{corretiva} (razoáveis; escala de Landis \& Koch~\cite{landis1977kappa}).
+O $\kappa$ baixo em \texttt{corretiva} indica que o próprio critério é ambíguo, o que é um achado (em entrega
+real, a prevalência de ``sim'' derruba o $\kappa$).
+\textbf{Limitação.} A rotulagem usou sugestões automáticas, iguais para todos os avaliadores, e os artefatos
+não demonstram três julgamentos independentes; o $\kappa$ e o consenso podem herdar esse viés, cujo tamanho não
+foi medido. Um repositório da amostra (\texttt{1bananachicken/MaaNTE}) saiu do GitHub depois do sorteio, e
+dois avaliadores rotularam suas \textit{releases} sem ver o conteúdo.
+O professor informou ao grupo que a validação vale
+assim, sem necessidade de nova rotulagem. Detalhes: \texttt{data/amostra\_ouro/},
+\texttt{docs/rotulagem-assistida.md}.
 
-\subsection{Rotulagem manual, sugestões assistidas e consenso}
-% data/amostra_ouro/{sorteio.json,LEIAME.md,PROTOCOLO_CONSENSO.md,consenso.csv}; rascunho/revisao_*.csv
-Foram sorteados 60 repositórios da lista de entrada \texttt{resultados.csv} (semente 42; \texttt{sha256}
-registrado em \texttt{sorteio.json}) e 5 \textit{releases} por repositório (300 \textit{releases}, as
-mesmas para os três avaliadores). Cada avaliador preencheu, em arquivo próprio, (i) o tipo do projeto,
-(ii) se as \textit{releases} são entregas reais e (iii) se cada \textit{release} é corretiva.
-
-\textbf{Uso de sugestões.} A rotulagem usou sugestões: \texttt{scripts/rotular.py} apresenta notas e
-commits de cada item junto de uma \emph{sugestão}, igual para todos os avaliadores, que o avaliador aceita
-ou substitui. Existem 292 sugestões para os 300 itens de \texttt{corretiva} (71 ``sim'', 221 ``não''); os
-8 restantes ficaram sem sugestão.
-
-\textbf{Rodada anterior (rótulos que não são os commitados).} Numa primeira rodada, feita com versões dos
-arquivos de rótulos que não foram as commitadas, os arquivos de revisão de \textbf{dois} avaliadores
-(guardados fora do Git) coincidiam com a sugestão em \textbf{292/292} itens, esses dois avaliadores
-coincidiam entre si em 293 dos 300 itens (97,7\%) e o terceiro coincidia com a sugestão em 181 dos 292
-(62,0\%).
-
-\textbf{Arquivos commitados (usados nos resultados abaixo).} Os rótulos oficiais são os três
-\texttt{labels\_<avaliador>.csv} commitados nas Issues \#23, \#24 e \#25. Neles, a concordância em
-\texttt{corretiva} é de 82,0\% (246/300) entre ALuiz19 e marcosffp, 63,3\% (190/300) entre ALuiz19 e
-GuilhermeVieira05 e 56,0\% (168/300) entre GuilhermeVieira05 e marcosffp. A aderência desses arquivos à
-sugestão não pode ser recalculada, porque \texttt{sugestoes.csv} e os arquivos de revisão estão fora do Git.
-
-Não há, nos artefatos, registro de como as sugestões foram geradas (\texttt{sugestoes.csv} traz só rótulo
-e motivo textual). Os fatos acima não permitem concluir que os rótulos estejam errados: uma sugestão
-pode estar correta. Eles apenas \emph{não demonstram} três julgamentos independentes, e o critério de
-independência do enunciado (``sem consultar os demais'') não é verificável nesses casos.
-
-\textbf{Repositório removido.} O repositório \texttt{1bananachicken/MaaNTE} (5 \textit{releases} da
-amostra) foi removido do GitHub depois do sorteio: a API devolve 404 para o repositório, as
-\textit{releases}, os \texttt{compare} e a conta do dono. Ele foi mantido na amostra por decisão do grupo.
-Dois dos três avaliadores rotularam essas \textit{releases} sem acesso ao conteúdo (registrado na coluna
-\texttt{observacoes}).
-\pend{se a rotulagem assistida é metodologicamente aceitável para a validação, ou se a amostra deve ser
-rotulada de novo sem sugestões, é decisão do professor}.
-
-O protocolo de consenso (\texttt{PROTOCOLO\_CONSENSO.md}) é: unanimidade; maioria simples em 2 a 1;
-reunião para 1-1-1. O protocolo prevê o kappa antes do consenso. Resultado em \texttt{consenso.csv}:
-\texttt{corretiva}, 152 por unanimidade e 148 por maioria (85 corretivas, 215 não); tipo do projeto, 44 e
-16; entrega real, 55 e 5; nenhum caso \texttt{reuniao} nem \texttt{pendente}.
-
-\subsection{Concordância entre avaliadores}
-% data/amostra_ouro/concordancia.csv; recalculado a partir de labels_*.csv com statsmodels
-\begin{table}[ht]
-\centering
-\caption{Kappa de Fleiss (3 avaliadores). Interpretação de Landis \& Koch.}
-\begin{tabular}{lrrl}
-\hline
-Dimensão & Itens & $\kappa$ & Interpretação \\ \hline
-Tipo do projeto & 60 & 0,743 & substancial \\
-Releases são entregas reais & 60 & 0,352 & razoável \\
-Release corretiva & 300 & 0,273 & razoável \\ \hline
-\end{tabular}
-\end{table}
-O kappa baixo da dimensão \texttt{corretiva} indica que o próprio critério é ambíguo, o que é um achado e
-limita qualquer validação contra esse consenso. A concordância simples foi 0,507 em \texttt{corretiva}.
-Em \texttt{entrega real}, a concordância simples é alta (0,917), mas quase todos os rótulos são ``sim'',
-o que derruba o kappa (efeito de prevalência).
-\textbf{Limitação na leitura do kappa.} O kappa de Fleiss pressupõe avaliações independentes, o que os
-artefatos não demonstram (ver acima). Com a maioria 2 a 1, o par de avaliadores mais próximo (82,0\% de
-concordância em \texttt{corretiva}) pesa mais no consenso do que o terceiro. Para a heurística, o consenso
-usado como referência de precisão, \textit{recall} e F1 pode herdar o viés das sugestões; o sentido e a
-magnitude desse efeito não foram medidos. Os valores foram calculados por \texttt{scripts.agreement} a
-partir dos três arquivos commitados (\texttt{concordancia.csv}).
-Outras medidas de avaliação usadas: precisão, \textit{recall} e F1 (\texttt{precision\_recall\_fscore\_support},
-positivo = corretiva). Na validação independente da v12, o intervalo de confiança do F1 é
-\textit{bootstrap} por repositório (10\,000 reamostragens, semente 20261015).
-
-\subsection{Heurística de release corretiva: versões e desempenho}\label{sec:heuristica}
-% data/amostra_ouro/avaliacao_heuristica.csv; docs/refino_heuristica.md; git log
-A heurística v1 reproduz o exemplo do professor (``só muda o \textit{patch} e contém \texttt{fix}'') e foi
-definida antes de ver os dados. As versões v2--v7 combinam os mesmos dois sinais (SemVer e palavra-chave,
-estrita ou ampla). As versões v8 e v9 olham o \emph{conteúdo} (commits de correção e de feature; na v9,
-também as \textit{release notes}) e foram desenhadas \textbf{depois} de analisar os erros da v1--v7 na
-\emph{mesma} amostra em que são avaliadas. Além disso, v8 e v9 entraram no repositório (PR \#65, 14/10,
-21h19) \emph{antes} de os rótulos de dois avaliadores serem commitados (PRs \#67 e \#68, 21h46 e 21h59):
-foram desenhadas sobre a rodada anterior de rótulos.
-
-Todas as versões são medidas nas 300 \textit{releases} da amostra-ouro (85 corretivas no consenso). As
-versões v10--v12 foram desenhadas depois da análise de erros (v10: rejeita \textit{bump} \emph{major}/\emph{minor};
-v11: aceita notas que se declaram release de correção; v12: reconhece \textit{patch} pelo número da própria
-tag, o que cobre \textit{backports}), de modo que o F1 de desenvolvimento delas é otimista.
+\subsection{Heurística de release corretiva}\label{sec:heuristica}
+A heurística é livre (enunciado, RQ03b); a v1 reproduz o exemplo do professor (muda só o \textit{patch} e traz
+\texttt{fix}). A Tabela~\ref{tab:heuristica} traz o F1 de cada versão contra o consenso (300 \textit{releases}).
+As v2--v7 combinam SemVer e palavra-chave; as v8--v9 olham commits e notas; as v10--v12 rejeitam
+\textit{bump} \emph{major}/\emph{minor}, aceitam notas que se declaram correção e reconhecem \textit{patch} pela
+tag (\textit{backports}). As v8--v12 foram desenhadas \emph{depois} de analisar os erros na mesma amostra em
+que são avaliadas, então seu F1 de desenvolvimento é otimista. Precisão e \textit{recall} de cada versão estão em
+\texttt{data/amostra\_ouro/avaliacao\_heuristica.csv} e \texttt{docs/validacao-independente.md}.
 
 \begin{table}[ht]
-\centering
-\caption{Versões testadas contra o consenso (300 \textit{releases}; 85 corretivas), amostra de
-desenvolvimento. Fonte: \texttt{avaliacao\_heuristica.csv} (v1--v10) e \texttt{docs/validacao-independente.md}
-(v11--v12).}
-\begin{tabular}{llrrrl}
+\centering\small
+\caption{F1 de cada versão da heurística (amostra de desenvolvimento, consenso de 300 \textit{releases}).}
+\label{tab:heuristica}
+\setlength{\tabcolsep}{3pt}
+\begin{tabular}{lcccccccccccc}
 \hline
-Versão & Regra & Precisão & Recall & F1 & Desenho \\ \hline
-v1 & patch \textbf{e} palavra estrita & 0,434 & 0,777 & 0,557 & antes dos dados \\
-v2 & patch \textbf{ou} palavra estrita & 0,327 & 0,988 & 0,491 & antes da análise de erros\textsuperscript{*} \\
-v3 & só palavra estrita & 0,319 & 0,871 & 0,467 & idem\textsuperscript{*} \\
-v4 & só patch & 0,429 & 0,894 & 0,580 & idem\textsuperscript{*} \\
-v5 & patch \textbf{e} palavra ampla & 0,443 & 0,824 & 0,576 & idem\textsuperscript{*} \\
-v6 & patch \textbf{ou} palavra ampla & 0,326 & 0,988 & 0,490 & idem\textsuperscript{*} \\
-v7 & só palavra ampla & 0,326 & 0,918 & 0,482 & idem\textsuperscript{*} \\
-v8 & correção e nenhuma feature & 0,625 & 0,412 & 0,497 & depois da análise de erros \\
-v9 & v8 \textbf{ou} notas com correção e sem novidade & 0,627 & 0,553 & 0,588 & depois da análise de erros \\
-v10 & rejeita \textit{major}/\textit{minor}; nota ampla para \textit{patch} & 0,699 & 0,600 & 0,646 & depois da análise de erros \\
-v11 & v10 \textbf{ou} patch com nota de correção/segurança & -- & -- & 0,671 & depois da análise de erros \\
-\textbf{v12} & v11, \textit{patch} também pela tag (\textit{backports}) & -- & -- & \textbf{0,722} & depois da análise de erros \\ \hline
+ & v1 & v2 & v3 & v4 & v5 & v6 & v7 & v8 & v9 & v10 & v11 & v12 \\ \hline
+F1 & 0,557 & 0,491 & 0,467 & 0,580 & 0,576 & 0,490 & 0,482 & 0,497 & 0,588 & 0,646 & 0,671 & \textbf{0,722} \\ \hline
 \end{tabular}
-\par{\footnotesize \textsuperscript{*} v2--v7 entraram no mesmo \textit{commit} do script de avaliação
-(\texttt{360adc7}); a ordem exata entre escrevê-las e a primeira rodada não é verificável pelo histórico.}
 \end{table}
 
-\textbf{Validação independente da v12.} Para não medir a heurística na mesma amostra que a desenhou, a v12
-foi congelada (SHA-256 \texttt{727b6c2b\dots}) e avaliada uma única vez em 40 repositórios sorteados
-(semente 7342) entre os 212 elegíveis, disjuntos dos 60 de desenvolvimento e dos que compartilham dono com
-eles, com 5 \textit{releases} cada (200). A rotulagem seguiu o protocolo cego
-(\texttt{data/validacao\_independente/}). Resultado: precisão 0,729, \textit{recall} 0,654 e
-\textbf{F1 = 0,689} (IC95\% por repositório, \textit{bootstrap} de 10\,000 reamostragens: 0,563--0,790); $\kappa$ de
-Fleiss em \texttt{corretiva} 0,868. A meta de F1 $\geq$ 0,70 \textbf{não} foi atingida de forma independente,
-embora o intervalo a inclua.
-
-\textbf{Status: heurística não validada; CFR (b) exploratório.} O professor confirmou que o CFR (b) pode ser
-usado como medida exploratória nessas condições, e é assim que ele é tratado: \texttt{data/metrics.csv} traz
-o CFR (b) calculado com a v12 (coluna \texttt{heuristic\_version}), e toda conclusão que o utilize
-(RQ03b, RQ05b e a combinação C2 da RQ07) deve citar o F1 de 0,689 e o intervalo. A coluna \texttt{escolhida}
-de \texttt{avaliacao\_heuristica.csv} é apenas a regra interna do script e \emph{não} indica validação. A
-v13 (\texttt{experimental/v13}) não foi promovida: sua hipótese foi formulada vendo os erros da amostra
-independente e permanece exploratória.
-
-\subsection{Dados ausentes, censura e ameaças à validade}
-% outputs/resultados.csv (contagem direta); E§3, E§5, E§11
-\textbf{Dados ausentes e censura.} Casos censurados não são descartados: dos 9062 episódios de falha
-em \texttt{resultados.csv}, 176 foram censurados; 6 \textit{releases} foram ignoradas no \textit{lead
-time} por 404 no \texttt{compare}; 23 repositórios têm tempo de recuperação indefinido (sem episódios
-concluídos). \prov{a mediana de recuperação usa só episódios concluídos e a proporção de censurados é
-reportada à parte (L09)}. No CFR (b), \textit{releases} dos últimos 7 dias da janela ficam fora do
-denominador. Em \texttt{resultados.csv}, 381 commits (32 repositórios) foram excluídos do \textit{lead time} por data posterior à release e 1685 \textit{releases} (51 repositórios) não têm commits novos (\texttt{python -m scripts.data\_quality}). Cinco \textit{releases} da amostra-ouro têm mensagens incompletas (\texttt{compare} 404 ou
-truncado), o que pode ocultar a palavra-chave.
-
-\textbf{Ameaças à validade} (resumo; a seção completa é entregue com o artigo final):
-\begin{itemize}
-  \item \emph{Construto:} \textit{release} $\neq$ deploy; falha de CI $\neq$ falha em produção;
-  \textit{commit} com \textit{rebase}/\textit{squash} distorce a data; \textit{releases} não são
-  filtradas pelo \textit{default branch}; a heurística corretiva não é validada.
-  \item \emph{Interna:} v8/v9 foram desenhadas sobre a amostra em que são avaliadas, antes de os rótulos
-  oficiais de dois avaliadores serem commitados, e a escolha é feita entre nove versões, o que torna o F1
-  otimista; a rotulagem assistida reduz a independência dos avaliadores; um repositório da amostra foi
-  removido e rotulado sem acesso ao conteúdo por dois avaliadores.
-  \item \emph{Externa:} amostra dos primeiros 300 repositórios que passam nos filtros em ordem
-  alfabética, com piso de 1000 estrelas; não representa projetos corporativos nem a população de
-  candidatos.
-  \item \emph{Conclusão:} kappa razoável (0,273) em \texttt{corretiva}; a amostra-ouro tem 60 repositórios e
-  5 \textit{releases} por repositório; \textbf{nenhuma análise estatística das RQs foi feita até aqui}.
-\end{itemize}
+\textbf{Validação independente da v12.} A v12 foi congelada e avaliada uma única vez em 40 repositórios
+sorteados (semente 7342), disjuntos dos 60 de desenvolvimento, com 5 \textit{releases} cada (200): precisão
+0,729, \textit{recall} 0,654 e \textbf{F1 = 0,689} (IC95\% 0,563--0,790; \textit{bootstrap} por repositório com
+10\,000 reamostragens); $\kappa$ de Fleiss em \texttt{corretiva} 0,868. A meta de F1 $\geq$ 0,70 \textbf{não} foi
+atingida de forma independente, embora o intervalo a inclua. Por isso o CFR (b) é \textbf{exploratório}, uso que o
+professor permitiu ao grupo, e toda conclusão que o usa
+(RQ03b, RQ05b, C2 da RQ07 e RQ08) deve citar o F1 de 0,689 e seu intervalo.

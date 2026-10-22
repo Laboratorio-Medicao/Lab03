@@ -1,0 +1,110 @@
+% Ameaças à validade — Lab03, Issue #49.
+% Estrutura: 4 categorias de Wohlin et al. (2012) com evidências quantitativas do projeto.
+
+\section{Ameaças à validade}
+
+Organizamos as ameaças nas quatro categorias clássicas de Wohlin et al.~\cite{wohlin2012experimentation}.
+
+\subsection{Validade de construto}
+
+\textbf{Release $\neq$ deploy.} A frequência de deploy e o \textit{lead time} são calculados a
+partir de \textit{releases} publicadas no GitHub. Uma biblioteca que publica uma versão por mês
+não ``faz deploy em produção''; quem faz isso são seus usuários. Repositórios de
+infraestrutura ou de documentação podem não publicar nenhuma \textit{release} mesmo implantando
+continuamente. Isso limita a generalização para projetos que adotam entrega contínua sem
+\textit{releases} formais.
+
+\textbf{Falha de CI $\neq$ falha em produção (CFR variante a).} O CFR(a) conta execuções de
+CI com conclusão de falha; erros de lint, testes instáveis e falhas de ambiente não são
+incidentes de produção. A mediana de 5,7\% pode subestimar (se falhas reais ficam ocultas)
+ou superestimar (se a maioria das falhas não chega aos usuários).
+
+\textbf{Heurística corretiva não validada (CFR variante b).} A v12 atingiu F1 = 0,689
+(IC95\% 0,563--0,790) na amostra independente, abaixo da meta de 0,70. Toda conclusão
+que use o CFR(b) — RQ03b, RQ05b e a combinação C2 da RQ07 — é exploratória. O $\kappa$
+de Fleiss em \textit{corretiva} foi de 0,273 na amostra-ouro (razoável), o que indica que
+a própria definição de ``release corretiva'' é ambígua para os avaliadores humanos.
+As versões v8--v12 foram concebidas após examinar os erros da amostra de desenvolvimento,
+tornando o F1 interno otimista.
+
+\textbf{Rebase e squash distorcem a data do commit.} O \textit{lead time} usa
+\texttt{commit.author.date} (E§3). Um rebase interativo altera a data do autor para o
+momento do rebase, comprimindo artificialmente o LT para commits reorganizados. Não há
+como detectar isso a partir da API pública.
+
+\textbf{Releases fora do branch principal.} \textit{Releases} não são filtradas pelo
+\textit{default branch}; backports publicados em ramos de manutenção entram no cálculo.
+A contagem de \textit{releases} com \texttt{compare diverged} fica em
+\texttt{n\_compare\_divergentes} no CSV.
+
+\textbf{Correlação positiva DF × CFR(b) como artefato de denominador.} O coeficiente
+$\rho = 0{,}62$ entre frequência de deploy e CFR(b) pode ser parcialmente explicado por
+confundimento: projetos com muitas \textit{releases} têm mais oportunidades de publicar
+correções, inflando o numerador do CFR(b) sem que isso reflita mais falhas reais.
+
+\subsection{Validade interna}
+
+\textbf{F1 otimista na escolha da heurística.} A versão escolhida (v12) foi selecionada
+como a de maior F1 entre doze versões avaliadas na mesma amostra de desenvolvimento de
+60 repositórios / 300 \textit{releases}. Sem um conjunto de validação separado, o F1
+interno (0,722) é inflado; o F1 independente (0,689) é a estimativa mais confiável.
+
+\textbf{Rotulagem assistida.} Os três avaliadores partilharam o protocolo de consenso e
+discutiram desempates em reunião, o que reduz a independência real dos rótulos. O $\kappa$
+de Fleiss por dimensão — 0,352 em ``entrega real'' e 0,273 em ``corretiva'' — indica
+concordância razoável, mas aquém do que seria esperado em avaliadores verdadeiramente
+independentes.
+
+\textbf{Dados ausentes não aleatórios.} Os 23 repositórios sem tempo de recuperação
+(nenhum episódio concluído) são projetos com poucas falhas de CI ou com episódios todos
+censurados — possivelmente os mais estáveis da amostra. Excluí-los subestima o tempo
+mediano de recuperação. Da mesma forma, o único repositório sem CFR(b) é um caso de
+comportamento incomum (\texttt{akveo/react-native-ui-kitten}, com 24 \textit{releases} todas censuradas).
+
+\textbf{Censura no tempo de recuperação.} Episódios sem sucesso posterior até o fim da janela
+são censurados e ficam fora da mediana. Se esses episódios são sistematicamente mais longos, a
+mediana de 2,8~h subestima o tempo real de recuperação.
+
+\subsection{Validade externa}
+
+\textbf{Amostra por ordem alfabética com piso de estrelas.} Os 300 repositórios são os
+primeiros que passam nos filtros (ações de CI, $\geq$ 5 \textit{releases}, $\geq$ 50 runs
+válidos) numa ordem alfabética global por \texttt{full\_name} (sem distinguir maiúsculas), entre os candidatos
+com piso de 1000 estrelas (\texttt{pipeline/selection.py}: busca fatiada por estrelas, candidatos deduplicados
+e ordenados por nome). Isso exclui projetos menos populares e introduz viés de seleção: projetos com
+nomes no início do alfabeto estão sobre-representados.
+
+\textbf{Popularidade truncada.} O piso de popularidade garante que todos os repositórios
+tenham alguma visibilidade, mas impede conclusões sobre projetos em estágio inicial ou de
+nicho. Os resultados descrevem projetos open-source consolidados, não o ecossistema como um todo.
+
+\textbf{Linguagens e tipos de projeto.} A amostra é dominada por TypeScript (22\%), Python
+(18\%), Go (14\%) e Rust (10\%). Linguagens com ecosistemas de \textit{release} diferentes
+(Java, PHP, Ruby) estão sub-representadas ou ausentes. O rótulo de tipo do projeto
+(biblioteca, aplicação, CLI) está disponível apenas para os 60 repositórios da amostra-ouro.
+
+\textbf{Janela de 12 meses.} A janela 2025-10-02 a 2026-10-02 captura um período específico;
+projetos com ciclos de \textit{release} irregulares ou que mudaram de ritmo nesse intervalo
+podem ter métricas não representativas do seu comportamento histórico.
+
+\subsection{Validade de conclusão}
+
+\textbf{Múltiplas comparações (RQ06).} A análise de fatores realiza 30 testes (5 fatores
+$\times$ 6 métricas). A correção de Holm foi aplicada com $\alpha = 0{,}05$, e apenas \NSeisSig{}
+associações permaneceram significativas. Nelas, $\varepsilon^2$ vai de \NEpsSigMin{} a \NEpsSigMax{} (efeito médio); nos
+demais testes o efeito é desprezível ou pequeno, e nenhum teste tem efeito grande.
+
+\textbf{Correlação de Spearman é monotônica, não linear.} O $\rho$ mede associação
+monotônica; uma relação em U ou com limiar não seria detectada. A interpretação de
+$\rho = 0{,}62$ entre DF e CFR(b) como ``correlação forte'' não implica causalidade nem
+descarta formas funcionais não monotônicas.
+
+\textbf{Número de testes por subgrupo.} Em RQ06, grupos com $n < 5$ foram excluídos.
+O fator tipo do projeto tem apenas $n = 51$ repositórios com rótulo, contra $\approx$ 300
+nos outros fatores, reduzindo o poder dos testes correspondentes.
+
+\textbf{Sensibilidade à definição operacional (RQ07).} Entre 22\% e 40\% dos repositórios
+mudam de categoria DORA ao trocar a combinação de métricas (C1, C2 ou C3), com $\kappa$
+linear entre 0,46 e 0,72. Conclusões sobre a distribuição de níveis DORA dependem da
+definição operacional escolhida, e comparações com outros estudos que adotem definições
+diferentes devem ser feitas com cautela.

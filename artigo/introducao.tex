@@ -1,59 +1,34 @@
-% Introdução do artigo (template SBC) — Lab03S01, Issue #15.
-% As hipóteses abaixo foram escritas ANTES de qualquer coleta ou análise de dados do Lab03
-% (o commit que adiciona este arquivo precede a execução do pipeline para os 100 repositórios).
+% Introdução (versão compacta para o limite de 10 páginas). Versão completa: artigo/completo/introducao.tex.
+% As hipóteses foram escritas ANTES de qualquer análise (Issue #15, Lab03S01); aqui só foram condensadas, sem
+% mudar a expectativa de cada uma. A redação original está em artigo/completo/introducao.tex.
 \section{Introdução}
 
-As métricas DORA (\textit{DevOps Research and Assessment}) tornaram-se o padrão de mercado para medir
-o desempenho de entrega de software~\cite{forsgren2018accelerate}. Quatro medidas descrevem duas
-dimensões: velocidade (\textit{deployment frequency} e \textit{lead time for changes}) e estabilidade
-(\textit{change failure rate} e tempo de recuperação de um deploy que falhou). O relatório
-\textit{Accelerate State of DevOps} sustenta que as equipes de melhor desempenho vão bem nas duas
-dimensões, ou seja, que velocidade e estabilidade não são um \textit{trade-off}.
+As métricas DORA (\textit{DevOps Research and Assessment}) tornaram-se o padrão de mercado para medir o
+desempenho de entrega de software~\cite{forsgren2018accelerate}. Quatro medidas descrevem duas dimensões:
+velocidade (\textit{deployment frequency} e \textit{lead time for changes}) e estabilidade (\textit{change failure
+rate} e tempo de recuperação). O relatório \textit{Accelerate State of DevOps} sustenta que as melhores equipes
+vão bem nas duas dimensões, isto é, que velocidade e estabilidade não são um \textit{trade-off}.
 
-O GitHub, porém, não registra ``deploys em produção'' nem ``falhas em produção''. Ao minerar
-repositórios open-source, só é possível \emph{inferir} as métricas por \textbf{proxies}: uma
-\textit{release} publicada faz o papel de deploy, e uma execução de CI que falhou faz o papel de falha.
-Proxies podem enganar. Uma biblioteca que publica uma release por mês não ``faz deploy'' em produção;
-quem faz isso são os usuários dela. Por isso o valor de uma métrica minerada precisa vir acompanhado
-de uma medida de confiança.
+O GitHub não registra ``deploys em produção'' nem ``falhas em produção''; só é possível \emph{inferir} as métricas
+por \textbf{proxies}: uma \textit{release} publicada faz o papel de deploy, e uma execução de CI que falhou, o de
+falha. Por isso cada métrica minerada precisa de uma medida de confiança. Este trabalho \textbf{calcula as métricas DORA} de repositórios populares que usam GitHub Actions e
+\textbf{mede o quanto as conclusões dependem das definições operacionais}. Hipóteses informais, escritas antes
+de ver os dados:
 
-Este trabalho tem como \textbf{objetivo} calcular automaticamente as métricas DORA para repositórios
-populares que usam GitHub Actions e medir o quanto as conclusões dependem das definições operacionais
-escolhidas. A seguir, uma hipótese informal por questão de pesquisa, escrita antes de ver os dados.
-
-\begin{description}
-  \item[H1 (RQ01, frequência de deploy).] Esperamos uma distribuição muito assimétrica, com mediana
-  entre uma release a cada duas semanas e uma por mês (categoria \textit{Medium}) e uma cauda de
-  projetos com mais de uma release por semana. Projetos populares costumam seguir um ritmo regular de
-  versões, mas poucos publicam diariamente.
-
-  \item[H2 (RQ02, \textit{lead time}).] A mediana por commit (variante b) será bem menor que a
-  mediana por release (variante a). Um único commit antigo incluído na release faz a variante (a)
-  crescer, enquanto a (b) é pouco afetada. Esperamos lead times medianos de semanas a poucos meses,
-  pois releases agrupam muitos commits acumulados.
-
-  \item[H3 (RQ03, taxa de falha).] A taxa de falha de CI (variante a) será maior que a taxa de
-  releases corretivas (variante b). Falhas de pipeline são comuns (testes instáveis, lint) e raramente
-  chegam a uma release corretiva. Esperamos um CFR (a) mediano entre 10\% e 30\%.
-
-  \item[H4 (RQ04, tempo de recuperação).] A maior parte dos episódios de falha se resolve em horas
-  (correção rápida no mesmo dia), mas a cauda é longa: dias ou semanas em projetos com pouca
-  manutenção. A mediana por repositório ficará entre 1 hora e 1 dia, e uma parcela relevante dos
-  episódios será censurada.
-
-  \item[H5 (RQ05, frequência $\times$ falha).] Esperamos uma correlação de Spearman fraca ou
-  levemente negativa entre frequência de deploy e CFR. Isso seguiria a afirmação do DORA de que não há
-  \textit{trade-off}, mas com ruído grande por causa dos proxies e da diferença entre tipos de projeto.
-
-  \item[H6 (RQ06, características dos repositórios).] A linguagem principal e o tipo de projeto
-  (biblioteca, aplicação, ferramenta CLI) terão associação mais forte com as métricas do que a
-  popularidade. Aplicações e serviços devem publicar com mais frequência que bibliotecas. Idade e
-  número de contribuidores terão efeitos pequenos, e a maior parte das diferenças perderá significância
-  após a correção para comparações múltiplas.
-
-  \item[H7 (RQ07, sensibilidade).] A classificação DORA mudará de categoria para uma fração
-  considerável dos repositórios (esperamos mais de 30\%) quando trocamos a definição de deploy
-  (release, release com pré-release ou tag) e a variante de \textit{lead time} e de CFR. A
-  concordância ponderada (kappa) entre combinações será no máximo moderada, o que indica que parte das
-  conclusões das demais RQs depende de escolhas arbitrárias.
+\begin{description}\setlength{\itemsep}{1pt}
+  \item[H1 (RQ01).] Distribuição muito assimétrica, com mediana entre uma \textit{release} a cada duas semanas e
+  uma por mês (\textit{Medium}) e cauda de projetos com mais de uma por semana.
+  \item[H2 (RQ02).] A mediana por commit (b) será bem menor que a por \textit{release} (a), pois um commit antigo
+  incluído na \textit{release} faz (a) crescer e afeta pouco (b); \textit{lead times} medianos de semanas a poucos meses.
+  \item[H3 (RQ03).] O CFR (a), de CI, será maior que o (b), de \textit{releases} corretivas, com mediana de (a) entre
+  10\% e 30\%: falhas de pipeline são comuns e raramente chegam a uma \textit{release} corretiva.
+  \item[H4 (RQ04).] A maioria dos episódios se resolve em horas, com cauda longa; mediana por repositório entre 1 hora
+  e 1 dia, e parcela relevante de episódios censurados.
+  \item[H5 (RQ05).] Correlação de Spearman fraca ou levemente negativa entre frequência e CFR, em linha com a tese
+  DORA, mas com ruído por causa dos proxies.
+  \item[H6 (RQ06).] Linguagem e tipo de projeto terão associação mais forte que a popularidade; aplicações publicam
+  mais que bibliotecas; idade e contribuidores terão efeitos pequenos, e a maioria das diferenças perderá
+  significância após a correção para comparações múltiplas.
+  \item[H7 (RQ07).] Mais de 30\% dos repositórios mudarão de categoria ao trocar a definição de deploy e as variantes
+  de LT e CFR, com $\kappa$ ponderado no máximo moderado.
 \end{description}
