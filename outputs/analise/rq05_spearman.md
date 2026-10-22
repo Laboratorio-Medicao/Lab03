@@ -7,30 +7,30 @@ Gerado por `python -m analysis.rq05_spearman` a partir de `data/metrics.csv` (sc
 | Variante | n | Excluídos | CFR = 0 | ρ | IC95% | p | Força | Direção (IC) |
 |---|---|---|---|---|---|---|---|---|
 | CFR (a) proxy de CI | 300 | 0 | 17 | -0,017 | [-0,130; 0,096] | 0,768 | desprezível | inconclusiva (IC contém 0) |
-| CFR (b) proxy de entrega | 298 | 2 | 71 | 0,620 | [0,537; 0,691] | < 0,001 | forte | positiva |
+| CFR (b) proxy de entrega | 299 | 1 | 71 | 0,624 | [0,542; 0,694] | < 0,001 | forte | positiva |
 
 IC95%: Fisher z, SE de Bonett e Wright (2000). α = 0,05. Força: |ρ| < 0,1 desprezível; < 0,3 fraca; < 0,5 moderada; ≥ 0,5 forte (Cohen, 1988; rótulo só descritivo). Direção: positiva/negativa só quando o IC95% exclui o 0.
 
 Excluídos (pares incompletos, exclusão só da variante):
 
-- CFR (b) proxy de entrega: akto-api-security/akto; akveo/react-native-ui-kitten
+- CFR (b) proxy de entrega: akveo/react-native-ui-kitten
 
 ## Sensibilidade de CFR (b) ao nº mínimo de releases avaliadas (diagnóstico)
 
-Cortes pré-declarados (5, 10, 20). **Ressalva:** DF e nº de releases avaliadas têm ρ = 0,981; o corte restringe a faixa de DF, e restrição de faixa por si só reduz |ρ|. Serve para dimensionar o efeito de denominador pequeno, não substitui o resultado principal.
+Cortes pré-declarados (5, 10, 20). **Ressalva:** DF e nº de releases avaliadas têm ρ = 0,982; o corte restringe a faixa de DF, e restrição de faixa por si só reduz |ρ|. Serve para dimensionar o efeito de denominador pequeno, não substitui o resultado principal.
 
 | Mín. avaliadas | Variante | n | Excluídos | CFR = 0 | ρ | IC95% | p | Força | Direção (IC) |
 |---|---|---|---|---|---|---|---|---|---|
-| ≥ 5 | CFR (b) proxy de entrega | 295 | 0 | 69 | 0,613 | [0,529; 0,685] | < 0,001 | forte | positiva |
-| ≥ 10 | CFR (b) proxy de entrega | 228 | 0 | 31 | 0,576 | [0,474; 0,662] | < 0,001 | forte | positiva |
-| ≥ 20 | CFR (b) proxy de entrega | 139 | 0 | 4 | 0,408 | [0,253; 0,543] | < 0,001 | moderada | positiva |
+| ≥ 5 | CFR (b) proxy de entrega | 296 | 0 | 69 | 0,617 | [0,534; 0,689] | < 0,001 | forte | positiva |
+| ≥ 10 | CFR (b) proxy de entrega | 229 | 0 | 31 | 0,580 | [0,479; 0,666] | < 0,001 | forte | positiva |
+| ≥ 20 | CFR (b) proxy de entrega | 140 | 0 | 4 | 0,420 | [0,267; 0,553] | < 0,001 | moderada | positiva |
 
 CFR (b) = 0 por nº de releases avaliadas:
 
 | Releases avaliadas | n | CFR (b) = 0 | Proporção |
 |---|---|---|---|
 | < 10 | 70 | 40 | 0,571 |
-| >= 10 | 228 | 31 | 0,136 |
+| >= 10 | 229 | 31 | 0,135 |
 
 ## Notas de método
 

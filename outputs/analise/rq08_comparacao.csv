@@ -1,33 +1,33 @@
 indicador,valor,descricao
-repos_base,299.0,Repositórios com referência no metrics.csv (base do limite de 5%)
-repos_divergentes,1.0,Repositórios da base excluídos (rótulos ausentes ou contadores diferentes do metrics.csv)
-repos_rework_definido,298.0,Repositórios com rework rate definido
-n_pareado,297.0,Repositórios com rework rate e CFR (b) definidos
-spearman_rework_cfr_b_rho,0.4789308527347617,Spearman ρ rework × CFR (b) (repositórios com rework definido)
-spearman_rework_cfr_b_p,1.9542601870425032e-18,Spearman rework × CFR (b): p-valor
-spearman_rework_cfr_b_n,297.0,Spearman rework × CFR (b): n
-spearman_df_cfr_b_rho,0.6201465170774865,Spearman ρ DF × CFR (b) (repositórios com rework definido)
-spearman_df_cfr_b_p,5.949655955241393e-33,Spearman DF × CFR (b): p-valor
-spearman_df_cfr_b_n,297.0,Spearman DF × CFR (b): n
-spearman_df_rework_rho,0.058800350330569344,Spearman ρ DF × rework (repositórios com rework definido)
-spearman_df_rework_p,0.3117001707993501,Spearman DF × rework: p-valor
-spearman_df_rework_n,298.0,Spearman DF × rework: n
-wilcoxon_estatistica,12756.0,"Wilcoxon pareado (rework − CFR b), zeros descartados: estatística W"
-wilcoxon_p,0.022857077224929502,Wilcoxon pareado: p-valor bilateral
+repos_base,300.0,Repositórios com referência no metrics.csv (base do limite de 5%)
+repos_divergentes,3.0,Repositórios da base excluídos (rótulos ausentes ou contadores diferentes do metrics.csv)
+repos_rework_definido,297.0,Repositórios com rework rate definido
+n_pareado,296.0,Repositórios com rework rate e CFR (b) definidos
+spearman_rework_cfr_b_rho,0.4791842095645667,Spearman ρ rework × CFR (b) (repositórios com rework definido)
+spearman_rework_cfr_b_p,2.127868762260215e-18,Spearman rework × CFR (b): p-valor
+spearman_rework_cfr_b_n,296.0,Spearman rework × CFR (b): n
+spearman_df_cfr_b_rho,0.6203757306064244,Spearman ρ DF × CFR (b) (repositórios com rework definido)
+spearman_df_cfr_b_p,7.095346360352645e-33,Spearman DF × CFR (b): p-valor
+spearman_df_cfr_b_n,296.0,Spearman DF × CFR (b): n
+spearman_df_rework_rho,0.059837926558780355,Spearman ρ DF × rework (repositórios com rework definido)
+spearman_df_rework_p,0.30404354519978394,Spearman DF × rework: p-valor
+spearman_df_rework_n,297.0,Spearman DF × rework: n
+wilcoxon_estatistica,12717.0,"Wilcoxon pareado (rework − CFR b), zeros descartados: estatística W"
+wilcoxon_p,0.026825882981805816,Wilcoxon pareado: p-valor bilateral
 wilcoxon_n_zeros,50.0,Pares com diferença zero (descartados do Wilcoxon e do rank-biserial)
-rank_biserial_pareado,0.16703669844586652,Correlação rank-biserial pareada (W+ − W−)/(W+ + W−); positivo = rework maior
-n_rework_maior,142.0,Pares com rework > CFR (b)
+rank_biserial_pareado,0.16283203317863137,Correlação rank-biserial pareada (W+ − W−)/(W+ + W−); positivo = rework maior
+n_rework_maior,141.0,Pares com rework > CFR (b)
 n_iguais,50.0,Pares com rework = CFR (b)
 n_rework_menor,105.0,Pares com rework < CFR (b)
-rework_agregado,0.26942459571267396,Σ corretivas ÷ Σ releases da janela (repositórios com rework definido)
-cfr_b_agregado,0.4743371065281439,Σ falhas ÷ Σ avaliadas (subconjunto pareado)
-falhas_por_corretiva_com_antecedente,2.154225352112676,Σ falhas ÷ Σ corretivas com antecedente (pareado); > 1 = multiplicidade
-corretivas_com_antecedente,2840.0,Corretivas na categoria com_antecedente
+rework_agregado,0.26901641813526134,Σ corretivas ÷ Σ releases da janela (repositórios com rework definido)
+cfr_b_agregado,0.4745381151995032,Σ falhas ÷ Σ avaliadas (subconjunto pareado)
+falhas_por_corretiva_com_antecedente,2.1562610229276897,Σ falhas ÷ Σ corretivas com antecedente (pareado); > 1 = multiplicidade
+corretivas_com_antecedente,2835.0,Corretivas na categoria com_antecedente
 corretivas_antecedente_censurado,24.0,Corretivas na categoria antecedente_censurado
 corretivas_antecedente_fora_janela,5.0,Corretivas na categoria antecedente_fora_janela
-corretivas_sem_anterior_7d,713.0,Corretivas na categoria sem_anterior_7d
-corretivas_total,3582.0,Releases corretivas (repositórios com rework definido)
-releases_total,13295.0,Releases de deploy da janela (repositórios com rework definido)
+corretivas_sem_anterior_7d,708.0,Corretivas na categoria sem_anterior_7d
+corretivas_total,3572.0,Releases corretivas (repositórios com rework definido)
+releases_total,13278.0,Releases de deploy da janela (repositórios com rework definido)
 calibracao_n_releases,200.0,Releases da validação independente (predicoes_v12.csv)
 calibracao_n_repos,40.0,Repositórios da validação independente
 calibracao_prev_consenso,0.39,Proporção de corretivas pelo consenso humano na validação independente

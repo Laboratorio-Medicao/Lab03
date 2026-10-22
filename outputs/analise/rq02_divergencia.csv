@@ -1,0 +1,15 @@
+indicador,valor
+n,300.0
+razao_mediana,1.211438645159546
+razao_q1,0.5300928906183972
+razao_q3,2.2197645575216733
+prop_a_maior_que_2b,0.29
+prop_a_menor_que_b,0.4033333333333333
+prop_b_maior_que_2a,0.24333333333333335
+prop_entre_metade_e_dobro,0.4666666666666667
+wilcoxon_pareado_estatistica,17411.0
+wilcoxon_pareado_p,0.0008050708882881947
+spearman_log_razao_vs_n_releases_rho,-0.15467734766430002
+spearman_log_razao_vs_n_releases_p,0.007273011139004269
+mediana_lt_a_h,146.35652777777779
+mediana_lt_b_h,146.336875
