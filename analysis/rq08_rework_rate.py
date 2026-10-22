@@ -6,7 +6,7 @@ sem censura, porque a corretividade de S é conhecida quando S é publicada.
 
 Reexecutável só a partir de CSVs, sem cache nem token:
 
-    python -m analysis.rq08_rework_rate [--csv data/metrics.csv] [--releases outputs/analise/rq08_releases.csv]
+    python -m analysis.rq08_rework_rate [--csv data/metrics.csv] [--releases data/rq08/rq08_releases.csv]
                                         [--saida outputs/analise]
 
 `rq08_releases.csv` (rótulo por release) vem de `python -m scripts.rq08_rotular_releases` (precisa do cache).
@@ -33,7 +33,7 @@ from scipy import stats  # noqa: E402
 
 from analysis import common, rq01_rq04  # noqa: E402
 
-RELEASES_PADRAO = common.SAIDA_PADRAO / "rq08_releases.csv"
+RELEASES_PADRAO = common.RAIZ / "data" / "rq08" / "rq08_releases.csv"  # insumo versionado (não é saída)
 PREDICOES_PADRAO = common.RAIZ / "data" / "validacao_independente" / "predicoes_v12.csv"
 LIMITE_DIVERGENCIA = 0.05  # fração máxima da base que pode divergir do metrics.csv
 SEMENTE_BOOTSTRAP = 20261015  # a mesma da validação independente da v12
@@ -383,7 +383,7 @@ def relatorio(t: pd.DataFrame, desc: pd.DataFrame, c: dict, metricas: pd.DataFra
     return f"""# RQ08 (bônus) — Rework rate e diferença para o CFR (b)
 
 Gerado por `python -m analysis.rq08_rework_rate` (Issue #39) a partir de `data/metrics.csv` e
-`outputs/analise/rq08_releases.csv` (rótulos por release de `python -m scripts.rq08_rotular_releases`).
+`data/rq08/rq08_releases.csv` (rótulos por release de `python -m scripts.rq08_rotular_releases`).
 Não editar à mão.
 
 ## Definição operacional

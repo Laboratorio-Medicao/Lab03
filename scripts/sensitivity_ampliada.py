@@ -1,4 +1,4 @@
-"""RQ07 (Bônus) — Sensibilidade ampliada: quatro variações controladas da classificação DORA.
+"""RQ07 (complementar; o bônus oficial é a RQ08) — Sensibilidade ampliada: quatro variações controladas da classificação DORA.
 
 Variações implementadas:
   1. Janela CFR(b) 3/7/14 dias — proxy via lower bound (3d) e upper bound (14d) calculados
@@ -236,7 +236,7 @@ def run() -> None:
         w.writerows(resultados)
 
     md = "\n".join([
-        "# RQ07 (Bônus) — Sensibilidade ampliada\n",
+        "# RQ07 (complementar) — Sensibilidade ampliada\n",
         "## Resultados por variação\n",
         _md_tabela_resultados(resultados),
         "",
@@ -250,6 +250,13 @@ def run() -> None:
         "  κ mede concordância no subconjunto restante.",
         "- **Cortes ±10%**: todos os limiares DF/LT/CFR/rec deslocados pelo mesmo fator;",
         "  reclassificação de `dora_c1` a partir das métricas brutas.",
+        "",
+        "## Quais variações são informativas",
+        "",
+        "- **Informativas:** `cfr_b_janela_*` (proxy aritmético, não re-execução do pipeline) e `cortes_*`.",
+        "- **Tautológicas (0% de mudança por construção):** `min_releases_5` (todo repositório da amostra tem ≥ 5",
+        "  releases na janela), `min_releases_10` e `censura_rq04_excluir_alta` (comparam o conjunto com um",
+        "  subconjunto dele mesmo, sem reclassificar). Não devem ser lidas como evidência de robustez.",
         "",
         "Fonte: `data/metrics.csv` · Script: `scripts/sensitivity_ampliada.py`",
     ])

@@ -78,7 +78,7 @@ def calcular_metricas(repo: RepoRecord, dados: dict, inicio: date, fim: date) ->
         "rec_class": _categoria(dora.classify_recovery, rec_mediana),
     }
     notas = [dora.score(c) for c in categorias.values() if c]
-    # L10 (decisão do grupo, validada com o professor): classifica com as métricas definidas e sinaliza
+    # L10 (decisão do grupo; sem registro de resposta do professor no repositório): classifica com as métricas definidas e sinaliza
     # a classificação parcial em `n_metricas_dora`.
     geral = dora.classify_overall_parcial(notas) if notas else ""
 
