@@ -2,7 +2,9 @@
 
 Pipeline reprodutível que calcula as métricas DORA (deployment frequency, lead time, change failure rate e tempo de recuperação) a partir de dados públicos do GitHub (releases, commits e GitHub Actions).
 
-> **Estado atual (Sprint S03):** o comando único encadeia seleção, funil, coleta (releases, tags, commits entre releases e workflow runs) e métricas DORA, com cache em disco e retomada.
+**Repositório:** <https://github.com/Laboratorio-Medicao/Lab03> · **Project (Kanban):** <https://github.com/orgs/Laboratorio-Medicao/projects/1>
+
+> **Estado atual (Entrega Final):** o comando único encadeia seleção, funil, coleta (releases, tags, commits entre releases e workflow runs) e métricas DORA, com cache em disco e retomada. Análises estatísticas (RQ01–RQ08) e análise de sensibilidade (RQ07) estão incluídas.
 
 ## Pré-requisitos
 
@@ -277,7 +279,7 @@ pipeline/              CLI (python -m pipeline), config, seleção, funil e orqu
 metricas/              funções de cálculo das métricas DORA (módulo medido pela cobertura)
 tests/                 testes automatizados (pytest)
 analysis/              análises da S03 (RQ01–RQ06, classificação C1, RQ08), reexecutáveis a partir do CSV
-scripts/               utilitários (validação de mensagem de commit)
+scripts/               utilitários: compute_metrics, sensitivity_analysis, sensitivity_ampliada, evaluate_heuristic, …
 .githooks/             hook commit-msg que exige #N
 .github/workflows/     CI: testes.yml (pytest + cobertura) e commits.yml (#N)
 artigo/                artigo (template SBC)
@@ -379,3 +381,53 @@ python -m analysis.rq08_rework_rate [--csv data/metrics.csv] [--releases outputs
 - **Cache:** a etapa 1 precisa do cache de releases (com `body`) e de commits da coleta. Se faltar, `python -m scripts.recoletar_cache` completa o cache. Repositório sem dado vira linha em `rq08_extracao_erros.csv`. Cada repositório também é conferido com `metricas.cfr_entrega.resumo_cfr_entrega`.
 - **Conferência:** a etapa 2 reconta os contadores do CFR (b) a partir dos rótulos e os compara com `data/metrics.csv`. Repositório divergente fica sem rework, e acima de 5% de divergência o comando para com código ≠ 0.
 - **Saídas:** `rq08_rework_rate.csv`, `rq08_descritiva.csv` (mediana/IQR), `rq08_comparacao.csv`, `rq08_*.png` e `rq08_rework_rate.md`, que traz a discussão da diferença para o CFR (b) e alimenta o artigo.
+
+## Análise de sensibilidade RQ07 (S03, Issues #40 e #41)
+
+Duas análises reexecutáveis a partir de `data/metrics.csv`, sem coleta nem token:
+
+```bash
+# Pares de combinações DORA (C1×C2, C1×C3, C2×C3): kappa linear e matrizes de transição
+python -m scripts.sensitivity_analysis
+
+# Sensibilidade ampliada: janela CFR(b), mínimo de releases, censura e cortes ±10%
+python -m scripts.sensitivity_ampliada
+```
+
+Saídas em `outputs/`: `sensitivity_dora.csv`/`sensitivity_dora.md` (kappa por par de combinações) e `sensitivity_ampliada.csv`/`sensitivity_ampliada.md` (7 variações controladas, κ > 0,92 em todas). Os scripts só leem `data/metrics.csv` e dependências do `requirements.txt`.
+
+## Snapshot do Kanban
+
+```bash
+python -m kanban.snapshot
+```
+
+Grava um CSV com estado atual do Project em `data/kanban-snapshots/`. Requer `GITHUB_TOKEN` com escopo `read:org`.
+
+## Dataset congelado
+
+`data/metrics.csv` e `DICIONARIO_DE_DADOS.csv` foram gerados com o pipeline completo e congelados na tag `dataset-final`. Hashes SHA-256 para conferência:
+
+```
+a7b0bb08cd4629b73760b1c109b9e44e4580ad8117278476c76bde24d2d79b5e  data/metrics.csv
+c33cc15a2fa1b94215f0c9a2d8f86e7de8160da2cb23529cb9839bd3febec7fe  DICIONARIO_DE_DADOS.csv
+```
+
+## Tempo estimado de execução
+
+| Etapa | Primeira vez (sem cache) | Com cache completo |
+|---|---|---|
+| Seleção + pipeline completo | 8–12 h (rate limit 5.000 req/h) | < 5 min |
+| `scripts/compute_metrics.py` | ≈ 5 min | ≈ 5 min |
+| Análises (RQ01–RQ08, sensibilidade) | ≈ 2 min | ≈ 2 min |
+
+O cache (~19 GB) é compartilhado no grupo; com ele, as análises completas rodam em menos de 10 minutos.
+
+## Problemas conhecidos
+
+| # | Descrição | Impacto |
+|---|---|---|
+| P1 | `df_class` em `outputs/repos_final.csv` classifica como `Low` 11 repositórios com exatamente 12 releases (limite de 1/mês), por precisão de ponto flutuante no armazenamento CSV. Corrigido em `data/metrics.csv` pelo `scripts/compute_metrics.py`. | Só `outputs/repos_final.csv`; `data/metrics.csv` está correto |
+| P2 | A heurística v12 de CFR(b) exige `body` das releases (release notes). Se o cache de `cache/releases/` não tiver `body` (coletado antes de Issue #7 incluir o campo), `scripts/compute_metrics.py` falha. Solução: apagar `cache/releases/` e reexecutar — o cache HTTP reconstrói os arquivos com `body`. | Só se o cache de releases estiver desatualizado |
+| P3 | `cache/releases/` pode estar desatualizado em relação ao cache HTTP se foi copiado de uma versão anterior do pipeline. Ver P2. | Ver P2 |
+| P4 | O IC95% do F1 da heurística v12 (0,563–0,790 na amostra independente de 200 releases) está abaixo da meta de 0,70. O CFR(b) é considerado exploratório pelo professor. | Limita a confiança no CFR(b) |

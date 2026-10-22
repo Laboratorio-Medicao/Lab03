@@ -160,5 +160,5 @@ def test_colunas_geradas_estao_no_dicionario(tmp_path):
 @pytest.mark.skipif(not (RAIZ / "data" / "metrics.csv").exists(), reason="data/metrics.csv ausente")
 def test_trava_de_regressao_no_csv_real():
     t = rq05.tabela(pd.read_csv(RAIZ / "data" / "metrics.csv")).set_index("variante")
-    assert (t.loc["a", "n"], t.loc["b", "n"]) == (300, 298)
-    assert t.loc["b", "excluidos"] == "akto-api-security/akto; akveo/react-native-ui-kitten"
+    assert (t.loc["a", "n"], t.loc["b", "n"]) == (300, 299)
+    assert t.loc["b", "excluidos"] == "akveo/react-native-ui-kitten"
